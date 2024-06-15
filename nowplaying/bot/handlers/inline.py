@@ -58,7 +58,7 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
 
     if mp3 is None:
         caption = f'Error: track is unavailable :(\n{caption}'
-        await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption=caption)
+        await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption=caption, parse_mode='HTML')
         return
 
     file_id = await cache_file(track.uri, mp3, track.artist, track.name, track.title, result.from_user)
@@ -90,11 +90,18 @@ async def inline_query_handler(query: InlineQuery) -> None:
     client = spotify.from_telegram_id(query.from_user.id)
 
     result: list[InlineQueryResultArticle | InlineQueryResultAudio | InlineQueryResultCachedAudio] = list()
+    seen_uris: list[str] = list()
+
     i: int = -1
     async for track in client.get_current_and_recent_tracks():
         i += 1
         if not isinstance(track, Track):
             continue
+
+        if track.uri in seen_uris:
+            continue
+
+        seen_uris.append(track.uri)
 
         if file_id := await get_cached_file_id(track.uri):
             result.append(InlineQueryResultCachedAudio(
