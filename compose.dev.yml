@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    command: postgres -c listen_addresses='*'
+    container_name: nowplaying-db
+    volumes:
+      - ./db_data/postgres:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s

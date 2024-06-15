@@ -14,7 +14,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = 'production'
 
     EMPTY_MP3_FILE_URL: str = 'https://es3n1n.eu/empty.mp3'
+    DEEZER_ARL_COOKIE: str
 
+    BOT_DEV_CHAT_ID: int = 1490827215
     BOT_TOKEN: str
     BOT_CACHE_CHAT_ID: int
     BOT_URL: str = 'https://t.me/playinnowbot'

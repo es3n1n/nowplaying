@@ -6,11 +6,13 @@ from loguru import logger
 from ..core.song_link import get_song_link_platforms
 from ..models.track import Track
 from .abc import DownloaderABC
+from .deezer import DeezerDownloader
 from .soundcloud import SoundcloudDownloader
 from .youtube import YoutubeDownloader
 
 
 downloaders: list[DownloaderABC] = [
+    DeezerDownloader(),
     YoutubeDownloader(),
     SoundcloudDownloader(),
 ]
