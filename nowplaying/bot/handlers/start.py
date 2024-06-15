@@ -1,9 +1,11 @@
 from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from spotipy import SpotifyException
 
 from ...core.config import config
 from ...core.spotify import spotify
 from ...database import db
+from ...util.logger import logger
 from ..bot import dp
 from .link import link_command_handler
 
@@ -13,14 +15,23 @@ async def try_controls(payload: str, message: Message) -> bool:
     if not uri:
         return False
 
+    if uri == 'link':
+        await link_command_handler(message)
+        return True
+
     if not uri.startswith('spotify:track:'):
         return False
 
     assert message.from_user is not None
-    client = spotify.from_telegram_id(message.from_user.id)
-    track = await client.get_track(uri)
-    if not track:
-        return False
+    try:
+        client = spotify.from_telegram_id(message.from_user.id)
+        track = await client.get_track(uri)
+        if not track:
+            return False
+    except SpotifyException as e:
+        logger.opt(exception=e).error('Error')
+        await message.reply('Something goofed up, contact @invlpg')
+        return True
 
     await message.reply(
         f'{track.artist} - {track.name}\nUse the buttons bellow to control your Spotify playback.',
@@ -40,10 +51,6 @@ async def try_controls(payload: str, message: Message) -> bool:
 async def command_start_handler(message: Message) -> None:
     assert message.from_user is not None
     assert message.text is not None
-
-    if message.text == '/start link':
-        await link_command_handler(message)
-        return
 
     authorized: bool = db.is_user_authorized(message.from_user.id)
 

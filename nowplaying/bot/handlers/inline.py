@@ -11,12 +11,14 @@ from aiogram.types import (
     InputMediaAudio,
     InputTextMessageContent,
 )
+from spotipy import SpotifyException
 
 from ...core.config import config
 from ...core.spotify import spotify
 from ...database import db
 from ...downloader import download_mp3
 from ...models.track import Track
+from ...util.logger import logger
 from ..bot import bot, dp
 from ..caching import cache_file, get_cached_file_id
 
@@ -87,47 +89,58 @@ async def inline_query_handler(query: InlineQuery) -> None:
         ], cache_time=1)
         return
 
-    client = spotify.from_telegram_id(query.from_user.id)
-
     result: list[InlineQueryResultArticle | InlineQueryResultAudio | InlineQueryResultCachedAudio] = list()
     seen_uris: list[str] = list()
 
-    i: int = -1
-    async for track in client.get_current_and_recent_tracks():
-        i += 1
-        if not isinstance(track, Track):
-            continue
+    try:
+        client = spotify.from_telegram_id(query.from_user.id)
 
-        if track.uri in seen_uris:
-            continue
+        i: int = -1
+        async for track in client.get_current_and_recent_tracks():
+            i += 1
+            if not isinstance(track, Track):
+                continue
 
-        seen_uris.append(track.uri)
+            if track.uri in seen_uris:
+                continue
 
-        if file_id := await get_cached_file_id(track.uri):
-            result.append(InlineQueryResultCachedAudio(
-                id=str(i),
-                audio_file_id=file_id,
-                caption=track_to_caption(track),
-                parse_mode='HTML'
-            ))
-            continue
+            seen_uris.append(track.uri)
 
-        result.append(
-            InlineQueryResultAudio(
-                id=track.uri,
-                audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
-                title=f'{track.title}',
-                caption=track_to_caption(track),
-                parse_mode='HTML',
-                reply_markup=InlineKeyboardMarkup(
-                    inline_keyboard=[
-                        [
-                            InlineKeyboardButton(text='downloading audio', callback_data='loading')
+            if file_id := await get_cached_file_id(track.uri):
+                result.append(InlineQueryResultCachedAudio(
+                    id=str(i),
+                    audio_file_id=file_id,
+                    caption=track_to_caption(track),
+                    parse_mode='HTML'
+                ))
+                continue
+
+            result.append(
+                InlineQueryResultAudio(
+                    id=track.uri,
+                    audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
+                    title=f'{track.title}',
+                    caption=track_to_caption(track),
+                    parse_mode='HTML',
+                    reply_markup=InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [
+                                InlineKeyboardButton(text='downloading audio', callback_data='loading')
+                            ]
                         ]
-                    ]
+                    )
                 )
             )
-        )
+    except SpotifyException as e:
+        logger.opt(exception=e).error('Error')
+        result.append(InlineQueryResultArticle(
+            id='0',
+            title='Something went wrong, contact @invlpg',
+            url='https://t.me/invlpg',
+            input_message_content=InputTextMessageContent(
+                message_text='Something went wrong (┛ಠ_ಠ)┛彡┻━┻'
+            )
+        ))
 
     if len(result) == 0:
         result.append(InlineQueryResultArticle(
