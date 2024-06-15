@@ -199,6 +199,16 @@ test = ["anyio[trio]", "coverage[toml] (>=7)", "exceptiongroup (>=1.2.0)", "hypo
 trio = ["trio (>=0.23)"]
 
 [[package]]
+name = "args"
+version = "0.1.0"
+description = "Command Arguments for Humans."
+optional = false
+python-versions = "*"
+files = [
+    {file = "args-0.1.0.tar.gz", hash = "sha256:a785b8d837625e9b61c39108532d95b85274acd679693b71ebb5156848fcf814"},
+]
+
+[[package]]
 name = "async-lru"
 version = "2.0.4"
 description = "Simple LRU cache for asyncio"
@@ -364,6 +374,19 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "clint"
+version = "0.5.1"
+description = "Python Command Line Interface Tools"
+optional = false
+python-versions = "*"
+files = [
+    {file = "clint-0.5.1.tar.gz", hash = "sha256:05224c32b1075563d0b16d0015faaf9da43aa214e4a2140e51f08789e7a4c5aa"},
+]
+
+[package.dependencies]
+args = "*"
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -373,6 +396,19 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
+
+[[package]]
+name = "dacite"
+version = "1.8.1"
+description = "Simple creation of data classes from dictionaries."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "dacite-1.8.1-py3-none-any.whl", hash = "sha256:cc31ad6fdea1f49962ea42db9421772afe01ac5442380d9a99fcf3d188c61afe"},
+]
+
+[package.extras]
+dev = ["black", "coveralls", "mypy", "pre-commit", "pylint", "pytest (>=5)", "pytest-benchmark", "pytest-cov"]
 
 [[package]]
 name = "dnspython"
@@ -393,6 +429,16 @@ doq = ["aioquic (>=0.9.25)"]
 idna = ["idna (>=3.6)"]
 trio = ["trio (>=0.23)"]
 wmi = ["wmi (>=1.5.1)"]
+
+[[package]]
+name = "docopt"
+version = "0.6.2"
+description = "Pythonic argument parser, that will make you smile"
+optional = false
+python-versions = "*"
+files = [
+    {file = "docopt-0.6.2.tar.gz", hash = "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"},
+]
 
 [[package]]
 name = "email-validator"
@@ -996,6 +1042,17 @@ files = [
 ]
 
 [[package]]
+name = "mutagen"
+version = "1.47.0"
+description = "read and write audio tags for many formats"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mutagen-1.47.0-py3-none-any.whl", hash = "sha256:edd96f50c5907a9539d8e5bba7245f62c9f520aef333d13392a79a4f70aca719"},
+    {file = "mutagen-1.47.0.tar.gz", hash = "sha256:719fadef0a978c31b4cf3c956261b3c58b6948b32023078a2117b1de09f0fc99"},
+]
+
+[[package]]
 name = "mypy"
 version = "1.10.0"
 description = "Optional static typing for Python"
@@ -1106,6 +1163,21 @@ files = [
     {file = "orjson-3.10.5-cp39-none-win_amd64.whl", hash = "sha256:cc28e90a7cae7fcba2493953cff61da5a52950e78dc2dacfe931a317ee3d8de7"},
     {file = "orjson-3.10.5.tar.gz", hash = "sha256:7a5baef8a4284405d96c90c7c62b755e9ef1ada84c2406c24a9ebec86b89f46d"},
 ]
+
+[[package]]
+name = "pathvalidate"
+version = "3.2.0"
+description = "pathvalidate is a Python library to sanitize/validate a string such as filenames/file-paths/etc."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pathvalidate-3.2.0-py3-none-any.whl", hash = "sha256:cc593caa6299b22b37f228148257997e2fa850eea2daf7e4cc9205cef6908dee"},
+    {file = "pathvalidate-3.2.0.tar.gz", hash = "sha256:5e8378cf6712bff67fbe7a8307d99fa8c1a0cb28aa477056f8fc374f0dff24ad"},
+]
+
+[package.extras]
+docs = ["Sphinx (>=2.4)", "sphinx-rtd-theme (>=1.2.2)", "urllib3 (<2)"]
+test = ["Faker (>=1.0.8)", "allpairspy (>=2)", "click (>=6.2)", "pytest (>=6.0.1)", "pytest-discord (>=0.1.4)", "pytest-md-report (>=0.4.1)"]
 
 [[package]]
 name = "psycopg"
@@ -1384,6 +1456,20 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "python-dateutil"
+version = "2.9.0.post0"
+description = "Extensions to the standard Python datetime module"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+files = [
+    {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
+    {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
+]
+
+[package.dependencies]
+six = ">=1.5"
+
+[[package]]
 name = "python-dotenv"
 version = "1.0.1"
 description = "Read key-value pairs from a .env file and set them as environment variables"
@@ -1529,6 +1615,30 @@ pygments = ">=2.13.0,<3.0.0"
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
+name = "scdl"
+version = "2.7.12"
+description = "Download Music from Souncloud"
+optional = false
+python-versions = ">=3.7"
+files = []
+develop = false
+
+[package.dependencies]
+clint = "*"
+docopt = "*"
+mutagen = ">=1.45.0"
+pathvalidate = "*"
+requests = "*"
+soundcloud-v2 = ">=1.3.7"
+termcolor = "*"
+
+[package.source]
+type = "git"
+url = "https://github.com/flyingrub/scdl"
+reference = "HEAD"
+resolved_reference = "42fbc5c23e3331059b05657f0819ac4835d6b83b"
+
+[[package]]
 name = "setuptools"
 version = "70.0.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -1555,6 +1665,17 @@ files = [
 ]
 
 [[package]]
+name = "six"
+version = "1.16.0"
+description = "Python 2 and 3 compatibility utilities"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+files = [
+    {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
+    {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+
+[[package]]
 name = "sniffio"
 version = "1.3.1"
 description = "Sniff out which async library your code is running under"
@@ -1564,6 +1685,25 @@ files = [
     {file = "sniffio-1.3.1-py3-none-any.whl", hash = "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2"},
     {file = "sniffio-1.3.1.tar.gz", hash = "sha256:f4324edc670a0f49750a81b895f35c3adb843cca46f0530f79fc1babb23789dc"},
 ]
+
+[[package]]
+name = "soundcloud-v2"
+version = "1.3.7"
+description = "Python wrapper for the v2 SoundCloud API"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "soundcloud-v2-1.3.7.tar.gz", hash = "sha256:0e26829c8117292c72138f8c0aad0ac1d2965067d63b72c0570b0c34490e9aa7"},
+    {file = "soundcloud_v2-1.3.7-py3-none-any.whl", hash = "sha256:a1cc572ab6b5df401b03c03da1a1d720e58d6caa9d520bc13ec42d406ba943f2"},
+]
+
+[package.dependencies]
+dacite = "*"
+python-dateutil = ">=2.8.2"
+requests = "*"
+
+[package.extras]
+test = ["coveralls", "pytest", "pytest-dotenv"]
 
 [[package]]
 name = "spotipy"
@@ -1601,6 +1741,20 @@ anyio = ">=3.4.0,<5"
 
 [package.extras]
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7)", "pyyaml"]
+
+[[package]]
+name = "termcolor"
+version = "2.4.0"
+description = "ANSI color formatting for output in terminal"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "termcolor-2.4.0-py3-none-any.whl", hash = "sha256:9297c0df9c99445c2412e832e882a7884038a25617c60cea2ad69488d4040d63"},
+    {file = "termcolor-2.4.0.tar.gz", hash = "sha256:aab9e56047c8ac41ed798fa36d892a37aca6b3e9159f3e0c24bc64a9b3ac7b7a"},
+]
+
+[package.extras]
+tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "typer"
@@ -2117,4 +2271,4 @@ resolved_reference = "0153b387e57e0bb8e580f1869f85596d2767fb0d"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "95172af57e66eac24ea95062a1cfa486e211c7a8e7cfcdb15c1ea98452191437"
+content-hash = "4a5068b2bbd7496ee0faa1fa178b4c24a9ee706ced2d49f51e0fa58a2ad2199e"
