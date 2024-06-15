@@ -8,6 +8,10 @@ from ..bot import bot, dp
 @dp.callback_query()
 async def controls_handler(query: CallbackQuery) -> None:
     assert query.data is not None
+    if query.data == 'loading':
+        await bot.answer_callback_query(query.id, text='Downloading the audio, please wait.')
+        return
+
     if not db.is_user_authorized(query.from_user.id):
         await bot.answer_callback_query(query.id, text='Please authenticate first')
         return

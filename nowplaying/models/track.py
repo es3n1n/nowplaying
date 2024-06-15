@@ -24,3 +24,7 @@ class Track(BaseModel):
             song_link=await get_song_link(url),
             currently_playing=is_playing,
         )
+
+    @property
+    def title(self):
+        return f'{self.artist} - {self.name}'

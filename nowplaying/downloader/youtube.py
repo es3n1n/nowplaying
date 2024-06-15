@@ -2,7 +2,7 @@ from io import BytesIO
 from os import remove
 from typing import Optional
 
-from youtube_dl import YoutubeDL
+from youtube_dl import DownloadError, YoutubeDL
 
 from ..models.song_link_platform import SongLinkPlatform, SongLinkPlatformType
 from ..util.fs import temp_file
@@ -26,7 +26,10 @@ class YoutubeDownloader(DownloaderABC):
                 }
             ],
         }) as ydl:
-            if ydl.download(url_list=[platform.url]) != 0:
+            try:
+                if ydl.download(url_list=[platform.url]) != 0:
+                    return None
+            except DownloadError:
                 return None
 
         # fixme: @es3n1n: fix this epic overhead

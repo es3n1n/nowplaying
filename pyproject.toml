@@ -17,7 +17,6 @@ psycopg = {extras = ["binary", "pool"], version = "^3.1.19"}
 pydantic-settings = "^2.3.3"
 filelock = "^3.15.1"
 async-lru = "^2.0.4"
-aiostream = "^0.6.1"
 youtube-dl = {git = "https://github.com/ytdl-org/youtube-dl.git", rev = "0153b387e57e0bb8e580f1869f85596d2767fb0d"}
 scdl = {git = "https://github.com/flyingrub/scdl", rev = "42fbc5c23e3331059b05657f0819ac4835d6b83b"}
 

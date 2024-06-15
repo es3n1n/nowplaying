@@ -13,7 +13,10 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str = 'production'
 
+    EMPTY_MP3_FILE_URL: str = 'https://es3n1n.eu/empty.mp3'
+
     BOT_TOKEN: str
+    BOT_CACHE_CHAT_ID: int
     BOT_URL: str = 'https://t.me/playinnowbot'
 
     STATE_SECRET: str
