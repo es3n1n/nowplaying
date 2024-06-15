@@ -1,13 +1,12 @@
-from abc import ABC, abstractmethod
 from io import BytesIO
 from typing import Optional
 
 from ..models.song_link_platform import SongLinkPlatform, SongLinkPlatformType
+from .abc import DownloaderABC
 
 
-class DownloaderABC(ABC):
-    platform: SongLinkPlatformType = SongLinkPlatformType.UNKNOWN
+class SoundcloudDownloader(DownloaderABC):
+    platform = SongLinkPlatformType.SOUNDCLOUD
 
-    @abstractmethod
     async def download_mp3(self, platform: SongLinkPlatform) -> Optional[BytesIO]:
-        """ Download mp3 for a given platform source """
+        return None

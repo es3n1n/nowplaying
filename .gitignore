@@ -3,3 +3,4 @@
 *.pyc
 .env
 db_data/**
+worker.lock

@@ -6,10 +6,10 @@ from filelock import FileLock, Timeout
 class Worker:
     def __init__(self) -> None:
         self.lock: Optional[FileLock] = None
-        self.setup('web')
+        self.setup()
 
-    def setup(self, service_name: str) -> None:
-        self.lock = FileLock(f'worker-{service_name}.lock')
+    def setup(self) -> None:
+        self.lock = FileLock('worker.lock')
         try:
             self.lock.acquire(blocking=False)
         except Timeout:

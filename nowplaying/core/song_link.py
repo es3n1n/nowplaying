@@ -1,7 +1,7 @@
 import re
 
 from async_lru import alru_cache
-from httpx import AsyncClient
+from httpx import AsyncClient, Timeout
 from loguru import logger
 from orjson import JSONDecodeError, loads
 
@@ -23,7 +23,7 @@ client = AsyncClient(headers={
     'Sec-Fetch-Site': 'same-site',
     'Sec-GPC': '1',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0'
-})
+}, timeout=Timeout(timeout=60.))
 
 
 @alru_cache(maxsize=128)

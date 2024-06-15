@@ -2099,7 +2099,22 @@ files = [
 idna = ">=2.0"
 multidict = ">=4.0"
 
+[[package]]
+name = "youtube_dl"
+version = "2021.12.17"
+description = "YouTube video downloader"
+optional = false
+python-versions = "*"
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/ytdl-org/youtube-dl.git"
+reference = "HEAD"
+resolved_reference = "0153b387e57e0bb8e580f1869f85596d2767fb0d"
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "15acf4bf7717742ef35f80abc10294bde85f9b345f79d53ebf32aea11e4b5fc0"
+content-hash = "95172af57e66eac24ea95062a1cfa486e211c7a8e7cfcdb15c1ea98452191437"
