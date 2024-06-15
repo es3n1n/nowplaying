@@ -1,7 +1,7 @@
 from io import BytesIO
 
 from aiogram.exceptions import AiogramError, TelegramAPIError
-from aiogram.types import BufferedInputFile, User
+from aiogram.types import BufferedInputFile, URLInputFile, User
 
 from ..core.config import config
 from ..database import db
@@ -21,13 +21,22 @@ async def get_cached_file_id(uri: str) -> str | None:
     return file_id
 
 
-async def cache_file(uri: str, data: BytesIO, performer: str, name: str, full_title: str, user: User) -> str:
+async def cache_file(
+        uri: str,
+        data: BytesIO,
+        thumbnail_url: str,
+        performer: str,
+        name: str,
+        full_title: str,
+        user: User
+) -> str:
     sent = await bot.send_audio(
         config.BOT_CACHE_CHAT_ID,
         BufferedInputFile(file=data.read(), filename=f'{full_title}.mp3'),
         caption=f'{uri} #id{user.id} {full_title}',
         performer=performer,
         title=name,
+        thumbnail=URLInputFile(url=thumbnail_url) if thumbnail_url != '' else None,
     )
     assert sent.audio is not None
 

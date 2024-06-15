@@ -10,7 +10,7 @@ from ..external.deezer import (
     download_song,
     get_song_infos_from_deezer_website,
 )
-from ..models.song_link_platform import SongLinkPlatform, SongLinkPlatformType
+from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
 from ..util.logger import logger
 from .abc import DownloaderABC
 

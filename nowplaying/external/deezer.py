@@ -8,7 +8,7 @@ from io import BytesIO
 
 from Crypto.Cipher import AES, Blowfish
 from Crypto.Hash import MD5
-from httpx import AsyncClient
+from httpx import AsyncClient, Timeout
 
 from ..core.config import config
 
@@ -39,7 +39,8 @@ session = AsyncClient(
     cookies={
         'arl': config.DEEZER_ARL_COOKIE,
         'comeback': '1'
-    }
+    },
+    timeout=Timeout(timeout=60.)
 )
 
 

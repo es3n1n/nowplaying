@@ -4,7 +4,7 @@ from typing import Optional
 
 from youtube_dl import DownloadError, YoutubeDL
 
-from ..models.song_link_platform import SongLinkPlatform, SongLinkPlatformType
+from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
 from ..util.fs import temp_file
 from ..util.logger import logger
 from .abc import DownloaderABC

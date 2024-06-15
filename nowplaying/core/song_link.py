@@ -5,7 +5,7 @@ from httpx import AsyncClient, Timeout
 from loguru import logger
 from orjson import JSONDecodeError, loads
 
-from ..models.song_link_platform import SongLinkPlatform, SongLinkPlatformType
+from ..models.song_link import SongLinkInfo, SongLinkPlatform, SongLinkPlatformType
 
 
 client = AsyncClient(headers={
@@ -32,8 +32,11 @@ async def get_song_link(track_url: str) -> str:
 
 
 @alru_cache(maxsize=128)
-async def get_song_link_platforms(song_link_url: str) -> dict[SongLinkPlatformType, SongLinkPlatform]:
-    result: dict[SongLinkPlatformType, SongLinkPlatform] = dict()
+async def get_song_link_info(song_link_url: str) -> SongLinkInfo:
+    result = SongLinkInfo(
+        platforms=dict(),
+        thumbnail_url=''
+    )
 
     resp = await client.get(song_link_url)
     if resp.status_code != 200:  # this might be an issue in the future since we'll cache the empty set
@@ -56,6 +59,10 @@ async def get_song_link_platforms(song_link_url: str) -> dict[SongLinkPlatformTy
 
     for section in sections:
         display_name: str = section.get('displayName', '')
+
+        if 'thumbnailUrl' in section:
+            result.thumbnail_url = section['thumbnailUrl']
+
         if display_name != 'Listen':
             continue
 
@@ -71,7 +78,7 @@ async def get_song_link_platforms(song_link_url: str) -> dict[SongLinkPlatformTy
                 platform_type = SongLinkPlatformType.UNKNOWN
                 logger.warning(f'Got an unknown platform: {platform_name}')
 
-            result[platform_type] = SongLinkPlatform(
+            result.platforms[platform_type] = SongLinkPlatform(
                 platform=platform_type,
                 url=platform_url,
             )

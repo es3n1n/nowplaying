@@ -16,7 +16,7 @@ from spotipy import SpotifyException
 from ...core.config import config
 from ...core.spotify import spotify
 from ...database import db
-from ...downloader import download_mp3
+from ...downloaders import download_mp3
 from ...models.track import Track
 from ...util.logger import logger
 from ..bot import bot, dp
@@ -56,14 +56,14 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
         return
 
     caption = track_to_caption(track)
-    mp3 = await download_mp3(track)
+    thumbnail, mp3 = await download_mp3(track)
 
     if mp3 is None:
         caption = f'Error: track is unavailable :(\n{caption}'
         await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption=caption, parse_mode='HTML')
         return
 
-    file_id = await cache_file(track.uri, mp3, track.artist, track.name, track.title, result.from_user)
+    file_id = await cache_file(track.uri, mp3, thumbnail, track.artist, track.name, track.title, result.from_user)
     await bot.edit_message_media(media=InputMediaAudio(
         performer=track.artist,
         title=track.name,

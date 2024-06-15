@@ -7,7 +7,7 @@ from scdl import scdl
 from scdl.scdl import download_hls, download_original_file
 from soundcloud import BasicTrack, SoundCloud, Track
 
-from ..models.song_link_platform import SongLinkPlatform, SongLinkPlatformType
+from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
 from ..util.fs import temp_file
 from ..util.logger import logger
 from .abc import DownloaderABC

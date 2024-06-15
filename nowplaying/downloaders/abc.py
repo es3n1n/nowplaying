@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from io import BytesIO
 from typing import Optional
 
-from ..models.song_link_platform import SongLinkPlatform, SongLinkPlatformType
+from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
 
 
 class DownloaderABC(ABC):
