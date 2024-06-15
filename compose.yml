@@ -4,6 +4,7 @@ services:
     image: postgres:14-alpine
     restart: always
     command: postgres -c listen_addresses='*'
+    container_name: nowplaying-db
     volumes:
       - ./db_data/postgres:/var/lib/postgresql/data
     env_file:
@@ -19,6 +20,7 @@ services:
   nowplaying:
     image: nowplaying-bot:latest
     restart: unless-stopped
+    container_name: nowplaying-bot
     build: .
     ports:
       - "31337:1337"
