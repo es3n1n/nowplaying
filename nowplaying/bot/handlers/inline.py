@@ -1,8 +1,10 @@
 from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessageContent, LinkPreviewOptions
+from aiostream.stream import enumerate as a_enumerate
 
 from ...core.config import config
 from ...core.spotify import spotify
 from ...database import db
+from ...models.track import Track
 from ...util.string import escape_html
 from ..bot import bot, dp
 
@@ -30,20 +32,24 @@ async def inline_query_handler(query: InlineQuery) -> None:
     client = spotify.from_telegram_id(query.from_user.id)
 
     result: list[InlineQueryResultArticle] = list()
-    for i, track in enumerate(await client.get_current_and_recent_tracks()):
-        play_url = config.get_start_url(track.uri)
+    track: Track
+    async for i, track in a_enumerate(client.get_current_and_recent_tracks()):  # type: ignore[arg-type]
+        if not isinstance(track, Track):
+            continue
 
-        postfix = ''
-        if track.song_link is not None:
-            postfix += f' | {url("Other", track.song_link)}'
+        play_url = config.get_start_url(track.uri)  # type: ignore[attr-defined]
+
+        message_text = f'{escape_html(track.artist)} - {escape_html(track.name)}\n'  # type: ignore[attr-defined]
+        message_text += f'\n{url("Spotify", track.url)} ({url("▶️", play_url)})'  # type: ignore[attr-defined]
+        if track.song_link is not None:  # type: ignore[attr-defined]
+            message_text += f' | {url("Other", track.song_link)}'  # type: ignore[attr-defined]
 
         result.append(
             InlineQueryResultArticle(
                 id=str(i),
-                title=f'{track.artist} - {track.name}',
+                title=f'{track.artist} - {track.name}',  # type: ignore[attr-defined]
                 input_message_content=InputTextMessageContent(
-                    message_text=f'{escape_html(track.artist)} - {escape_html(track.name)}\n'
-                                 f'{url("Spotify", track.url)} ({url("▶️", play_url)}){postfix}',
+                    message_text=message_text,
                     parse_mode='HTML',
                     link_preview_options=LinkPreviewOptions(
                         is_disabled=True

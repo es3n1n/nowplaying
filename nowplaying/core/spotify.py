@@ -1,3 +1,5 @@
+from typing import AsyncIterator
+
 from orjson import dumps, loads
 from spotipy import CacheHandler as _CacheHandler
 from spotipy import Spotify as _Spotify
@@ -21,16 +23,13 @@ class SpotifyClient:
 
         return await Track.from_spotify_item(track['item'], is_playing=True)
 
-    async def get_current_and_recent_tracks(self, limit: int = 5) -> list[Track]:
-        result = list()
+    async def get_current_and_recent_tracks(self, limit: int = 5) -> AsyncIterator[Track]:
         if track := await self.get_current_playing_track():
-            result.append(track)
+            yield track
 
         history = self.spotify_app.current_user_recently_played(limit=limit)
         for item in history['items']:
-            result.append(await Track.from_spotify_item(item['track']))
-
-        return result
+            yield await Track.from_spotify_item(item['track'])
 
     async def get_track(self, uri: str) -> Track | None:
         try:
