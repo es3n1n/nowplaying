@@ -30,7 +30,7 @@ async def inline_query_handler(query: InlineQuery) -> None:
     client = spotify.from_telegram_id(query.from_user.id)
 
     result: list[InlineQueryResultArticle] = list()
-    for i, track in enumerate(client.get_current_and_recent_tracks()):
+    for i, track in enumerate(await client.get_current_and_recent_tracks()):
         play_url = config.get_start_url(track.uri)
 
         postfix = ''

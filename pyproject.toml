@@ -16,6 +16,7 @@ spotipy = "^2.24.0"
 psycopg = {extras = ["binary", "pool"], version = "^3.1.19"}
 pydantic-settings = "^2.3.3"
 filelock = "^3.15.1"
+async-lru = "^2.0.4"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"

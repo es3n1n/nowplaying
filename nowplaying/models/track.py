@@ -13,7 +13,7 @@ class Track(BaseModel):
     currently_playing: bool = False
 
     @classmethod
-    def from_spotify_item(cls, track_item: dict, is_playing: bool = False) -> 'Track':
+    async def from_spotify_item(cls, track_item: dict, is_playing: bool = False) -> 'Track':
         url: str = track_item['external_urls']['spotify']
         return cls(
             artist=', '.join([x['name'] for x in track_item['artists']]),
@@ -21,6 +21,6 @@ class Track(BaseModel):
             uri=track_item['uri'],
             id=track_item['id'],
             url=url,
-            song_link=get_song_link(url),
+            song_link=await get_song_link(url),
             currently_playing=is_playing,
         )

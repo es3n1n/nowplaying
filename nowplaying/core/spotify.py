@@ -14,27 +14,27 @@ class SpotifyClient:
     def __init__(self, spotify_app: _Spotify):
         self.spotify_app = spotify_app
 
-    def get_current_playing_track(self) -> Track | None:
+    async def get_current_playing_track(self) -> Track | None:
         track = self.spotify_app.current_user_playing_track()
         if track['item'] is None:
             return None
 
-        return Track.from_spotify_item(track['item'], is_playing=True)
+        return await Track.from_spotify_item(track['item'], is_playing=True)
 
-    def get_current_and_recent_tracks(self, limit: int = 5) -> list[Track]:
+    async def get_current_and_recent_tracks(self, limit: int = 5) -> list[Track]:
         result = list()
-        if track := self.get_current_playing_track():
+        if track := await self.get_current_playing_track():
             result.append(track)
 
         history = self.spotify_app.current_user_recently_played(limit=limit)
         for item in history['items']:
-            result.append(Track.from_spotify_item(item['track']))
+            result.append(await Track.from_spotify_item(item['track']))
 
         return result
 
-    def get_track(self, uri: str) -> Track | None:
+    async def get_track(self, uri: str) -> Track | None:
         try:
-            return Track.from_spotify_item(self.spotify_app.track(uri))
+            return await Track.from_spotify_item(self.spotify_app.track(uri))
         except SpotifyException:
             return None
 

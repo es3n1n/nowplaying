@@ -18,7 +18,7 @@ async def try_controls(payload: str, message: Message) -> bool:
 
     assert message.from_user is not None
     client = spotify.from_telegram_id(message.from_user.id)
-    track = client.get_track(uri)
+    track = await client.get_track(uri)
     if not track:
         return False
 
