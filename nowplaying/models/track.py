@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from nowplaying.core.song_link import get_song_link
+from ..core.song_link import get_song_link
 
 
 class Track(BaseModel):

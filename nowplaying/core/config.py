@@ -2,7 +2,7 @@ from base64 import b64decode, b64encode
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from nowplaying.util.fs import ROOT_DIR
+from ..util.fs import ROOT_DIR
 
 
 class Settings(BaseSettings):
