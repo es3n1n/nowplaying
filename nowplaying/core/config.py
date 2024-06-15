@@ -51,8 +51,9 @@ class Settings(BaseSettings):
         return config.BOT_URL + '?start=' + b64encode(payload.encode()).decode().rstrip('=')
 
     def decode_start_url(self, payload: str) -> str | None:
+        # fixme @es3n1n: ghetto workaround for paddings, we can't use = in start payload because telegram doesn't allows
         try:
-            return b64decode(payload).decode()
+            return b64decode(payload + ('=' * 3)).decode()
         except ValueError:
             return None
 
