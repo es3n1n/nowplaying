@@ -1,30 +1,54 @@
-from fastapi import FastAPI
+from asyncio import run as asyncio_run
+from multiprocessing import Process
+
+from aiogram.types import BotCommand
+from fastapi import Request
+from fastapi.responses import ORJSONResponse, RedirectResponse
+from starlette.exceptions import HTTPException
 from uvicorn import run
-from spotipy import Spotify
-from spotipy.oauth2 import SpotifyOAuth
+
+from . import app
+from .bot.bot import bot, dp
+from .core.config import config
+from .util.logger import get_uvicorn_config, logger
 
 
-app = FastAPI()
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_: Request, exc: HTTPException) -> ORJSONResponse | RedirectResponse:
+    if 400 <= exc.status_code <= 499:
+        return RedirectResponse(
+            url=config.BOT_URL,
+            status_code=307,
+        )
 
-auth_manager = SpotifyOAuth(
-    client_id='',
-    client_secret='',
-    redirect_uri='http://127.0.0.1:1337/ext/spotify/callback',
-    open_browser=True,
-)
-spotify = Spotify(auth_manager=auth_manager)
+    return ORJSONResponse(content={'detail': exc.detail}, status_code=exc.status_code)
 
 
-@app.get('/ext/spotify/callback')
-async def spotify_callback(code: str):
-    print('got the code', code)
+def start_bot() -> None:
+    async def _start() -> None:
+        logger.info('Setting up bot commands')
+        await bot.set_my_commands(commands=[
+            BotCommand(command='link', description='Link spotify account')
+        ])
 
-    auth_manager.get_authorization_code()
+        logger.info('Starting long polling')
+        await dp.start_polling(bot)
+
+    asyncio_run(_start())
 
 
 def main() -> None:
-    print(auth_manager.get_authorize_url())
-    run(app, host='0.0.0.0', port=1337)
+    process = Process(target=start_bot)
+    process.start()
+
+    kw = {}
+
+    if not config.dev_env:
+        kw['workers'] = config.WEB_WORKERS
+
+    logger.info('Starting web-server...')
+    run('nowplaying:app', host=config.WEB_HOST, port=config.WEB_PORT,
+        log_config=get_uvicorn_config(), **kw)  # type: ignore
 
 
 if __name__ == '__main__':
