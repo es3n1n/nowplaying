@@ -533,6 +533,21 @@ flake8 = ">=6.0.0"
 dev = ["coverage", "hypothesis", "hypothesmith (>=0.2)", "pre-commit", "pytest", "tox"]
 
 [[package]]
+name = "flake8-print"
+version = "5.0.0"
+description = "print statement checker plugin for flake8"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "flake8-print-5.0.0.tar.gz", hash = "sha256:76915a2a389cc1c0879636c219eb909c38501d3a43cc8dae542081c9ba48bdf9"},
+    {file = "flake8_print-5.0.0-py3-none-any.whl", hash = "sha256:84a1a6ea10d7056b804221ac5e62b1cee1aefc897ce16f2e5c42d3046068f5d8"},
+]
+
+[package.dependencies]
+flake8 = ">=3.0"
+pycodestyle = "*"
+
+[[package]]
 name = "flake8-quotes"
 version = "3.4.0"
 description = "Flake8 lint for quotes."
@@ -2295,4 +2310,4 @@ resolved_reference = "0153b387e57e0bb8e580f1869f85596d2767fb0d"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "b012b9985cf297e7b51d68251aa681c3dc25fc65cd422aca28ddd4c854ce4540"
+content-hash = "12bafaad0d119b8460b6e8ef6af03f9aabfef1dcef1f4fa59fa07dbabb4967ad"

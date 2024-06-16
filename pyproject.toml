@@ -27,6 +27,7 @@ mypy = "^1.10.0"
 isort = "^5.13.2"
 flake8-quotes = "^3.4.0"
 flake8-bugbear = "^24.4.26"
+flake8-print = "^5.0.0"
 
 [tool.isort]
 profile = "black"

@@ -1,7 +1,8 @@
 from aiogram.types import CallbackQuery
 
-from ...core.spotify import spotify
-from ...database import db
+from ...core.database import db
+from ...models.song_link import SongLinkPlatformType
+from ...platforms import get_platform_from_telegram_id
 from ..bot import bot, dp
 
 
@@ -12,16 +13,18 @@ async def controls_handler(query: CallbackQuery) -> None:
         await bot.answer_callback_query(query.id, text='Downloading the audio, please wait.')
         return
 
-    if not db.is_user_authorized(query.from_user.id):
-        await bot.answer_callback_query(query.id, text='Please authenticate first')
+    command, platform_name, track_id = query.data.split('_', maxsplit=2)
+    platform_type = SongLinkPlatformType(platform_name)
+
+    if not db.is_user_authorized(query.from_user.id, platform_type):
+        await bot.answer_callback_query(query.id, text='Please authorize first')
         return
 
-    command, uri = query.data.split('_', maxsplit=1)
-    client = spotify.from_telegram_id(query.from_user.id)
+    client = await get_platform_from_telegram_id(query.from_user.id, platform_type)
 
     if command == 'play':
-        client.play(uri)
+        await client.play(track_id)
     elif command == 'queue':
-        client.add_to_queue(uri)
+        await client.add_to_queue(track_id)
 
     await bot.answer_callback_query(query.id, text='Done')

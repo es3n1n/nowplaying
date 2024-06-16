@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     BOT_DEV_CHAT_ID: int = 1490827215
     BOT_TOKEN: str
-    BOT_CACHE_CHAT_ID: int
+    BOT_CACHE_CHAT_ID: int = 1490827215
     BOT_URL: str = 'https://t.me/playinnowbot'
 
     STATE_SECRET: str

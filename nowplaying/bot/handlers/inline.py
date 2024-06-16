@@ -11,51 +11,60 @@ from aiogram.types import (
     InputMediaAudio,
     InputTextMessageContent,
 )
-from spotipy import SpotifyException
 
 from ...core.config import config
-from ...core.spotify import spotify
-from ...database import db
+from ...core.database import db
 from ...downloaders import download_mp3
+from ...models.song_link import SongLinkPlatformType
 from ...models.track import Track
+from ...platforms import PlatformClientABC, get_platform_from_telegram_id, platforms
 from ...util.logger import logger
 from ..bot import bot, dp
 from ..caching import cache_file, get_cached_file_id
+
+
+NUM_OF_ITEMS_TO_QUERY: int = 5
 
 
 def url(text: str, href: str) -> str:
     return f'<a href="{href}">{text}</a>'
 
 
-def track_to_caption(track: Track) -> str:
+def track_to_caption(client: PlatformClientABC, track: Track) -> str:
     play_url = config.get_start_url(track.uri)
-    message_text = f'{url("Spotify", track.url)} ({url("▶️", play_url)})'
+
+    message_text = f'{url(track.platform.value.capitalize(), track.url)}'
+
+    if client.can_control_playback:
+        message_text += f' ({url("▶️", play_url)})'
+
     if track.song_link is not None:
         message_text += f' | {url("Other", track.song_link)}'
+
     return message_text
-
-
-@dp.update()
-async def upd(x):
-    print(x)
 
 
 @dp.chosen_inline_result()
 async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
-    if not result.result_id.startswith('spotify:track:') or result.inline_message_id is None:
+    # todo @es3n1n: multiprocess queue
+    if result.inline_message_id is None:
         return
 
-    if not db.is_user_authorized(result.from_user.id):
+    uri = result.result_id
+    platform_name, track_id = uri.split('_', maxsplit=1)
+    platform_type = SongLinkPlatformType(platform_name)
+
+    if not db.is_user_authorized(result.from_user.id, platform_type):
         await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption='Please authorize first')
         return
 
-    client = spotify.from_telegram_id(result.from_user.id)
-    track = await client.get_track(result.result_id)
+    client = await get_platform_from_telegram_id(result.from_user.id, platform_type)
+    track = await client.get_track(track_id)
     if track is None:
-        await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption='Something went wrong')
+        await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption='Error: track not found')
         return
 
-    caption = track_to_caption(track)
+    caption = track_to_caption(client, track)
     thumbnail, mp3 = await download_mp3(track)
 
     if mp3 is None:
@@ -63,7 +72,7 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
         await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption=caption, parse_mode='HTML')
         return
 
-    file_id = await cache_file(track.uri, mp3, thumbnail, track.artist, track.name, track.title, result.from_user)
+    file_id = await cache_file(track.uri, mp3, thumbnail, track.artist, track.name, result.from_user)
     await bot.edit_message_media(media=InputMediaAudio(
         performer=track.artist,
         title=track.name,
@@ -75,70 +84,79 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
 
 @dp.inline_query()
 async def inline_query_handler(query: InlineQuery) -> None:
-    if not db.is_user_authorized(query.from_user.id):
-        await bot.answer_inline_query(query.id, results=[
-            InlineQueryResultArticle(
-                id='0',
-                title='Please authorize',
-                url=config.BOT_URL,
-                input_message_content=InputTextMessageContent(
-                    message_text=f'Please {url("authorize", config.get_start_url("link"))} first (╯°□°)╯︵ ┻━┻',
-                    parse_mode='HTML'
-                )
-            )
-        ], cache_time=1)
-        return
-
     result: list[InlineQueryResultArticle | InlineQueryResultAudio | InlineQueryResultCachedAudio] = list()
-    seen_uris: list[str] = list()
+    is_authorized: bool = False
 
-    try:
-        client = spotify.from_telegram_id(query.from_user.id)
+    feed = list()
+    clients: dict[SongLinkPlatformType, PlatformClientABC] = dict()
 
-        i: int = -1
-        async for track in client.get_current_and_recent_tracks():
-            i += 1
-            if not isinstance(track, Track):
-                continue
+    for platform in platforms:
+        if not db.is_user_authorized(query.from_user.id, platform.type):
+            continue
 
-            if track.uri in seen_uris:
-                continue
+        is_authorized = True
+        try:
+            client = await get_platform_from_telegram_id(query.from_user.id, platform.type)
 
-            seen_uris.append(track.uri)
+            async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
+                feed.append(track)
 
-            if file_id := await get_cached_file_id(track.uri):
-                result.append(InlineQueryResultCachedAudio(
-                    id=str(i),
-                    audio_file_id=file_id,
-                    caption=track_to_caption(track),
-                    parse_mode='HTML'
-                ))
-                continue
-
-            result.append(
-                InlineQueryResultAudio(
-                    id=track.uri,
-                    audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
-                    title=f'{track.title}',
-                    caption=track_to_caption(track),
-                    parse_mode='HTML',
-                    reply_markup=InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [
-                                InlineKeyboardButton(text='downloading audio', callback_data='loading')
-                            ]
-                        ]
-                    )
+            clients[platform.type] = client
+        except Exception as e:
+            logger.opt(exception=e).error('Something went wrong!')
+            result.append(InlineQueryResultArticle(
+                id='0',
+                title='Something went wrong, dm @invlpg',
+                url='https://t.me/invlpg',
+                input_message_content=InputTextMessageContent(
+                    message_text='Something went wrong (┛ಠ_ಠ)┛彡┻━┻'
                 )
+            ))
+            feed.clear()
+            break
+
+    seen_uris = list()
+
+    for track in reversed(sorted(feed, key=lambda x: (x.currently_playing, x.played_at))):
+        if track.uri in seen_uris:
+            continue
+
+        seen_uris.append(track.uri)
+
+        if file_id := await get_cached_file_id(track.uri):
+            result.append(InlineQueryResultCachedAudio(
+                id=track.uri,
+                audio_file_id=file_id,
+                caption=track_to_caption(clients[track.platform], track),
+                parse_mode='HTML'
+            ))
+            continue
+
+        result.append(InlineQueryResultAudio(
+            id=track.uri,
+            audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
+            performer=track.artist,
+            title=track.name,
+            caption=track_to_caption(clients[track.platform], track),
+            parse_mode='HTML',
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[[
+                    InlineKeyboardButton(
+                        text='downloading audio',
+                        callback_data='loading'
+                    )
+                ]]
             )
-    except SpotifyException as e:
-        logger.opt(exception=e).error('Error')
+        ))
+
+    if not is_authorized:
         result.append(InlineQueryResultArticle(
             id='0',
-            title='Something went wrong, contact @invlpg',
-            url='https://t.me/invlpg',
+            title='Please authorize',
+            url=config.BOT_URL,
             input_message_content=InputTextMessageContent(
-                message_text='Something went wrong (┛ಠ_ಠ)┛彡┻━┻'
+                message_text=f'Please {url("authorize", config.get_start_url("link"))} first (╯°□°)╯︵ ┻━┻',
+                parse_mode='HTML'
             )
         ))
 

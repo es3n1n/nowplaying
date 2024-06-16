@@ -26,9 +26,27 @@ client = AsyncClient(headers={
 }, timeout=Timeout(timeout=60.))
 
 
-async def get_song_link(track_url: str) -> str:
-    uri: str = track_url.split('/')[-1]
-    return f'https://song.link/s/{uri}'
+@alru_cache(maxsize=128)
+async def get_song_link(track_url: str) -> str | None:
+    if track_url.startswith('https://open.spotify.com/track/'):
+        uri: str = track_url.split('/')[-1]
+        return f'https://song.link/s/{uri}'
+
+    resp = await client.get('https://api.odesli.co/resolve', params={
+        'url': track_url,
+    })
+    if resp.status_code != 200:
+        return None
+
+    try:
+        resp_json = loads(resp.text)
+    except JSONDecodeError:
+        return None
+
+    if 'id' not in resp_json:
+        return None
+
+    return f'https://song.link/s/{resp_json["id"]}'
 
 
 @alru_cache(maxsize=128)

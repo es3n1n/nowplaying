@@ -328,8 +328,8 @@ async def writeid3v2(fo, song):
 
     try:
         id3.append(maketag('APIC', makepic(await downloadpicture(song['ALB_PICTURE']))))
-    except Exception as e:
-        print('ERROR: no album cover?', e)
+    except Exception:
+        pass
 
     id3data = b''.join(id3)
     # >      big-endian
@@ -367,7 +367,6 @@ async def download_song(song: dict, output_file: BytesIO) -> bool:
         # open in a new tab the song Moby - Honey
         # this will give you a 404!?
         # but you can play the song in the browser
-        print('ERROR: Can not download this song. Got a {}'.format(fh.status_code))
         return False
 
     await writeid3v2(output_file, song)

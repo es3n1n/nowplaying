@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import AsyncIterator
 
 from orjson import dumps, loads
@@ -6,13 +7,23 @@ from spotipy import Spotify as _Spotify
 from spotipy import SpotifyException
 from spotipy import SpotifyOAuth as _SpotifyOAuth
 
-from ..database import db
+from ..core.config import config
+from ..core.database import db
+from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
-from .config import config
-from .sign import sign
+from .abc import PlatformABC, PlatformClientABC
 
 
-class SpotifyClient:
+def _to_uri(track_id: str) -> str:
+    return f'spotify:track:{track_id}'
+
+
+class SpotifyClient(PlatformClientABC):
+    features = {
+        'add_to_queue': True,
+        'play': True,
+    }
+
     def __init__(self, spotify_app: _Spotify):
         self.spotify_app = spotify_app
 
@@ -21,27 +32,29 @@ class SpotifyClient:
         if track['item'] is None:
             return None
 
-        return await Track.from_spotify_item(track['item'], is_playing=True)
+        return await Track.from_spotify_item(track['item'], datetime.utcnow(), is_playing=True)
 
-    async def get_current_and_recent_tracks(self, limit: int = 5) -> AsyncIterator[Track]:
+    async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
         if track := await self.get_current_playing_track():
             yield track
 
         history = self.spotify_app.current_user_recently_played(limit=limit)
         for item in history['items']:
-            yield await Track.from_spotify_item(item['track'])
+            yield await Track.from_spotify_item(item['track'], datetime.fromisoformat(item['played_at']))
 
-    async def get_track(self, uri: str) -> Track | None:
+    async def get_track(self, track_id: str) -> Track | None:
         try:
-            return await Track.from_spotify_item(self.spotify_app.track(uri))
+            return await Track.from_spotify_item(self.spotify_app.track(track_id))
         except SpotifyException:
             return None
 
-    def add_to_queue(self, uri: str) -> None:
-        self.spotify_app.add_to_queue(uri)
+    async def add_to_queue(self, track_id: str) -> bool:
+        self.spotify_app.add_to_queue(_to_uri(track_id))
+        return True
 
-    def play(self, uri: str) -> None:
-        self.spotify_app.start_playback(uris=[uri])
+    async def play(self, track_id: str) -> bool:
+        self.spotify_app.start_playback(uris=[_to_uri(track_id)])
+        return True
 
 
 class SpotifyCacheHandler(_CacheHandler):
@@ -49,15 +62,17 @@ class SpotifyCacheHandler(_CacheHandler):
         self.telegram_id = telegram_id
 
     def get_cached_token(self) -> dict | None:
-        result = db.get_user_token(self.telegram_id)
+        result = db.get_user_token(self.telegram_id, SongLinkPlatformType.SPOTIFY)
         return loads(result) if result is not None else None
 
     def save_token_to_cache(self, token_info: dict) -> None:
         token_info_str = dumps(token_info).decode()
-        db.store_user_token(self.telegram_id, token_info_str)
+        db.store_user_token(self.telegram_id, SongLinkPlatformType.SPOTIFY, token_info_str)
 
 
-class Spotify:
+class SpotifyPlatform(PlatformABC):
+    type = SongLinkPlatformType.SPOTIFY
+
     def __init__(self):
         self.general_purpose_manager = self._get_manager()
 
@@ -77,7 +92,7 @@ class Spotify:
         )
 
     @classmethod
-    def from_auth_code(cls, telegram_id: int, auth_code: str) -> SpotifyClient:
+    async def from_auth_callback(cls, telegram_id: int, auth_code: str) -> PlatformClientABC:
         manager = cls._get_manager(telegram_id)
         manager.get_access_token(auth_code)
 
@@ -86,15 +101,12 @@ class Spotify:
         )
 
     @classmethod
-    def from_telegram_id(cls, telegram_id: int) -> SpotifyClient:
+    async def from_telegram_id(cls, telegram_id: int) -> PlatformClientABC:
         return SpotifyClient(
             _Spotify(auth_manager=cls._get_manager(telegram_id))
         )
 
-    def get_authorization_url(self, telegram_id: int) -> str:
+    async def get_authorization_url(self, state: str) -> str:
         return self.general_purpose_manager.get_authorize_url(
-            state=sign(telegram_id)
+            state=state
         )
-
-
-spotify = Spotify()

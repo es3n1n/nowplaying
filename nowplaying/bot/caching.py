@@ -4,7 +4,7 @@ from aiogram.exceptions import AiogramError, TelegramAPIError
 from aiogram.types import BufferedInputFile, URLInputFile, User
 
 from ..core.config import config
-from ..database import db
+from ..core.database import db
 from .bot import bot
 
 
@@ -27,13 +27,12 @@ async def cache_file(
         thumbnail_url: str,
         performer: str,
         name: str,
-        full_title: str,
         user: User
 ) -> str:
     sent = await bot.send_audio(
         config.BOT_CACHE_CHAT_ID,
-        BufferedInputFile(file=data.read(), filename=f'{full_title}.mp3'),
-        caption=f'{uri} #id{user.id} {full_title}',
+        BufferedInputFile(file=data.read(), filename=f'{performer} - {name}.mp3'),
+        caption=f'#{uri} #id{user.id} {performer} - {name}',
         performer=performer,
         title=name,
         thumbnail=URLInputFile(url=thumbnail_url) if thumbnail_url != '' else None,
