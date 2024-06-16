@@ -1529,6 +1529,18 @@ httpx = "*"
 tests = ["flaky", "pytest", "pytest-cov", "pytest-random-order", "pyyaml"]
 
 [[package]]
+name = "pysocks"
+version = "1.7.1"
+description = "A Python SOCKS client module. See https://github.com/Anorov/PySocks for more information."
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+files = [
+    {file = "PySocks-1.7.1-py27-none-any.whl", hash = "sha256:08e69f092cc6dbe92a0fdd16eeb9b9ffbc13cadfe5ca4c7bd92ffb078b293299"},
+    {file = "PySocks-1.7.1-py3-none-any.whl", hash = "sha256:2725bd0a9925919b9b51739eea5f9e2bae91e83288108a9ad338b2e3a4435ee5"},
+    {file = "PySocks-1.7.1.tar.gz", hash = "sha256:3f8804571ebe159c380ac6de37643bb4685970655d3bba243530d6558b799aa0"},
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -1663,6 +1675,7 @@ files = [
 certifi = ">=2017.4.17"
 charset-normalizer = ">=2,<4"
 idna = ">=2.5,<4"
+PySocks = {version = ">=1.5.6,<1.5.7 || >1.5.7", optional = true, markers = "extra == \"socks\""}
 urllib3 = ">=1.21.1,<3"
 
 [package.extras]
@@ -2224,6 +2237,21 @@ files = [
 dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 
 [[package]]
+name = "yandex-music"
+version = "2.2.0"
+description = "Неофициальная Python библиотека для работы с API сервиса Яндекс.Музыка."
+optional = false
+python-versions = "~=3.7"
+files = [
+    {file = "yandex-music-2.2.0.tar.gz", hash = "sha256:46beaacf8206de212323264c89e0bd4f4e2e626483dfa58f95e78cacd1a102cf"},
+]
+
+[package.dependencies]
+aiofiles = "*"
+aiohttp = "*"
+requests = {version = "*", extras = ["socks"]}
+
+[[package]]
 name = "yarl"
 version = "1.9.4"
 description = "Yet another URL library"
@@ -2344,4 +2372,4 @@ resolved_reference = "0153b387e57e0bb8e580f1869f85596d2767fb0d"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ca267132c08c8a275e13a3f2ed3ac172c03ca542eed303a7bd6cdbd37688a9e1"
+content-hash = "add285bd835209ebd8e3ec78ac3e41b581844136a5d242273ef7690fe5c05dde"

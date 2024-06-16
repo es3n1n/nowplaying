@@ -13,6 +13,8 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str = 'production'
 
+    WEB_SERVER_PUBLIC_ENDPOINT: str = 'https://now.es3n1n.eu'
+
     EMPTY_MP3_FILE_URL: str = 'https://es3n1n.eu/empty.mp3'
     DEEZER_ARL_COOKIE: str
 

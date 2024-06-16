@@ -4,7 +4,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from ...core.config import config
 from ...core.database import db
 from ...models.song_link import SongLinkPlatformType
-from ...platforms import get_platform_from_telegram_id
+from ...platforms import get_platform_from_telegram_id, yandex
+from ...routes.ext import send_auth_msg
 from ...util.logger import logger
 from ..bot import dp
 from .link import get_auth_keyboard, link_command_handler
@@ -62,10 +63,21 @@ async def command_start_handler(message: Message) -> None:
 
     authorized: bool = db.is_user_authorized_globally(message.from_user.id)
 
-    if message.text.find(' ') != -1 and authorized:
+    if message.text.find(' ') != -1:
         payload = message.text.split(' ', maxsplit=1)[1]
 
-        if await try_controls(payload, message):
+        if payload.startswith('ym_'):
+            token = payload[3:]
+            try:
+                await yandex.from_auth_callback(message.from_user.id, token)
+            except ValueError:
+                await message.reply('Unable to authorize, please try again!')
+                return
+
+            await send_auth_msg(message.from_user.id, 'yandex')
+            return
+
+        if authorized and await try_controls(payload, message):
             return
 
     msg = f'Hello, {message.from_user.full_name}'

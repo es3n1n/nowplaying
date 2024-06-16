@@ -3,16 +3,19 @@ from .abc import PlatformABC, PlatformClientABC
 from .apple import ApplePlatform
 from .lastfm import LastfmPlatform
 from .spotify import SpotifyPlatform
+from .yandex import YandexPlatform
 
 
 spotify = SpotifyPlatform()
 lastfm = LastfmPlatform()
 apple = ApplePlatform()
+yandex = YandexPlatform()
 
 platforms: list[PlatformABC] = [
     spotify,
     lastfm,
-    # apple
+    # apple,
+    # yandex,
 ]
 
 
