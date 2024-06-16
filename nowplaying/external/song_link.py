@@ -45,6 +45,10 @@ async def get_song_link(track_url: str) -> str | None:
 
         return f'https://song.link/us/i/{itunes_id}'
 
+    if track_url.startswith('https://music.yandex.com/'):
+        track_id: str = track_url.split('/')[-1]
+        return f'https://song.link/ya/{track_id}'
+
     resp = await client.get('https://api.odesli.co/resolve', params={
         'url': track_url,
     })

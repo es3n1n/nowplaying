@@ -6,6 +6,7 @@ from pylast import LastFMNetwork, PlayedTrack, SessionKeyGenerator, _Request
 
 from ..core.config import config
 from ..core.database import db
+from ..enums.platform_features import PlatformFeature
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from .abc import PlatformABC, PlatformClientABC
@@ -13,9 +14,9 @@ from .abc import PlatformABC, PlatformClientABC
 
 class LastfmClient(PlatformClientABC):
     features = {
-        'track_getters': False,
-        'add_to_queue': False,
-        'play': False,
+        PlatformFeature.TRACK_GETTERS: False,
+        PlatformFeature.ADD_TO_QUEUE: False,
+        PlatformFeature.PLAY: False
     }
 
     def __init__(self, net: LastFMNetwork):

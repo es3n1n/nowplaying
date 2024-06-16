@@ -1495,6 +1495,23 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "pyjwt"
+version = "2.8.0"
+description = "JSON Web Token implementation in Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "PyJWT-2.8.0-py3-none-any.whl", hash = "sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320"},
+    {file = "PyJWT-2.8.0.tar.gz", hash = "sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de"},
+]
+
+[package.extras]
+crypto = ["cryptography (>=3.4.0)"]
+dev = ["coverage[toml] (==5.0.4)", "cryptography (>=3.4.0)", "pre-commit", "pytest (>=6.0.0,<7.0.0)", "sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
+tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
+
+[[package]]
 name = "pylast"
 version = "5.3.0"
 description = "A Python interface to Last.fm and Libre.fm"
@@ -2327,4 +2344,4 @@ resolved_reference = "0153b387e57e0bb8e580f1869f85596d2767fb0d"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "5c6bd4b08a6554f6bb13ab74bab39209fdb9689a85e932ddc17aca4b8c1ce02e"
+content-hash = "ca267132c08c8a275e13a3f2ed3ac172c03ca542eed303a7bd6cdbd37688a9e1"

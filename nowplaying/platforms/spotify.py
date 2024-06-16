@@ -9,6 +9,7 @@ from spotipy import SpotifyOAuth as _SpotifyOAuth
 
 from ..core.config import config
 from ..core.database import db
+from ..enums.platform_features import PlatformFeature
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.tz import UTC_TZ
@@ -21,9 +22,9 @@ def _to_uri(track_id: str) -> str:
 
 class SpotifyClient(PlatformClientABC):
     features = {
-        'track_getters': True,
-        'add_to_queue': True,
-        'play': True,
+        PlatformFeature.TRACK_GETTERS: True,
+        PlatformFeature.ADD_TO_QUEUE: True,
+        PlatformFeature.PLAY: True
     }
 
     def __init__(self, spotify_app: _Spotify):

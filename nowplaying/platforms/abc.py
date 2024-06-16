@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import AsyncIterator
 
-from nowplaying.models.song_link import SongLinkPlatformType
-from nowplaying.models.track import Track
+from ..enums.platform_features import PlatformFeature
+from ..models.song_link import SongLinkPlatformType
+from ..models.track import Track
 
 
 class PlatformClientABC(ABC):
-    features = {
-        'track_getters': True,
-        'add_to_queue': False,
-        'play': False
+    features: dict[PlatformFeature, bool] = {
+        PlatformFeature.TRACK_GETTERS: True,
+        PlatformFeature.ADD_TO_QUEUE: False,
+        PlatformFeature.PLAY: False
     }
 
     @abstractmethod
@@ -34,7 +35,10 @@ class PlatformClientABC(ABC):
 
     @property
     def can_control_playback(self) -> bool:
-        return self.features.get('add_to_queue', False) or self.features.get('play', False)
+        return self.features.get(
+            PlatformFeature.ADD_TO_QUEUE,
+            False
+        ) or self.features.get(PlatformFeature.ADD_TO_QUEUE, False)
 
 
 class PlatformABC(ABC):

@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     LASTFM_SHARED_SECRET: str
     LASTFM_REDIRECT_URL: str
 
+    APPLE_SECRET_KEY: str
+    APPLE_KEY_ID: str
+    APPLE_TEAM_ID: str
+
     POSTGRES_ADDRESS: str
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str

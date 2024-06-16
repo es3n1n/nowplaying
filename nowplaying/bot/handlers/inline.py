@@ -15,6 +15,7 @@ from aiogram.types import (
 from ...core.config import config
 from ...core.database import db
 from ...downloaders import download_mp3
+from ...enums.platform_features import PlatformFeature
 from ...models.song_link import SongLinkPlatformType
 from ...models.track import Track
 from ...platforms import PlatformClientABC, get_platform_from_telegram_id, platforms
@@ -31,12 +32,12 @@ def url(text: str, href: str) -> str:
     return f'<a href="{href}">{text}</a>'
 
 
-def track_to_caption(client: PlatformClientABC, track: Track) -> str:
+def track_to_caption(client: PlatformClientABC, track: Track, is_getter_supported: bool) -> str:
     play_url = config.get_start_url(track.uri)
 
     message_text = ''
 
-    if not client.features.get('track_getters', True):
+    if not is_getter_supported:
         message_text += f'Error: downloading from {track.platform.value.capitalize()} is unsupported\n'
 
     message_text += f'{url(track.platform.value.capitalize(), track.url)}'
@@ -70,7 +71,7 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
         # :shrug:, there's nothing we can do
         return
 
-    caption = track_to_caption(client, track)
+    caption = track_to_caption(client, track, is_getter_supported=True)
     thumbnail, mp3 = await download_mp3(track)
 
     if mp3 is None:
@@ -139,19 +140,19 @@ async def inline_query_handler(query: InlineQuery) -> None:
             result.append(InlineQueryResultCachedAudio(
                 id=track.uri,
                 audio_file_id=file_id,
-                caption=track_to_caption(client, track),
+                caption=track_to_caption(client, track, is_getter_supported=True),
                 parse_mode='HTML'
             ))
             continue
 
-        supported: bool = client.features.get('track_getters', True)
+        supported: bool = client.features.get(PlatformFeature.TRACK_GETTERS, True)
 
         result.append(InlineQueryResultAudio(
             id=track.uri if supported else str(i),
             audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
             performer=track.artist,
             title=track.name,
-            caption=track_to_caption(client, track),
+            caption=track_to_caption(client, track, supported),
             parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[[
