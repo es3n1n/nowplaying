@@ -49,6 +49,13 @@ async def get_song_link(track_url: str) -> str | None:
         track_id: str = track_url.split('/')[-1]
         return f'https://song.link/ya/{track_id}'
 
+    if track_url.startswith('https://music.apple.com/'):
+        # https://music.apple.com/fr/album/imagine/1743455180?i=1743455190
+        args = track_url.split('?')[0].split('/')
+        track_id: str = args[-1]
+        country: str = args[3]
+        return f'https://song.link/{country}/i/{track_id}'
+
     resp = await client.get('https://api.odesli.co/resolve', params={
         'url': track_url,
     })
