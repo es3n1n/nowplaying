@@ -1,12 +1,15 @@
 from ..models.song_link import SongLinkPlatformType
 from .abc import PlatformABC, PlatformClientABC
+from .lastfm import LastfmPlatform
 from .spotify import SpotifyPlatform
 
 
 spotify = SpotifyPlatform()
+lastfm = LastfmPlatform()
 
 platforms: list[PlatformABC] = [
     spotify,
+    lastfm,
 ]
 
 

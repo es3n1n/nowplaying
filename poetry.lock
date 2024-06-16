@@ -1495,6 +1495,23 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "pylast"
+version = "5.3.0"
+description = "A Python interface to Last.fm and Libre.fm"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pylast-5.3.0-py3-none-any.whl", hash = "sha256:4cc47cdcb05baf24a5cea10a012c17df0fe13e22911296a69835b127458a7308"},
+    {file = "pylast-5.3.0.tar.gz", hash = "sha256:637943b1b0e6045dd85ed7389db6071a1fea45cc7ff90dc6126fd509ca6fae2f"},
+]
+
+[package.dependencies]
+httpx = "*"
+
+[package.extras]
+tests = ["flaky", "pytest", "pytest-cov", "pytest-random-order", "pyyaml"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -2310,4 +2327,4 @@ resolved_reference = "0153b387e57e0bb8e580f1869f85596d2767fb0d"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "12bafaad0d119b8460b6e8ef6af03f9aabfef1dcef1f4fa59fa07dbabb4967ad"
+content-hash = "5c6bd4b08a6554f6bb13ab74bab39209fdb9689a85e932ddc17aca4b8c1ce02e"

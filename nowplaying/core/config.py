@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     SPOTIFY_SECRET: str
     SPOTIFY_REDIRECT_URL: str
 
+    LASTFM_API_KEY: str
+    LASTFM_SHARED_SECRET: str
+    LASTFM_REDIRECT_URL: str
+
     POSTGRES_ADDRESS: str
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str

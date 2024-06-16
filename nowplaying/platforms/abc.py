@@ -7,6 +7,7 @@ from nowplaying.models.track import Track
 
 class PlatformClientABC(ABC):
     features = {
+        'track_getters': True,
         'add_to_queue': False,
         'play': False
     }

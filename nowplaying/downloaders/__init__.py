@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 from loguru import logger
 
-from ..core.song_link import get_song_link_info
+from ..external.song_link import get_song_link_info
 from ..models.track import Track
 from .abc import DownloaderABC
 from .deezer import DeezerDownloader

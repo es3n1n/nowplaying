@@ -19,6 +19,9 @@ class SongLinkPlatformType(Enum):
     BOOM_PLAY: str = 'boomplay'
     ANGHAMI: str = 'anghami'
 
+    # @fixme: @es3n1n: added by me
+    LASTFM: str = 'lastfm'
+
 
 class SongLinkPlatform(BaseModel):
     platform: SongLinkPlatformType

@@ -23,7 +23,8 @@ from ..bot import bot, dp
 from ..caching import cache_file, get_cached_file_id
 
 
-NUM_OF_ITEMS_TO_QUERY: int = 5
+# Only 2 because for some fxxcked up platforms like lastfm it takes so much time to gather all the info
+NUM_OF_ITEMS_TO_QUERY: int = 2
 
 
 def url(text: str, href: str) -> str:
@@ -33,7 +34,12 @@ def url(text: str, href: str) -> str:
 def track_to_caption(client: PlatformClientABC, track: Track) -> str:
     play_url = config.get_start_url(track.uri)
 
-    message_text = f'{url(track.platform.value.capitalize(), track.url)}'
+    message_text = ''
+
+    if not client.features.get('track_getters', True):
+        message_text += f'Error: downloading from {track.platform.value.capitalize()} is unsupported\n'
+
+    message_text += f'{url(track.platform.value.capitalize(), track.url)}'
 
     if client.can_control_playback:
         message_text += f' ({url("▶️", play_url)})'
@@ -61,7 +67,7 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
     client = await get_platform_from_telegram_id(result.from_user.id, platform_type)
     track = await client.get_track(track_id)
     if track is None:
-        await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption='Error: track not found')
+        # :shrug:, there's nothing we can do
         return
 
     caption = track_to_caption(client, track)
@@ -116,28 +122,36 @@ async def inline_query_handler(query: InlineQuery) -> None:
             break
 
     seen_uris = list()
+    i: int = -1
 
-    for track in reversed(sorted(feed, key=lambda x: (x.currently_playing, x.played_at))):
+    for track in reversed(sorted(
+            feed,
+            key=lambda x: (x.currently_playing, x.played_at)
+    )):
+        i += 1
         if track.uri in seen_uris:
             continue
 
         seen_uris.append(track.uri)
+        client = clients[track.platform]
 
         if file_id := await get_cached_file_id(track.uri):
             result.append(InlineQueryResultCachedAudio(
                 id=track.uri,
                 audio_file_id=file_id,
-                caption=track_to_caption(clients[track.platform], track),
+                caption=track_to_caption(client, track),
                 parse_mode='HTML'
             ))
             continue
 
+        supported: bool = client.features.get('track_getters', True)
+
         result.append(InlineQueryResultAudio(
-            id=track.uri,
+            id=track.uri if supported else str(i),
             audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
             performer=track.artist,
             title=track.name,
-            caption=track_to_caption(clients[track.platform], track),
+            caption=track_to_caption(client, track),
             parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[[
@@ -146,7 +160,7 @@ async def inline_query_handler(query: InlineQuery) -> None:
                         callback_data='loading'
                     )
                 ]]
-            )
+            ) if supported else None
         ))
 
     if not is_authorized:

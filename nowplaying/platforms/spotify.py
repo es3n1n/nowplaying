@@ -11,6 +11,7 @@ from ..core.config import config
 from ..core.database import db
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
+from ..util.tz import UTC_TZ
 from .abc import PlatformABC, PlatformClientABC
 
 
@@ -20,6 +21,7 @@ def _to_uri(track_id: str) -> str:
 
 class SpotifyClient(PlatformClientABC):
     features = {
+        'track_getters': True,
         'add_to_queue': True,
         'play': True,
     }
@@ -40,7 +42,10 @@ class SpotifyClient(PlatformClientABC):
 
         history = self.spotify_app.current_user_recently_played(limit=limit)
         for item in history['items']:
-            yield await Track.from_spotify_item(item['track'], datetime.fromisoformat(item['played_at']))
+            yield await Track.from_spotify_item(
+                item['track'],
+                datetime.fromisoformat(item['played_at']).replace(tzinfo=UTC_TZ)
+            )
 
     async def get_track(self, track_id: str) -> Track | None:
         try:

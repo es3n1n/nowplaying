@@ -1,10 +1,12 @@
 import re
+from urllib.parse import unquote
 
 from async_lru import alru_cache
 from httpx import AsyncClient, Timeout
 from loguru import logger
 from orjson import JSONDecodeError, loads
 
+from ..external.apple import find_song_in_apple_music
 from ..models.song_link import SongLinkInfo, SongLinkPlatform, SongLinkPlatformType
 
 
@@ -31,6 +33,17 @@ async def get_song_link(track_url: str) -> str | None:
     if track_url.startswith('https://open.spotify.com/track/'):
         uri: str = track_url.split('/')[-1]
         return f'https://song.link/s/{uri}'
+
+    if track_url.startswith('https://www.last.fm/music/'):
+        args = track_url.split('/')
+        track_name = unquote(unquote(args[-1])).replace('+', ' ')
+        artist_name = unquote(unquote(args[-3])).replace('+', ' ')
+
+        itunes_id = await find_song_in_apple_music(artist_name, track_name)
+        if itunes_id is None:
+            return None
+
+        return f'https://song.link/us/i/{itunes_id}'
 
     resp = await client.get('https://api.odesli.co/resolve', params={
         'url': track_url,
