@@ -9,8 +9,19 @@ from uvicorn import run
 
 from . import app
 from .bot.bot import bot, dp
+from .bot.handlers.exceptions import send_auth_code_error
 from .core.config import config
+from .exceptions.platforms import PlatformInvalidAuthCodeError
 from .util.logger import get_uvicorn_config, logger
+
+
+@app.exception_handler(PlatformInvalidAuthCodeError)
+async def invalid_code_handler(_: Request, exc: PlatformInvalidAuthCodeError) -> RedirectResponse:
+    await send_auth_code_error(exc)
+    return RedirectResponse(
+        url=config.BOT_URL,
+        status_code=307,
+    )
 
 
 @app.exception_handler(HTTPException)

@@ -6,7 +6,6 @@ from ...core.database import db
 from ...models.song_link import SongLinkPlatformType
 from ...platforms import get_platform_from_telegram_id, yandex
 from ...routes.ext import send_auth_msg
-from ...util.logger import logger
 from ..bot import dp
 from .link import get_auth_keyboard, link_command_handler
 
@@ -31,16 +30,11 @@ async def try_controls(payload: str, message: Message) -> bool:
     if not db.is_user_authorized(message.from_user.id, platform_type):
         return False
 
-    try:
-        client = await get_platform_from_telegram_id(message.from_user.id, platform_type)
-        track = await client.get_track(track_id)
+    client = await get_platform_from_telegram_id(message.from_user.id, platform_type)
+    track = await client.get_track(track_id)
 
-        if not track:
-            return False
-    except Exception as e:
-        logger.opt(exception=e).error('Error')
-        await message.reply('Something goofed up, contact @invlpg')
-        return True
+    if not track:
+        return False
 
     await message.reply(
         f'{track.artist} - {track.name}\nUse the buttons bellow to control your playback.',
@@ -68,12 +62,7 @@ async def command_start_handler(message: Message) -> None:
 
         if payload.startswith('ym_'):
             token = payload[3:]
-            try:
-                await yandex.from_auth_callback(message.from_user.id, token)
-            except ValueError:
-                await message.reply('Unable to authorize, please try again!')
-                return
-
+            await yandex.from_auth_callback(message.from_user.id, token)
             await send_auth_msg(message.from_user.id, 'yandex')
             return
 

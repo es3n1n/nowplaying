@@ -13,6 +13,8 @@ class Settings(BaseSettings):
 
     ENVIRONMENT: str = 'production'
 
+    DEVELOPER_USERNAME: str = 'invlpg'
+
     WEB_SERVER_PUBLIC_ENDPOINT: str = 'https://now.es3n1n.eu'
 
     EMPTY_MP3_FILE_URL: str = 'https://es3n1n.eu/empty.mp3'

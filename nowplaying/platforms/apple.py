@@ -2,10 +2,17 @@ from typing import AsyncIterator
 
 from ..core.database import db
 from ..enums.platform_features import PlatformFeature
+from ..exceptions.platforms import PlatformInvalidAuthCodeError
 from ..external.apple import AppleMusicWrapper, AppleMusicWrapperClient
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from .abc import PlatformABC, PlatformClientABC
+
+
+TYPE = SongLinkPlatformType.APPLE_MUSIC
+
+
+# todo: add rethrows once api is implemented
 
 
 class AppleClient(PlatformClientABC):
@@ -15,8 +22,9 @@ class AppleClient(PlatformClientABC):
         PlatformFeature.PLAY: True
     }
 
-    def __init__(self, app: AppleMusicWrapperClient):
+    def __init__(self, app: AppleMusicWrapperClient, telegram_id: int):
         self.app = app
+        self.telegram_id = telegram_id
 
     async def get_current_playing_track(self) -> Track | None:
         return None
@@ -52,10 +60,10 @@ class ApplePlatform(PlatformABC):
         self.app = AppleMusicWrapper()
 
     async def from_auth_callback(self, telegram_id: int, auth_code: str) -> PlatformClientABC:
-        client = AppleClient(self.app.with_media_token(auth_code))
+        client = AppleClient(self.app.with_media_token(auth_code), telegram_id)
 
         if not await client.is_alive():
-            raise ValueError()
+            raise PlatformInvalidAuthCodeError(platform=self.type, telegram_id=telegram_id)
 
         db.store_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC, auth_code)
         return client
@@ -63,7 +71,7 @@ class ApplePlatform(PlatformABC):
     async def from_telegram_id(self, telegram_id: int) -> PlatformClientABC:
         token = db.get_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC)
         assert token is not None
-        return AppleClient(self.app.with_media_token(token))
+        return AppleClient(self.app.with_media_token(token), telegram_id)
 
     async def get_authorization_url(self, state: str) -> str:
         return 'https://google.com/'

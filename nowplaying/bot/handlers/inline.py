@@ -19,7 +19,6 @@ from ...enums.platform_features import PlatformFeature
 from ...models.song_link import SongLinkPlatformType
 from ...models.track import Track
 from ...platforms import PlatformClientABC, get_platform_from_telegram_id, platforms
-from ...util.logger import logger
 from ..bot import bot, dp
 from ..caching import cache_file, get_cached_file_id
 
@@ -102,25 +101,12 @@ async def inline_query_handler(query: InlineQuery) -> None:
             continue
 
         is_authorized = True
-        try:
-            client = await get_platform_from_telegram_id(query.from_user.id, platform.type)
+        client = await get_platform_from_telegram_id(query.from_user.id, platform.type)
 
-            async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
-                feed.append(track)
+        async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
+            feed.append(track)
 
-            clients[platform.type] = client
-        except Exception as e:
-            logger.opt(exception=e).error('Something went wrong!')
-            result.append(InlineQueryResultArticle(
-                id='0',
-                title='Something went wrong, dm @invlpg',
-                url='https://t.me/invlpg',
-                input_message_content=InputTextMessageContent(
-                    message_text='Something went wrong (┛ಠ_ಠ)┛彡┻━┻'
-                )
-            ))
-            feed.clear()
-            break
+        clients[platform.type] = client
 
     seen_uris = list()
     i: int = -1
