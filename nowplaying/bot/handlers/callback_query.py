@@ -13,6 +13,17 @@ async def controls_handler(query: CallbackQuery) -> None:
         await bot.answer_callback_query(query.id, text='Downloading the audio, please wait.')
         return
 
+    if query.data.startswith('logout_'):
+        command, platform_name = query.data.split('_', maxsplit=1)
+        platform_type = SongLinkPlatformType(platform_name)
+
+        if db.delete_user_token(query.from_user.id, platform_type):
+            await bot.answer_callback_query(query.id, text='Successfully logged out')
+            return
+
+        await bot.answer_callback_query(query.id, text='Unable to logout, are you sure you are authorized?')
+        return
+
     command, platform_name, track_id = query.data.split('_', maxsplit=2)
     platform_type = SongLinkPlatformType(platform_name)
 

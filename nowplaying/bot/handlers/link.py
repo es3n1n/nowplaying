@@ -1,6 +1,7 @@
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+from ...core.database import db
 from ...core.sign import sign
 from ...platforms import platforms
 from ...util.string import chunks
@@ -8,10 +9,18 @@ from ..bot import dp
 
 
 async def get_auth_keyboard(user_id: int) -> InlineKeyboardMarkup:
+    authorized_platforms = db.get_user_authorized_platforms(user_id)
+
     buttons = []
     for platform in platforms:
+        is_authorized: bool = platform.type in authorized_platforms
+
+        text = f'Authorize in {platform.type.name.capitalize()}'
+        if is_authorized:
+            text = f'(re){text}'
+
         buttons.append(InlineKeyboardButton(
-            text=f'Authorize in {platform.type.name.capitalize()}',
+            text=text,
             url=await platform.get_authorization_url(sign(user_id))
         ))
 

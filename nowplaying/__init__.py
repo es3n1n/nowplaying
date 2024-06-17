@@ -2,7 +2,6 @@ from fastapi import FastAPI
 
 from .bot import import_bot_handlers
 from .routes.ext import router as ext_router
-from .util.fs import ROOT_DIR
 
 
 app = FastAPI(

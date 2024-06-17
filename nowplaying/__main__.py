@@ -28,7 +28,8 @@ def start_bot() -> None:
     async def _start() -> None:
         logger.info('Setting up bot commands')
         await bot.set_my_commands(commands=[
-            BotCommand(command='link', description='Link spotify account')
+            BotCommand(command='link', description='Link account'),
+            BotCommand(command='logout', description='Logout from platforms'),
         ])
 
         logger.info('Starting long polling')

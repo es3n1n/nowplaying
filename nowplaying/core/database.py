@@ -31,15 +31,29 @@ class Database:
     def is_user_authorized(self, telegram_id: int, platform: SongLinkPlatformType) -> bool:
         with self.conn.cursor() as cur:
             cur.execute('SELECT 1 FROM tokens WHERE telegram_id = %s AND platform_name = %s LIMIT 1',
-                        (telegram_id, platform.name,))
+                        (telegram_id, platform.value,))
             return cur.fetchone() is not None
+
+    def get_user_authorized_platforms(self, telegram_id: int) -> list[SongLinkPlatformType]:
+        with self.conn.cursor() as cur:
+            cur.execute('SELECT (platform_name) FROM tokens WHERE telegram_id = %s', (telegram_id,))
+            return [SongLinkPlatformType(x[0]) for x in cur.fetchall()]
+
+    def delete_user_token(self, telegram_id: int, platform: SongLinkPlatformType) -> bool:
+        with self.conn.cursor() as cur:
+            cur.execute('DELETE FROM tokens WHERE telegram_id = %s AND platform_name = %s',
+                        (telegram_id, platform.value))
+            success = cur.rowcount >= 1
+            if success:
+                self.conn.commit()
+            return success
 
     def store_user_token(self, telegram_id: int, platform: SongLinkPlatformType, token: str) -> None:
         with self.conn.cursor() as cur:
             cur.execute(
                 'INSERT INTO tokens (telegram_id, platform_name, token) VALUES (%s, %s, %s) '
                 'ON CONFLICT (telegram_id, platform_name) DO UPDATE SET token = %s',
-                (telegram_id, platform.name, token, token,),
+                (telegram_id, platform.value, token, token,),
             )
             self.conn.commit()
 
@@ -47,7 +61,7 @@ class Database:
         with self.conn.cursor() as cur:
             cur.execute(
                 'SELECT (token) FROM tokens WHERE telegram_id = %s AND platform_name = %s LIMIT 1',
-                (telegram_id, platform.name,)
+                (telegram_id, platform.value,)
             )
 
             r = cur.fetchone()
