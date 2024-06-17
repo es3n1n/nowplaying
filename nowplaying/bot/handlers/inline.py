@@ -18,7 +18,7 @@ from ...downloaders import download_mp3
 from ...enums.platform_features import PlatformFeature
 from ...models.song_link import SongLinkPlatformType
 from ...models.track import Track
-from ...platforms import PlatformClientABC, get_platform_from_telegram_id, platforms
+from ...platforms import PlatformClientABC, get_platform_from_telegram_id
 from ..bot import bot, dp
 from ..caching import cache_file, get_cached_file_id
 
@@ -91,31 +91,44 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
 @dp.inline_query()
 async def inline_query_handler(query: InlineQuery) -> None:
     result: list[InlineQueryResultArticle | InlineQueryResultAudio | InlineQueryResultCachedAudio] = list()
-    is_authorized: bool = False
 
     feed = list()
     clients: dict[SongLinkPlatformType, PlatformClientABC] = dict()
 
-    for platform in platforms:
-        if not db.is_user_authorized(query.from_user.id, platform.type):
-            continue
+    authorized_platforms = db.get_user_authorized_platforms(query.from_user.id)
+    authorized_in_multiple_platforms: bool = len(authorized_platforms) > 1
 
-        is_authorized = True
-        client = await get_platform_from_telegram_id(query.from_user.id, platform.type)
+    if len(authorized_platforms) == 0:
+        await bot.answer_inline_query(
+            inline_query_id=query.id,
+            results=[
+                InlineQueryResultArticle(
+                    id='0',
+                    title='Please authorize',
+                    url=config.BOT_URL,
+                    input_message_content=InputTextMessageContent(
+                        message_text=f'Please {url("authorize", config.get_start_url("link"))} first (╯°□°)╯︵ ┻━┻',
+                        parse_mode='HTML'
+                    )
+                )
+            ]
+        )
+        return
+
+    for platform in authorized_platforms:
+        client = await get_platform_from_telegram_id(query.from_user.id, platform)
 
         async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
             feed.append(track)
 
-        clients[platform.type] = client
+        clients[platform] = client
 
     seen_uris = list()
-    i: int = -1
 
-    for track in reversed(sorted(
+    for i, track in enumerate(reversed(sorted(
             feed,
             key=lambda x: (x.currently_playing, x.played_at)
-    )):
-        i += 1
+    ))):
         if track.uri in seen_uris:
             continue
 
@@ -133,11 +146,14 @@ async def inline_query_handler(query: InlineQuery) -> None:
 
         supported: bool = client.features.get(PlatformFeature.TRACK_GETTERS, True)
 
+        title: str = track.full_title
+        if authorized_in_multiple_platforms:
+            title = f'({track.platform.value.capitalize()}) {title}'
+
         result.append(InlineQueryResultAudio(
             id=track.uri if supported else str(i),
             audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
-            performer=track.artist,
-            title=track.name,
+            title=title,
             caption=track_to_caption(client, track, supported),
             parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup(
@@ -148,17 +164,6 @@ async def inline_query_handler(query: InlineQuery) -> None:
                     )
                 ]]
             ) if supported else None
-        ))
-
-    if not is_authorized:
-        result.append(InlineQueryResultArticle(
-            id='0',
-            title='Please authorize',
-            url=config.BOT_URL,
-            input_message_content=InputTextMessageContent(
-                message_text=f'Please {url("authorize", config.get_start_url("link"))} first (╯°□°)╯︵ ┻━┻',
-                parse_mode='HTML'
-            )
         ))
 
     if len(result) == 0:
