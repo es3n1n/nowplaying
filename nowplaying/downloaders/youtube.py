@@ -10,6 +10,20 @@ from ..util.logger import logger
 from .abc import DownloaderABC
 
 
+class YoutubeDLLogger(object):
+    @staticmethod
+    def debug(msg: str):
+        pass
+
+    @staticmethod
+    def warning(msg: str):
+        logger.warning(msg)
+
+    @staticmethod
+    def error(msg: str):
+        logger.error(msg)
+
+
 class YoutubeDownloader(DownloaderABC):
     platform = SongLinkPlatformType.YOUTUBE
 
@@ -28,6 +42,7 @@ class YoutubeDownloader(DownloaderABC):
                     'preferredcodec': 'mp3',
                 }
             ],
+            'logger': YoutubeDLLogger
         }) as ydl:
             try:
                 if ydl.download(url_list=[platform.url]) != 0:
