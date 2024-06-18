@@ -80,7 +80,7 @@ class Track(BaseModel):
     ) -> 'Track':
         url = f'https://music.yandex.ru/track/{track.id}'
         return cls(
-            platform=SongLinkPlatformType.LASTFM,
+            platform=SongLinkPlatformType.YANDEX,
             artist=', '.join(track.artists_name()),
             name=track.title,
             id=track.id,

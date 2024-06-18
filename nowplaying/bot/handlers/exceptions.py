@@ -74,7 +74,8 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
                             message_text=BROKE_MSG_TEXT
                         )
                     )
-                ]
+                ],
+                cache_time=1
             )
         except TelegramAPIError:
             pass

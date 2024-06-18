@@ -15,7 +15,7 @@ platforms: list[PlatformABC] = [
     spotify,
     lastfm,
     # apple,
-    # yandex,
+    yandex,
 ]
 
 
