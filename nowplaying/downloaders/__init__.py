@@ -14,8 +14,8 @@ from .youtube import YoutubeDownloader
 # Uses the same priority as declared
 downloaders: list[DownloaderABC] = [
     DeezerDownloader(),
-    SoundcloudDownloader(),
     YoutubeDownloader(),
+    SoundcloudDownloader(),
 ]
 
 
