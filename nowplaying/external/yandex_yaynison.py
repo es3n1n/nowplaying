@@ -165,7 +165,10 @@ class Yaynison:
         result = list()
 
         m = loads(await self.conn.recv())
-        for it in m.get('player_state', {}).get('player_queue', {}).get('playable_list', []):
+        player_queue = m.get('player_state', {}).get('player_queue', {})
+        current_index = player_queue.get('current_playable_index', 0)
+
+        for it in player_queue.get('playable_list', [])[current_index:]:
             if it['playable_type'] != 'TRACK':
                 continue
 
