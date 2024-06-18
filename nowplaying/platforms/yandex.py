@@ -46,6 +46,7 @@ class YandexClient(PlatformClientABC):
     @rethrow_platform_error(YandexMusicError, TYPE)
     @rethrow_platform_error(YaynisonException, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
+        limit += 1  # the limit does not include currently playing track
         playable_items = await self._yaynison.one_shot_playable_items()
         ids = [item.playable_id for item in playable_items[:limit]]
 
