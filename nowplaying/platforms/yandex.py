@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import AsyncIterator
 
 from yandex_music import ClientAsync
@@ -51,6 +51,7 @@ class YandexClient(PlatformClientABC):
 
         app = await self.get_app()
         tracks = await app.tracks(track_ids=ids)
+        cur_time = datetime.utcnow()
 
         for i, track in enumerate(tracks):
             if not track:
@@ -58,7 +59,7 @@ class YandexClient(PlatformClientABC):
 
             yield await Track.from_yandex_item(
                 track,
-                played_at=datetime.utcfromtimestamp(limit - i),  # used for sorting
+                played_at=cur_time - timedelta(minutes=i),  # used for sorting
             )
 
     @rethrow_platform_error(YandexMusicError, TYPE)
