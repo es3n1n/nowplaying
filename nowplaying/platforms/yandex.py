@@ -35,7 +35,8 @@ class YandexClient(PlatformClientABC):
 
     async def get_app(self) -> ClientAsync:
         if not self._initialized_app:
-            await self._app.init()
+            # There is no need to initialize this thing for our needs
+            # await self._app.init()
             self._initialized_app = True
         return self._app
 
