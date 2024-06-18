@@ -2,7 +2,7 @@ from io import BytesIO
 from os import remove
 from typing import Optional
 
-from youtube_dl import DownloadError, YoutubeDL
+from yt_dlp import DownloadError, YoutubeDL
 
 from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
 from ..util.fs import temp_file
