@@ -18,6 +18,9 @@ class YoutubeDownloader(DownloaderABC):
 
         result = temp_file('.mp3')
         with YoutubeDL(params={
+            'format': 'bestaudio/best',
+            'geo-bypass': True,
+            'nocheckcertificate': True,
             'outtmpl': str((result.parent / result.stem).absolute()),
             'postprocessors': [
                 {
