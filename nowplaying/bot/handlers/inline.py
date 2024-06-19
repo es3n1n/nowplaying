@@ -1,3 +1,4 @@
+from asyncio import TaskGroup
 from urllib.parse import quote
 
 from aiogram.types import (
@@ -123,13 +124,17 @@ async def inline_query_handler(query: InlineQuery) -> None:
         )
         return
 
-    for platform in authorized_platforms:
-        client = await get_platform_from_telegram_id(query.from_user.id, platform)
+    async def proceed_platform(platform_type: SongLinkPlatformType) -> None:
+        nonlocal clients
+        client = await get_platform_from_telegram_id(query.from_user.id, platform_type)
 
         async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
             feed.append(track)
 
-        clients[platform] = client
+        clients[platform_type] = client
+
+    async with TaskGroup() as group:
+        [group.create_task(proceed_platform(platform)) for platform in authorized_platforms]
 
     seen_uris = list()
 
