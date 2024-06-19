@@ -25,7 +25,9 @@ from ..caching import cache_file, get_cached_file_id
 
 
 # Only 2 because for some fxxcked up platforms like lastfm it takes so much time to gather all the info
+# Without the currently playing song
 NUM_OF_ITEMS_TO_QUERY: int = 2
+UNAVAILABLE_MSG: str = 'Error: this track is not available :('
 
 
 def url(text: str, href: str) -> str:
@@ -45,7 +47,7 @@ def track_to_caption(
     if not is_getter_available:
         message_text += f'Error: downloading from {track.platform.value.capitalize()} is unsupported\n'
     elif not is_track_available:
-        message_text += 'Error: track is unavailable :(\n'
+        message_text += UNAVAILABLE_MSG + '\n'
 
     message_text += f'{url(track.platform.value.capitalize(), track.url)}'
 
@@ -82,7 +84,7 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
     thumbnail, mp3 = await download_mp3(track)
 
     if mp3 is None:
-        caption = f'Error: track is unavailable :(\n{caption}'
+        caption = f'{UNAVAILABLE_MSG}\n{caption}'
         await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption=caption, parse_mode='HTML')
         return
 
@@ -126,12 +128,12 @@ async def inline_query_handler(query: InlineQuery) -> None:
 
     async def proceed_platform(platform_type: SongLinkPlatformType) -> None:
         nonlocal clients
-        client = await get_platform_from_telegram_id(query.from_user.id, platform_type)
+        _client = await get_platform_from_telegram_id(query.from_user.id, platform_type)
 
-        async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
-            feed.append(track)
+        async for _track in _client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
+            feed.append(_track)
 
-        clients[platform_type] = client
+        clients[platform_type] = _client
 
     async with TaskGroup() as group:
         [group.create_task(proceed_platform(platform)) for platform in authorized_platforms]
@@ -162,14 +164,15 @@ async def inline_query_handler(query: InlineQuery) -> None:
 
         can_proceed = is_getter_available and is_track_available
 
-        title: str = track.full_title
+        name: str = track.name
         if authorized_in_multiple_platforms:
-            title = f'({track.platform.value.capitalize()}) {title}'
+            name = f'{name} ({track.platform.value.capitalize()})'
 
         result.append(InlineQueryResultAudio(
             id=track.uri if can_proceed else str(i),
             audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
-            title=title,
+            performer=track.artist,
+            title=name,
             caption=track_to_caption(client, track, is_getter_available, is_track_available),
             parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup(

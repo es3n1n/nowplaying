@@ -33,7 +33,7 @@ async def cache_file(
         config.BOT_CACHE_CHAT_ID,
         BufferedInputFile(file=data.read(), filename=f'{performer} - {name}.mp3'),
         caption=f'#{uri.replace("-", "_")}\n'
-                f'#uid{user.id} #u{str(user.username)} {user.full_name}\n'
+                f'#uid_{user.id} #username_{str(user.username)} {user.full_name}\n'
                 f'{performer} - {name}',
         performer=performer,
         title=name,
