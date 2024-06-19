@@ -1,4 +1,5 @@
 import re
+from urllib.parse import parse_qs, urlparse
 
 from aiohttp import ClientSession, ClientTimeout
 from async_lru import alru_cache
@@ -42,27 +43,40 @@ async def _get_client() -> ClientSession:
 
 @alru_cache(maxsize=128)
 async def get_song_link(track_url: str) -> str | None:
-    # No "www." please, thanks
-    track_url = track_url.replace('://www.', '://')
+    url = urlparse(track_url)
 
     if track_url.startswith('https://open.spotify.com/track/'):
-        uri: str = track_url.split('/')[-1]
-        return f'https://song.link/s/{uri}'
+        # https://open.spotify.com/track/2ZAkKj4bPw2NM5bgLPOSVz
+        track_id: str = url.path.split('/')[-1]
+        return f'https://song.link/s/{track_id}'
 
-    if track_url.startswith('https://music.yandex.'):  # .com or .ru
-        track_id: str = track_url.split('/')[-1]
+    if 'music.yandex.' in url.netloc:  # .com or .ru
+        # https://music.yandex.ru/track/79714180
+        track_id = url.path.split('/')[-1]
         return f'https://song.link/ya/{track_id}'
 
-    if track_url.startswith('https://music.apple.com/'):
+    if url.netloc == 'music.apple.com':
         # https://music.apple.com/fr/album/imagine/1743455180?i=1743455190
-        args = track_url.split('?')[0].split('/')
+        args = url.path.split('/')
         track_id = args[-1]
-        country: str = args[3]
+        if track_id.startswith('id'):
+            track_id = track_id[2:]
+        country: str = args[1]
         return f'https://song.link/{country}/i/{track_id}'
 
-    if track_url.startswith('https://youtube.com/watch?v='):
-        uri = track_url.split('&')[0].split('v=', maxsplit=1)[1]
-        return f'https://song.link/y/{uri}'
+    if url.netloc == 'geo.music.apple.com':
+        # https://geo.music.apple.com/album/id1606018075?i=1606018581&at=10l3Sh
+        args = url.path.split('/')
+        track_id = args[-1]
+        if track_id.startswith('id'):
+            track_id = track_id[2:]
+        return f'https://song.link/i/{track_id}'
+
+    if url.netloc.endswith('youtube.com'):
+        # https://www.youtube.com/watch?v=TsfJfn4Ow2Q
+        qs = parse_qs(url.query)
+        v = qs.get('v', [''])
+        return f'https://song.link/y/{v[0]}'
 
     logger.warning(f'Falling back to odesli api for the url: {track_url}')
 
@@ -140,3 +154,24 @@ async def get_song_link_info(song_link_url: str) -> SongLinkInfo:
         break
 
     return result
+
+
+# async def tests() -> None:
+#     assert (await get_song_link('https://www.youtube.com/watch?v=TsfJfn4Ow2Q&adhsjkasdhjk') ==
+#             'https://song.link/y/TsfJfn4Ow2Q')
+#     assert (await get_song_link('https://open.spotify.com/track/5L1eW2bt7pDbjhNLKWKom2?asdasdasd') ==
+#             'https://song.link/s/5L1eW2bt7pDbjhNLKWKom2')
+#     assert (await get_song_link('https://geo.music.apple.com/album/id1606018075?i=1606018581&at=10l3Sh') ==
+#             'https://song.link/i/1606018075')
+#     assert (await get_song_link('https://music.apple.com/fr/album/icarus/1606018075?i=1606018581') ==
+#             'https://song.link/fr/i/1606018075')
+#     assert (await get_song_link('https://music.yandex.ru/track/79714180') ==
+#             'https://song.link/ya/79714180')
+#     assert (await get_song_link('https://music.yandex.com/track/79714180') ==
+#             'https://song.link/ya/79714180')
+#
+#     exit()
+#
+# from asyncio import run
+#
+# run(tests())
