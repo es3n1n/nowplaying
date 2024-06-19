@@ -1,6 +1,7 @@
 import logging
 import sys
 
+import aiogram.loggers
 from loguru import logger
 
 from ..core.config import config
@@ -43,10 +44,10 @@ def get_uvicorn_config() -> None:
 
 def init_logger() -> None:
     level = logging.DEBUG if config.dev_env else logging.INFO
-    logging.basicConfig(
-        level=level,
-        handlers=[LoguruHandler()]
-    )
+
+    aiogram.loggers.event.setLevel(level=level)
+    aiogram.loggers.dispatcher.setLevel(level=level)
+    logging.basicConfig(handlers=[LoguruHandler()])
 
     def filter_min_level(record: dict) -> bool:
         return record['level'].no >= logger.level('DEBUG' if config.dev_env else 'INFO').no
