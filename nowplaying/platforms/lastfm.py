@@ -60,8 +60,8 @@ class LastfmClient(PlatformClientABC):
         )
 
         if out_track.song_link is not None:  # otherwise, this track isn't available for a download
-            out_track.id = db.cache_local_track(platform=TYPE, url=out_track.url, artist=out_track.artist,
-                                                name=out_track.name)
+            out_track.id = await db.cache_local_track(platform=TYPE, url=out_track.url, artist=out_track.artist,
+                                                      name=out_track.name)
 
         return out_track
 
@@ -81,7 +81,7 @@ class LastfmClient(PlatformClientABC):
 
     @rethrow_platform_error(LastFMError, TYPE)
     async def get_track(self, track_id: str) -> Track | None:
-        cached_track: CachedLocalTrack | None = db.get_cached_local_track_info(track_id)
+        cached_track: CachedLocalTrack | None = await db.get_cached_local_track_info(track_id)
         if cached_track is None:
             return None
 
@@ -109,12 +109,12 @@ class LastfmPlatform(PlatformABC):
         except LastFMError:
             raise PlatformInvalidAuthCodeError(platform=cls.type, telegram_id=telegram_id)
 
-        db.store_user_token(telegram_id, cls.type, session_key)
+        await db.store_user_token(telegram_id, cls.type, session_key)
         return LastfmClient(LastFMClient(session_key), telegram_id)
 
     @classmethod
     async def from_telegram_id(cls, telegram_id: int) -> PlatformClientABC:
-        session_key = db.get_user_token(telegram_id, cls.type)
+        session_key = await db.get_user_token(telegram_id, cls.type)
         assert session_key is not None
         return LastfmClient(LastFMClient(session_key), telegram_id)
 

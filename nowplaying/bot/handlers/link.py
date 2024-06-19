@@ -9,7 +9,7 @@ from ..bot import dp
 
 
 async def get_auth_keyboard(user_id: int) -> InlineKeyboardMarkup:
-    authorized_platforms = db.get_user_authorized_platforms(user_id)
+    authorized_platforms = await db.get_user_authorized_platforms(user_id)
 
     buttons = []
     for platform in platforms:

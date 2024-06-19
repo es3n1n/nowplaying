@@ -27,7 +27,7 @@ async def try_controls(payload: str, message: Message) -> bool:
     platform_name, track_id = uri.split('_')
     platform_type = SongLinkPlatformType(platform_name)
 
-    if not db.is_user_authorized(message.from_user.id, platform_type):
+    if not await db.is_user_authorized(message.from_user.id, platform_type):
         return False
 
     client = await get_platform_from_telegram_id(message.from_user.id, platform_type)
@@ -55,7 +55,7 @@ async def command_start_handler(message: Message) -> None:
     assert message.from_user is not None
     assert message.text is not None
 
-    authorized: bool = db.is_user_authorized_globally(message.from_user.id)
+    authorized: bool = await db.is_user_authorized_globally(message.from_user.id)
 
     if message.text.find(' ') != -1:
         payload = message.text.split(' ', maxsplit=1)[1]

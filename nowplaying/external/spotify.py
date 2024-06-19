@@ -87,9 +87,10 @@ class Spotify:
         return needle_scope_set <= haystack_scope_set
 
     @staticmethod
-    def _is_token_expired(token_info) -> bool:
+    def _is_token_expired(token_info: SpotifyToken) -> bool:
         now = int(time())
-        return token_info['expires_at'] - now < 60
+        expires_at: int = token_info['expires_at']  # type: ignore
+        return expires_at - now < 60
 
     async def _validate_token(
             self,
@@ -147,6 +148,8 @@ class Spotify:
 
         token = loads(response.content)
         token = self._add_attrs_to_token(token)
+        if 'refresh_token' not in token:
+            token['refresh_token'] = refresh_token
         await self.cache_handler.save_token_to_cache(token)
         return token
 

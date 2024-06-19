@@ -11,6 +11,7 @@ from . import app
 from .bot.bot import bot, dp
 from .bot.handlers.exceptions import send_auth_code_error
 from .core.config import config
+from .core.database import db
 from .exceptions.platforms import PlatformInvalidAuthCodeError
 from .util.logger import logger
 
@@ -35,6 +36,16 @@ async def http_exception_handler(_: Request, exc: HTTPException) -> ORJSONRespon
     return ORJSONResponse(content={'detail': exc.detail}, status_code=exc.status_code)
 
 
+async def init_pool() -> None:
+    await db.get_pool()  # initializing the connection pool
+
+
+# We **have** to initialize the pool from `on_event` callback, otherwise we'll get transaction errors :shrug:
+@app.on_event('startup')
+async def startup() -> None:
+    await init_pool()
+
+
 def start_bot() -> None:
     async def _start() -> None:
         logger.info('Setting up bot commands')
@@ -45,6 +56,7 @@ def start_bot() -> None:
         ])
 
         logger.info('Starting long polling')
+        dp.startup.register(init_pool)
         await dp.start_polling(bot)
 
     asyncio_run(_start())

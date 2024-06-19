@@ -93,11 +93,11 @@ class YandexPlatform(PlatformABC):
         except Exception:
             raise PlatformInvalidAuthCodeError(platform=self.type, telegram_id=telegram_id)
 
-        db.store_user_token(telegram_id, self.type, auth_code)
+        await db.store_user_token(telegram_id, self.type, auth_code)
         return YandexClient(client, telegram_id)
 
     async def from_telegram_id(self, telegram_id: int) -> PlatformClientABC:
-        token = db.get_user_token(telegram_id, self.type)
+        token = await db.get_user_token(telegram_id, self.type)
         assert token is not None
         return YandexClient(ClientAsync(token), telegram_id)
 

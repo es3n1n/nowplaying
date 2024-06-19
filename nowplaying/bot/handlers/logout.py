@@ -11,7 +11,7 @@ async def link_command_handler(message: Message) -> None:
     assert message.from_user is not None
 
     kb = list()
-    for platform in db.get_user_authorized_platforms(message.from_user.id):
+    for platform in await db.get_user_authorized_platforms(message.from_user.id):
         kb.append(InlineKeyboardButton(
             text=f'Logout from {platform.value.capitalize()}',
             callback_data=f'logout_{platform.value}',

@@ -79,12 +79,12 @@ class SpotifyCacheHandler(SpotifyCacheHandlerABC):
         self.telegram_id = telegram_id
 
     async def get_cached_token(self) -> dict | None:
-        result = db.get_user_token(self.telegram_id, TYPE)
+        result = await db.get_user_token(self.telegram_id, TYPE)
         return loads(result) if result is not None else None
 
     async def save_token_to_cache(self, token_info: dict) -> None:
         token_info_str = dumps(token_info).decode()
-        db.store_user_token(self.telegram_id, TYPE, token_info_str)
+        await db.store_user_token(self.telegram_id, TYPE, token_info_str)
 
 
 class SpotifyPlatform(PlatformABC):

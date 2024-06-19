@@ -65,11 +65,11 @@ class ApplePlatform(PlatformABC):
         if not await client.is_alive():
             raise PlatformInvalidAuthCodeError(platform=self.type, telegram_id=telegram_id)
 
-        db.store_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC, auth_code)
+        await db.store_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC, auth_code)
         return client
 
     async def from_telegram_id(self, telegram_id: int) -> PlatformClientABC:
-        token = db.get_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC)
+        token = await db.get_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC)
         assert token is not None
         return AppleClient(self.app.with_media_token(token), telegram_id)
 

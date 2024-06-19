@@ -37,7 +37,7 @@ async def on_token_invalidation(event: ErrorEvent) -> bool:
         exc.telegram_id,
         f'Your {exc.platform.value.capitalize()} session has expired/got invalidated, please authorize again.'
     )
-    db.delete_user_token(exc.telegram_id, exc.platform)
+    await db.delete_user_token(exc.telegram_id, exc.platform)
     return True
 
 
@@ -58,7 +58,7 @@ async def on_exception_group(event: ErrorEvent) -> bool:
         if isinstance(nested_exc, PlatformTokenInvalidateError):
             return await on_token_invalidation(nested_event)
 
-    return False
+    return await fallback_error_handler(event)
 
 
 @dp.error()

@@ -70,7 +70,7 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
     platform_name, track_id = uri.split('_', maxsplit=1)
     platform_type = SongLinkPlatformType(platform_name)
 
-    if not db.is_user_authorized(result.from_user.id, platform_type):
+    if not await db.is_user_authorized(result.from_user.id, platform_type):
         await bot.edit_message_caption(inline_message_id=result.inline_message_id, caption='Please authorize first')
         return
 
@@ -105,7 +105,7 @@ async def inline_query_handler(query: InlineQuery) -> None:
     feed = list()
     clients: dict[SongLinkPlatformType, PlatformClientABC] = dict()
 
-    authorized_platforms = db.get_user_authorized_platforms(query.from_user.id)
+    authorized_platforms = await db.get_user_authorized_platforms(query.from_user.id)
     authorized_in_multiple_platforms: bool = len(authorized_platforms) > 1
 
     if len(authorized_platforms) == 0:

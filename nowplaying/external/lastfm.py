@@ -7,7 +7,7 @@ from async_lru import alru_cache
 from httpx import AsyncClient, Response
 from orjson import loads
 
-from nowplaying.core.config import config
+from ..core.config import config
 
 
 client = AsyncClient(headers={

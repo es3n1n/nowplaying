@@ -9,7 +9,7 @@ from .bot import bot
 
 
 async def get_cached_file_id(uri: str) -> str | None:
-    file_id = db.get_cached_file(uri)
+    file_id = await db.get_cached_file(uri)
     if file_id is None:
         return None
 
@@ -41,5 +41,5 @@ async def cache_file(
     )
     assert sent.audio is not None
 
-    db.store_cached_file(uri, sent.audio.file_id)
+    await db.store_cached_file(uri, sent.audio.file_id)
     return sent.audio.file_id
