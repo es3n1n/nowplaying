@@ -19,6 +19,9 @@ async def send_auth_code_error(exc: PlatformInvalidAuthCodeError) -> None:
     )
 
 
+# todo: respond to the inline events within on_invalid_auth_code_error/on_token_invalidation
+
+
 @dp.error(ExceptionTypeFilter(PlatformInvalidAuthCodeError))
 async def on_invalid_auth_code_error(event: ErrorEvent) -> bool:
     await send_auth_code_error(event.exception)  # type: ignore
@@ -47,6 +50,7 @@ async def on_exception_group(event: ErrorEvent) -> bool:
             exception=nested_exc
         )
 
+        # todo: feed them back to the dp
         if isinstance(nested_exc, PlatformInvalidAuthCodeError):
             return await on_invalid_auth_code_error(nested_event)
 
