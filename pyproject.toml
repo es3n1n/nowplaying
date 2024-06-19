@@ -19,7 +19,6 @@ filelock = "^3.15.1"
 async-lru = "^2.0.4"
 scdl = {git = "https://github.com/flyingrub/scdl", rev = "42fbc5c23e3331059b05657f0819ac4835d6b83b"}
 pycryptodome = "^3.20.0"
-pylast = "^5.3.0"
 pyjwt = "^2.8.0"
 yandex-music = "^2.2.0"
 websockets = "^12.0"

@@ -1,9 +1,9 @@
 from datetime import datetime
 
 from pydantic import BaseModel
-from pylast import Track as LFMTrack
 from yandex_music import Track as YandexTrack
 
+from ..external.lastfm import LastFMTrack
 from ..external.song_link import get_song_link
 from .song_link import SongLinkPlatformType
 
@@ -59,8 +59,7 @@ class Track(BaseModel):
     @classmethod
     async def from_lastfm_item(
             cls,
-            track: LFMTrack,
-            track_url: str,
+            track: LastFMTrack,
             track_id: str | None,
             song_link_url: str | None,
             played_at: datetime = _TS_NULL,
@@ -68,10 +67,10 @@ class Track(BaseModel):
     ) -> 'Track':
         return cls(
             platform=SongLinkPlatformType.LASTFM,
-            artist=track.artist.name,
-            name=track.title,
+            artist=track.artist,
+            name=track.name,
             id=track_id,
-            url=track_url,
+            url=track.url,
             song_link=song_link_url,
             currently_playing=is_playing,
             played_at=played_at,

@@ -1797,23 +1797,6 @@ docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
-name = "pylast"
-version = "5.3.0"
-description = "A Python interface to Last.fm and Libre.fm"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pylast-5.3.0-py3-none-any.whl", hash = "sha256:4cc47cdcb05baf24a5cea10a012c17df0fe13e22911296a69835b127458a7308"},
-    {file = "pylast-5.3.0.tar.gz", hash = "sha256:637943b1b0e6045dd85ed7389db6071a1fea45cc7ff90dc6126fd509ca6fae2f"},
-]
-
-[package.dependencies]
-httpx = "*"
-
-[package.extras]
-tests = ["flaky", "pytest", "pytest-cov", "pytest-random-order", "pyyaml"]
-
-[[package]]
 name = "pysocks"
 version = "1.7.1"
 description = "A Python SOCKS client module. See https://github.com/Anorov/PySocks for more information."
@@ -2673,4 +2656,4 @@ test = ["pytest (>=8.1,<9.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1f7d6d3986e94a70d31c6c471a92916b7a67b27b77778b82f3321a4c4a4c1076"
+content-hash = "20e52a5fced93bec92fecb45bd3b045aae2a325c45b620ac5e8eeb8daa2c2a82"
