@@ -17,7 +17,7 @@ class Track(BaseModel):
     artist: str
     name: str
 
-    id: str
+    id: str | None  # if set to none, the track is marked as unavailable
     url: str
 
     song_link: str | None
@@ -32,6 +32,10 @@ class Track(BaseModel):
     @property
     def uri(self) -> str:
         return f'{self.platform.value}_{self.id}'
+
+    @property
+    def is_available(self) -> bool:
+        return self.id is not None
 
     @classmethod
     async def from_spotify_item(
@@ -56,17 +60,19 @@ class Track(BaseModel):
     async def from_lastfm_item(
             cls,
             track: LFMTrack,
+            track_url: str,
+            track_id: str | None,
+            song_link_url: str | None,
             played_at: datetime = _TS_NULL,
             is_playing: bool = False
     ) -> 'Track':
-        url = track.get_url()
         return cls(
             platform=SongLinkPlatformType.LASTFM,
             artist=track.artist.name,
             name=track.title,
-            id=f'{track.artist.name}_{track.title}',
-            url=url,
-            song_link=await get_song_link(url),
+            id=track_id,
+            url=track_url,
+            song_link=song_link_url,
             currently_playing=is_playing,
             played_at=played_at,
         )

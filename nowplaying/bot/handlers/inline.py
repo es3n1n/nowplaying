@@ -31,13 +31,20 @@ def url(text: str, href: str) -> str:
     return f'<a href="{href}">{text}</a>'
 
 
-def track_to_caption(client: PlatformClientABC, track: Track, is_getter_supported: bool) -> str:
+def track_to_caption(
+        client: PlatformClientABC,
+        track: Track,
+        is_getter_available: bool = True,
+        is_track_available: bool = True,
+) -> str:
     play_url = config.get_start_url(track.uri)
 
     message_text = ''
 
-    if not is_getter_supported:
+    if not is_getter_available:
         message_text += f'Error: downloading from {track.platform.value.capitalize()} is unsupported\n'
+    elif not is_track_available:
+        message_text += 'Error: track is unavailable :(\n'
 
     message_text += f'{url(track.platform.value.capitalize(), track.url)}'
 
@@ -70,7 +77,7 @@ async def chosen_inline_result_handler(result: ChosenInlineResult) -> None:
         # :shrug:, there's nothing we can do
         return
 
-    caption = track_to_caption(client, track, is_getter_supported=True)
+    caption = track_to_caption(client, track, is_getter_available=True)
     thumbnail, mp3 = await download_mp3(track)
 
     if mp3 is None:
@@ -111,7 +118,8 @@ async def inline_query_handler(query: InlineQuery) -> None:
                         parse_mode='HTML'
                     )
                 )
-            ]
+            ],
+            cache_time=1
         )
         return
 
@@ -139,22 +147,25 @@ async def inline_query_handler(query: InlineQuery) -> None:
             result.append(InlineQueryResultCachedAudio(
                 id=track.uri,
                 audio_file_id=file_id,
-                caption=track_to_caption(client, track, is_getter_supported=True),
+                caption=track_to_caption(client, track),
                 parse_mode='HTML'
             ))
             continue
 
-        supported: bool = client.features.get(PlatformFeature.TRACK_GETTERS, True)
+        is_getter_available: bool = client.features.get(PlatformFeature.TRACK_GETTERS, True)
+        is_track_available: bool = track.is_available
+
+        can_proceed = is_getter_available and is_track_available
 
         title: str = track.full_title
         if authorized_in_multiple_platforms:
             title = f'({track.platform.value.capitalize()}) {title}'
 
         result.append(InlineQueryResultAudio(
-            id=track.uri if supported else str(i),
+            id=track.uri if can_proceed else str(i),
             audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
             title=title,
-            caption=track_to_caption(client, track, supported),
+            caption=track_to_caption(client, track, is_getter_available, is_track_available),
             parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[[
@@ -163,7 +174,7 @@ async def inline_query_handler(query: InlineQuery) -> None:
                         callback_data='loading'
                     )
                 ]]
-            ) if supported else None
+            ) if can_proceed else None
         ))
 
     if len(result) == 0:

@@ -1,12 +1,10 @@
 import re
-from urllib.parse import unquote
 
 from aiohttp import ClientSession, ClientTimeout
 from async_lru import alru_cache
 from loguru import logger
 from orjson import JSONDecodeError, loads
 
-from ..external.apple import find_song_in_apple_music
 from ..models.song_link import SongLinkInfo, SongLinkPlatform, SongLinkPlatformType
 
 
@@ -44,20 +42,12 @@ async def _get_client() -> ClientSession:
 
 @alru_cache(maxsize=128)
 async def get_song_link(track_url: str) -> str | None:
+    # No "www." please, thanks
+    track_url = track_url.replace('://www.', '://')
+
     if track_url.startswith('https://open.spotify.com/track/'):
         uri: str = track_url.split('/')[-1]
         return f'https://song.link/s/{uri}'
-
-    if track_url.startswith('https://www.last.fm/music/'):
-        args = track_url.split('/')
-        track_name = unquote(unquote(args[-1])).replace('+', ' ')
-        artist_name = unquote(unquote(args[-3])).replace('+', ' ')
-
-        itunes_id = await find_song_in_apple_music(artist_name, track_name)
-        if itunes_id is None:
-            return None
-
-        return f'https://song.link/us/i/{itunes_id}'
 
     if track_url.startswith('https://music.yandex.'):  # .com or .ru
         track_id: str = track_url.split('/')[-1]
@@ -69,6 +59,12 @@ async def get_song_link(track_url: str) -> str | None:
         track_id = args[-1]
         country: str = args[3]
         return f'https://song.link/{country}/i/{track_id}'
+
+    if track_url.startswith('https://youtube.com/watch?v='):
+        uri = track_url.split('&')[0].split('v=', maxsplit=1)[1]
+        return f'https://song.link/y/{uri}'
+
+    logger.warning(f'Falling back to odesli api for the url: {track_url}')
 
     cl = await _get_client()
     resp = await cl.get('https://api.odesli.co/resolve', params={
@@ -85,7 +81,8 @@ async def get_song_link(track_url: str) -> str | None:
     if 'id' not in resp_json:
         return None
 
-    return f'https://song.link/s/{resp_json["id"]}'
+    prefix = resp_json.get('provider', 'spotify')[0]
+    return f'https://song.link/{prefix}/{resp_json["id"]}'
 
 
 @alru_cache(maxsize=128)

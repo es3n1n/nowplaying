@@ -32,7 +32,9 @@ async def cache_file(
     sent = await bot.send_audio(
         config.BOT_CACHE_CHAT_ID,
         BufferedInputFile(file=data.read(), filename=f'{performer} - {name}.mp3'),
-        caption=f'#{uri} #id{user.id} {performer} - {name}',
+        caption=f'#{uri.replace("-", "_")}\n'
+                f'#uid{user.id} #u{str(user.username)} {user.full_name}\n'
+                f'{performer} - {name}',
         performer=performer,
         title=name,
         thumbnail=URLInputFile(url=thumbnail_url) if thumbnail_url != '' else None,

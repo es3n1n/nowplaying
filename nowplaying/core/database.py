@@ -1,6 +1,9 @@
+from typing import Any
+
 from psycopg import connect
 
 from ..core.config import config
+from ..models.cached_local_track import CachedLocalTrack
 from ..models.song_link import SongLinkPlatformType
 from ..util.fs import ROOT_DIR
 from ..util.logger import logger
@@ -21,6 +24,10 @@ class Database:
             with self.conn.cursor() as cur:
                 cur.execute(init_sql)
                 self.conn.commit()
+
+    @staticmethod
+    def _first_or_none(var: tuple | None) -> Any | None:
+        return var[0] if var is not None else None
 
     def is_user_authorized_globally(self, telegram_id: int) -> bool:
         with self.conn.cursor() as cur:
@@ -63,9 +70,7 @@ class Database:
                 'SELECT (token) FROM tokens WHERE telegram_id = %s AND platform_name = %s LIMIT 1',
                 (telegram_id, platform.value,)
             )
-
-            r = cur.fetchone()
-            return r[0] if r is not None else None
+            return self._first_or_none(cur.fetchone())
 
     def is_file_cached(self, spotify_uri: str) -> bool:
         with self.conn.cursor() as cur:
@@ -87,9 +92,38 @@ class Database:
                 'SELECT (file_id) FROM cached_files WHERE uri = %s LIMIT 1',
                 (uri,)
             )
+            return self._first_or_none(cur.fetchone())
 
-            r = cur.fetchone()
-            return r[0] if r is not None else None
+    def cache_local_track(self, platform: SongLinkPlatformType, url: str, artist: str, name: str) -> str:
+        with self.conn.cursor() as cur:
+            cur.execute(
+                'SELECT cache_local_track_id(%s, %s, %s, %s)',
+                (platform.value, url, artist, name)
+            )
+            uuid, inserted = cur.fetchone()[0]
+            if inserted == 't':
+                self.conn.commit()
+            return uuid
+
+    def get_cached_local_track_info(self, our_id: str) -> CachedLocalTrack | None:
+        with self.conn.cursor() as cur:
+            cur.execute(
+                'SELECT (id, platform_name, url, artist, name) '
+                'FROM local_tracks '
+                'WHERE id = %s LIMIT 1',
+                (our_id,)
+            )
+            result = self._first_or_none(cur.fetchone())
+            if result is None:
+                return None
+
+            return CachedLocalTrack(
+                id=result[0],
+                platform_type=SongLinkPlatformType(result[1]),
+                url=result[2],
+                artist=result[3],
+                name=result[4],
+            )
 
 
 db = Database()
