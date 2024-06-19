@@ -8,12 +8,7 @@ from ..core.config import config
 from ..core.database import db
 from ..enums.platform_features import PlatformFeature
 from ..exceptions.platforms import PlatformInvalidAuthCodeError
-from ..external.lastfm import (
-    LastFMClient,
-    LastFMError,
-    LastFMTrack,
-    query_lastfm_external_track_links,
-)
+from ..external.lastfm import LastFMClient, LastFMError, LastFMTrack, query_lastfm_external_track_links
 from ..external.song_link import get_song_link
 from ..models.cached_local_track import CachedLocalTrack
 from ..models.song_link import SongLinkPlatformType

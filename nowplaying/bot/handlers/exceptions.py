@@ -37,6 +37,25 @@ async def on_token_invalidation(event: ErrorEvent) -> bool:
     return True
 
 
+@dp.error(ExceptionTypeFilter(ExceptionGroup))
+async def on_exception_group(event: ErrorEvent) -> bool:
+    exc: ExceptionGroup = event.exception  # type: ignore
+
+    for nested_exc in exc.exceptions:
+        nested_event = ErrorEvent(
+            update=event.update,
+            exception=nested_exc
+        )
+
+        if isinstance(nested_exc, PlatformInvalidAuthCodeError):
+            return await on_invalid_auth_code_error(nested_event)
+
+        if isinstance(nested_exc, PlatformTokenInvalidateError):
+            return await on_token_invalidation(nested_event)
+
+    return False
+
+
 @dp.error()
 async def fallback_error_handler(event: ErrorEvent) -> bool:
     if event.update.message is not None:
