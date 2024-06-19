@@ -3,6 +3,7 @@ import sys
 
 import aiogram.loggers
 from loguru import logger
+from uvicorn.config import LOGGING_CONFIG
 
 from ..core.config import config
 
@@ -29,25 +30,19 @@ class LoguruHandler(logging.Handler):
         )
 
 
-def get_uvicorn_config() -> None:
-    try:
-        from uvicorn.config import LOGGING_CONFIG
-    except ImportError:
-        return
-
-    del LOGGING_CONFIG['handlers']
-    for log in LOGGING_CONFIG['loggers'].keys():
-        v = LOGGING_CONFIG['loggers'][log]
-        if 'handlers' in v.keys():
-            del v['handlers']
-
-
 def init_logger() -> None:
     level = logging.DEBUG if config.dev_env else logging.INFO
 
+    loguru_handler = LoguruHandler()
+
     aiogram.loggers.event.setLevel(level=level)
     aiogram.loggers.dispatcher.setLevel(level=level)
-    logging.basicConfig(handlers=[LoguruHandler()])
+    logging.basicConfig(handlers=[loguru_handler])
+
+    for _, v in LOGGING_CONFIG['handlers'].items():
+        v['class'] = 'nowplaying.util.logger.LoguruHandler'
+        if 'stream' in v:
+            del v['stream']
 
     def filter_min_level(record: dict) -> bool:
         return record['level'].no >= logger.level('DEBUG' if config.dev_env else 'INFO').no

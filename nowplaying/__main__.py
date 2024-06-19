@@ -12,7 +12,7 @@ from .bot.bot import bot, dp
 from .bot.handlers.exceptions import send_auth_code_error
 from .core.config import config
 from .exceptions.platforms import PlatformInvalidAuthCodeError
-from .util.logger import get_uvicorn_config, logger
+from .util.logger import logger
 
 
 @app.exception_handler(PlatformInvalidAuthCodeError)
@@ -60,7 +60,7 @@ def main() -> None:
 
     logger.info('Starting web-server...')
     run('nowplaying:app', host=config.WEB_HOST, port=config.WEB_PORT,
-        log_config=get_uvicorn_config(), **kw)  # type: ignore
+        **kw)  # type: ignore
 
 
 if __name__ == '__main__':
