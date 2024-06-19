@@ -32,6 +32,7 @@ async def on_invalid_auth_code_error(event: ErrorEvent) -> bool:
 async def on_token_invalidation(event: ErrorEvent) -> bool:
     exc: PlatformTokenInvalidateError = event.exception  # type: ignore
 
+    logger.opt(exception=exc).warning('Invalidating platform session')
     await bot.send_message(
         exc.telegram_id,
         f'Your {exc.platform.value.capitalize()} session has expired/got invalidated, please authorize again.'

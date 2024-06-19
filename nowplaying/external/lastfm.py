@@ -86,7 +86,7 @@ class LastFMClient:
     @staticmethod
     def _ensure_response(r: Response) -> None:
         if r.status_code != 200:
-            raise LastFMError('status != 200')
+            raise LastFMError(f'status {r.status_code} != 200 {r.text}')
 
     async def get_session_key(self) -> str:
         if self.token is None:

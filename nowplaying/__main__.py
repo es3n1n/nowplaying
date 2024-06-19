@@ -56,7 +56,7 @@ def main() -> None:
 
     kw = {}
 
-    if not config.dev_env:
+    if not config.is_dev_env:
         kw['workers'] = config.WEB_WORKERS
 
     logger.info('Starting web-server...')

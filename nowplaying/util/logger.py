@@ -31,7 +31,7 @@ class LoguruHandler(logging.Handler):
 
 
 def init_logger() -> None:
-    level = logging.DEBUG if config.dev_env else logging.INFO
+    level = logging.DEBUG if config.is_dev_env else logging.INFO
 
     loguru_handler = LoguruHandler()
 
@@ -45,7 +45,7 @@ def init_logger() -> None:
             del v['stream']
 
     def filter_min_level(record: dict) -> bool:
-        return record['level'].no >= logger.level('DEBUG' if config.dev_env else 'INFO').no
+        return record['level'].no >= logger.level('DEBUG' if config.is_dev_env else 'INFO').no
 
     def filter_stderr(record: dict) -> bool:
         return filter_min_level(record)

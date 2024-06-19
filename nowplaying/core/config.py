@@ -58,13 +58,14 @@ class Settings(BaseSettings):
                f'port={self.POSTGRES_PORT}'
 
     @property
-    def dev_env(self):
+    def is_dev_env(self):
         return self.ENVIRONMENT.lower() in ['dev', 'development']
 
     def get_start_url(self, payload: str) -> str:
-        return config.BOT_URL + '?start=' + b64encode(payload.encode()).decode().rstrip('=')
+        return self.BOT_URL + '?start=' + b64encode(payload.encode()).decode().rstrip('=')
 
-    def decode_start_url(self, payload: str) -> str | None:
+    @staticmethod
+    def decode_start_url(payload: str) -> str | None:
         # fixme @es3n1n: ghetto workaround for paddings, we can't use = in start payload because telegram doesn't allows
         try:
             return b64decode(payload + ('=' * 3)).decode()
