@@ -153,7 +153,7 @@ class Spotify:
         await self.cache_handler.save_token_to_cache(token)
         return token
 
-    async def get_current_user_playing_track(self) -> dict:
+    async def get_current_user_playing_track(self) -> dict | None:
         if self.token is None:
             raise SpotifyError('token is none')
 
@@ -162,6 +162,9 @@ class Spotify:
             headers=self._auth_headers
         )
         self._raise_for_status(response)
+
+        if response.status_code == 204:  # No content
+            return None
 
         return loads(response.content)
 
