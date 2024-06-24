@@ -35,6 +35,7 @@ ENV VIRTUAL_ENV=/app/.venv \
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --from=frontend-builder /frontend/ym/web-app/build/ ./frontend/ym/web-app/build/
+COPY frontend/apple/ ./frontend/apple/
 
 COPY nowplaying/ ./nowplaying/
 COPY main.py .
