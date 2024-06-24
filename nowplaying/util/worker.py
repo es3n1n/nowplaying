@@ -13,11 +13,12 @@ class Worker:
         try:
             self.lock.acquire(blocking=False)
         except Timeout:
-            pass
+            return
 
     @property
     def is_first(self) -> bool:
-        assert self.lock is not None
+        if self.lock is None:
+            return False
         return self.lock.is_locked
 
 

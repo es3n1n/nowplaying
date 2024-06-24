@@ -10,19 +10,9 @@ from ..bot import dp
 from .link import get_auth_keyboard, link_command_handler
 
 
-async def try_controls(payload: str, message: Message) -> bool:
-    uri = config.decode_start_url(payload)
-    if not uri:
-        return False
-
-    if uri == 'link':
-        await link_command_handler(message)
-        return True
-
-    if '_' not in uri:
-        return False
-
-    assert message.from_user is not None
+async def handle_controls(uri: str, message: Message) -> bool:
+    if message.from_user is None:
+        raise ValueError()
 
     platform_name, track_id = uri.split('_')
     platform_type = SongLinkPlatformType(platform_name)
@@ -43,17 +33,32 @@ async def try_controls(payload: str, message: Message) -> bool:
                 [
                     InlineKeyboardButton(text='Play', callback_data=f'play_{uri}'),
                     InlineKeyboardButton(text='Add to queue', callback_data=f'queue_{uri}'),
-                ]
-            ]
-        )
+                ],
+            ],
+        ),
     )
     return True
 
 
+async def try_controls(payload: str, message: Message) -> bool:
+    uri = config.decode_start_url(payload)
+    if not uri:
+        return False
+
+    if uri == 'link':
+        await link_command_handler(message)
+        return True
+
+    if '_' not in uri:
+        return False
+
+    return await handle_controls(uri, message)
+
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    assert message.from_user is not None
-    assert message.text is not None
+    if message.from_user is None or message.text is None:
+        raise ValueError()
 
     authorized: bool = await db.is_user_authorized_globally(message.from_user.id)
 

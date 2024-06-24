@@ -5,20 +5,23 @@ from ..bot.bot import bot
 from ..core.config import config
 from ..core.sign import verify_sign
 from ..platforms import apple, lastfm, spotify
+from ..util.http import STATUS_TEMPORARY_REDIRECT
 
 
 router = APIRouter(prefix='/ext')
 redirect = RedirectResponse(
     url=config.BOT_URL,
-    status_code=307,
+    status_code=STATUS_TEMPORARY_REDIRECT,
 )
 
 
 async def send_auth_msg(telegram_id: int, platform_name: str) -> None:
     await bot.send_message(
         telegram_id,
-        f'Successfully authorized in {platform_name.title()}! '
-        'Check out the inline menu to see your recent tracks'
+        (
+            f'Successfully authorized in {platform_name.title()}! '
+            + 'Check out the inline menu to see your recent tracks'
+        ),
     )
 
 

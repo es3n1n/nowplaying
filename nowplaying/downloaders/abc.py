@@ -10,4 +10,4 @@ class DownloaderABC(ABC):
 
     @abstractmethod
     async def download_mp3(self, platform: SongLinkPlatform) -> Optional[BytesIO]:
-        """ Download mp3 for a given platform source """
+        """Download mp3 for a given platform source."""

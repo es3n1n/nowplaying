@@ -3,7 +3,7 @@ from os import remove
 from pathlib import Path
 from typing import Optional
 
-from scdl import scdl
+from scdl import scdl as sc_dl
 from scdl.scdl import download_hls, download_original_file
 from soundcloud import BasicTrack, SoundCloud, Track
 
@@ -19,7 +19,7 @@ def get_filename(track: BasicTrack, original_filename=None, aac=False, playlist_
     return path.parent / (path.name + ext)
 
 
-scdl.get_filename = get_filename
+sc_dl.get_filename = get_filename
 
 
 class SoundcloudDownloader(DownloaderABC):
@@ -47,7 +47,7 @@ class SoundcloudDownloader(DownloaderABC):
         kw = {
             'name_format': temp_file(),
             'onlymp3': True,
-            'title': ''
+            'title': '',
         }
 
         if track.downloadable:
@@ -61,8 +61,8 @@ class SoundcloudDownloader(DownloaderABC):
 
         # fixme: @es3n1n: not sure how to fix this epic overhead since ffmpeg encodes stuff to files :thinking:
         io = BytesIO()
-        with open(filename, 'rb') as f:
-            io.write(f.read())
+        with open(filename, 'rb') as out_file:
+            io.write(out_file.read())
 
         io.seek(0)
         remove(filename)

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 
 import jwt
+import orjson
 from async_lru import alru_cache
 from httpx import AsyncClient
-from orjson import JSONDecodeError, loads
 
 from ..core.config import config
 from ..util.logger import logger
@@ -16,8 +16,10 @@ client = AsyncClient(headers={
     'Origin': 'https://odesli.co',
     'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'en-US,en;q=0.9',
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 '
-                  'Safari/537.36',
+    'User-Agent': (
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 '
+        + 'Safari/537.36'
+    ),
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     'Accept': '*/*',
     'Cache-Control': 'no-cache',
@@ -28,7 +30,7 @@ client = AsyncClient(headers={
 })
 
 
-@alru_cache(maxsize=128)
+@alru_cache()
 async def find_song_in_apple_music(artist: str, name: str, country: str = 'US') -> int | None:
     resp = await client.get('https://itunes.apple.com/search', params={
         'term': f'{artist} - {name}',
@@ -37,19 +39,19 @@ async def find_song_in_apple_music(artist: str, name: str, country: str = 'US') 
     })
 
     try:
-        resp_json = loads(resp.text)
-    except JSONDecodeError:
+        resp_json = orjson.loads(resp.text)
+    except orjson.JSONDecodeError:
         return None
 
     if 'results' not in resp_json:
         logger.warning(f'Got suspicious response from itunes: {resp_json}')
         return None
 
-    results = resp_json['results']
-    if len(results) == 0:
+    search_results = resp_json['results']
+    if not search_results:
         return None
 
-    return results[0]['trackId']
+    return search_results[0]['trackId']
 
 
 class AppleMusicWrapperClient:
@@ -58,10 +60,10 @@ class AppleMusicWrapperClient:
         self.media_user_token = media_user_token
 
     def headers(self, with_media_token: bool = False) -> dict[str, str]:
-        result = self.app.headers
+        headers_result = self.app.headers
         if with_media_token:
-            result['media-user-token'] = self.media_user_token
-        return result
+            headers_result['media-user-token'] = self.media_user_token
+        return headers_result
 
 
 class AppleMusicWrapper:
@@ -70,7 +72,7 @@ class AppleMusicWrapper:
         self.key_id = config.APPLE_KEY_ID
         self.team_id = config.APPLE_TEAM_ID
         self.client = AsyncClient(headers={
-            'User-Agent': 'playinnow/1.0'
+            'User-Agent': 'playinnow/1.0',
         })
 
         self._alg: str = 'ES256'
@@ -84,7 +86,8 @@ class AppleMusicWrapper:
     @property
     def ensured_token(self) -> str:
         if self.token_valid:
-            assert self._token is not None
+            if not self._token:
+                raise ValueError('No token')
             return self._token
 
         now = datetime.utcnow()
@@ -100,7 +103,7 @@ class AppleMusicWrapper:
                 'kid': self.key_id,
             },
             key=self.secret,
-            algorithm=self._alg
+            algorithm=self._alg,
         )
         return self._token
 
@@ -108,7 +111,7 @@ class AppleMusicWrapper:
     def headers(self) -> dict[str, str]:
         return {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.ensured_token}'
+            'Authorization': f'Bearer {self.ensured_token}',
         }
 
     @property

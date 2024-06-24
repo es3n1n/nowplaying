@@ -1,7 +1,7 @@
 import logging
 import sys
 
-import aiogram.loggers
+from aiogram import loggers as aiogram_loggers
 from loguru import logger
 from uvicorn.config import LOGGING_CONFIG
 
@@ -26,8 +26,24 @@ class LoguruHandler(logging.Handler):
             depth += 1
 
         logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage()
+            level, record.getMessage(),
         )
+
+
+def _filter_min_level(record: dict) -> bool:
+    current_level_name: str = 'DEBUG' if config.is_dev_env else 'INFO'
+    current_level: int = logger.level(current_level_name).no
+    return record['level'].no >= current_level
+
+
+def _filter_stderr(record: dict) -> bool:
+    return _filter_min_level(record)
+
+
+def _filter_stdout(record: dict) -> bool:
+    record_no: int = record['level'].no
+    error_no: int = logger.level('ERROR').no
+    return _filter_min_level(record) and record_no != error_no
 
 
 def init_logger() -> None:
@@ -35,31 +51,26 @@ def init_logger() -> None:
 
     loguru_handler = LoguruHandler()
 
-    aiogram.loggers.event.setLevel(level=level)
-    aiogram.loggers.dispatcher.setLevel(level=level)
+    aiogram_loggers.event.setLevel(level=level)
+    aiogram_loggers.dispatcher.setLevel(level=level)
     logging.basicConfig(handlers=[loguru_handler])
 
-    for _, v in LOGGING_CONFIG['handlers'].items():
-        v['class'] = 'nowplaying.util.logger.LoguruHandler'
-        if 'stream' in v:
-            del v['stream']
+    for key in LOGGING_CONFIG['handlers'].keys():
+        handler_conf = LOGGING_CONFIG['handlers'][key]
 
-    def filter_min_level(record: dict) -> bool:
-        return record['level'].no >= logger.level('DEBUG' if config.is_dev_env else 'INFO').no
+        handler_conf['class'] = 'nowplaying.util.logger.LoguruHandler'
+        if 'stream' in handler_conf:
+            handler_conf.pop('stream')
 
-    def filter_stderr(record: dict) -> bool:
-        return filter_min_level(record)
-
-    def filter_stdout(record: dict) -> bool:
-        return filter_min_level(record) and record['level'].no != logger.level('ERROR').no
-
-    fmt = '<level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - ' \
-          '<level>{message}</level>'
+    fmt = (
+        '<level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
+        + '<level>{message}</level>'
+    )
 
     logger.remove()
     logger.configure(handlers=[
-        {'sink': sys.stderr, 'level': 'ERROR', 'format': fmt, 'filter': filter_stderr},
-        {'sink': sys.stdout, 'format': fmt, 'filter': filter_stdout}
+        {'sink': sys.stderr, 'level': 'ERROR', 'format': fmt, 'filter': _filter_stderr},
+        {'sink': sys.stdout, 'format': fmt, 'filter': _filter_stdout},
     ])
 
 

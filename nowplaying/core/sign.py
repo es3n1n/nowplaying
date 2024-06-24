@@ -2,9 +2,10 @@ import hmac
 from hashlib import sha256
 from typing import Any
 
+import orjson
 from fastapi import HTTPException
-from orjson import JSONDecodeError, dumps, loads
 
+from ..util.http import STATUS_BAD_REQUEST
 from .config import config
 
 
@@ -13,26 +14,28 @@ def _hmac(payload: str) -> str:
 
 
 def sign(payload: Any) -> str:
-    return dumps({
+    return orjson.dumps({
         'h': payload,
-        'm': _hmac(str(payload))
+        'm': _hmac(str(payload)),
     }).decode()
 
 
 def verify_sign(state: str) -> Any:
     try:
-        loaded = loads(state)
-        assert isinstance(loaded, dict)
+        loaded = orjson.loads(state)
+    except orjson.JSONDecodeError:
+        loaded = None
 
-        payload = loaded['h']
-        assert isinstance(payload, int)
+    if not isinstance(loaded, dict):
+        raise HTTPException(status_code=STATUS_BAD_REQUEST, detail='Invalid state')
 
-        signature = loaded['m']
-        assert isinstance(signature, str)
-    except (JSONDecodeError, KeyError, AssertionError):
-        raise HTTPException(status_code=400, detail='Invalid state')
+    payload = loaded.get('h', None)
+    signature = loaded.get('m', None)
+
+    if not isinstance(payload, int) or not isinstance(signature, str):
+        raise HTTPException(status_code=STATUS_BAD_REQUEST, detail='Invalid args')
 
     if not hmac.compare_digest(signature, _hmac(str(payload))):
-        raise HTTPException(status_code=400, detail='Invalid signature')
+        raise HTTPException(status_code=STATUS_BAD_REQUEST, detail='Invalid signature')
 
     return payload

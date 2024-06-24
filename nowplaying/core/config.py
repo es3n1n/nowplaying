@@ -8,7 +8,7 @@ from ..util.fs import ROOT_DIR
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=ROOT_DIR / '.env',
-        env_file_encoding='utf-8'
+        env_file_encoding='utf-8',
     )
 
     ENVIRONMENT: str = 'production'
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     STATE_SECRET: str
 
-    WEB_HOST: str = '0.0.0.0'
+    WEB_HOST: str = '0.0.0.0'  # noqa: S104
     WEB_PORT: int = 1337
     WEB_WORKERS: int = 2
 
@@ -51,21 +51,24 @@ class Settings(BaseSettings):
 
     @property
     def db_connection_info(self) -> str:
-        return f'dbname={self.POSTGRES_DB} '\
-               f'user={self.POSTGRES_USER} '\
-               f'password={self.POSTGRES_PASSWORD} '\
-               f'host={self.POSTGRES_ADDRESS} '\
-               f'port={self.POSTGRES_PORT}'
+        return (
+            f'dbname={self.POSTGRES_DB} '
+            + f'user={self.POSTGRES_USER} '
+            + f'password={self.POSTGRES_PASSWORD} '
+            + f'host={self.POSTGRES_ADDRESS} '
+            + f'port={self.POSTGRES_PORT}'
+        )
 
     @property
     def is_dev_env(self):
-        return self.ENVIRONMENT.lower() in ['dev', 'development']
+        return self.ENVIRONMENT.lower() in {'dev', 'development'}
 
     def get_start_url(self, payload: str) -> str:
-        return self.BOT_URL + '?start=' + b64encode(payload.encode()).decode().rstrip('=')
+        payload_encoded = b64encode(payload.encode()).decode().rstrip('=')
+        return f'{self.BOT_URL}?start={payload_encoded}'
 
     @staticmethod
-    def decode_start_url(payload: str) -> str | None:
+    def decode_start_url(payload: str) -> str | None:  # noqa: WPS602
         # fixme @es3n1n: ghetto workaround for paddings, we can't use = in start payload because telegram doesn't allows
         try:
             return b64decode(payload + ('=' * 3)).decode()

@@ -9,17 +9,17 @@ from ..util.logger import logger
 from .abc import DownloaderABC
 
 
-class YoutubeDLLogger(object):
+class YoutubeDLLogger:
     @staticmethod
-    def debug(msg: str):
-        pass
+    def debug(msg: str):  # noqa: WPS602
+        """Do nothing."""
 
     @staticmethod
-    def warning(msg: str):
+    def warning(msg: str):  # noqa: WPS602
         logger.warning(msg)
 
     @staticmethod
-    def error(msg: str):
+    def error(msg: str):  # noqa: WPS602
         logger.error(msg)
 
 
@@ -31,25 +31,27 @@ class YoutubeDownloader(DownloaderABC):
 
         io = BytesIO()
         io.close = lambda: None  # type: ignore
-        with (redirect_stdout(io),  # type: ignore
-              YoutubeDL(params={
-                  'format': 'bestaudio/best',
-                  'geo_bypass': True,
-                  'nocheckcertificate': True,
-                  'outtmpl': '-',
-                  'postprocessors': [
-                      {
-                          'key': 'FFmpegExtractAudio',
-                          'preferredcodec': 'mp3',
-                      }
-                  ],
-                  'logger': YoutubeDLLogger
-              }) as ydl):
-            try:
-                if ydl.download(url_list=[platform.url]) != 0:
+        with redirect_stdout(io):  # type: ignore
+            with YoutubeDL(params={
+                'format': 'bestaudio/best',
+                'geo_bypass': True,
+                'nocheckcertificate': True,
+                'outtmpl': '-',
+                'postprocessors': [
+                    {
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                    },
+                ],
+                'logger': YoutubeDLLogger,
+            }) as ydl:
+                try:
+                    result_stat: int = ydl.download(url_list=[platform.url])
+                except DownloadError:
                     return None
-            except DownloadError:
-                return None
+
+        if result_stat != 0:
+            return None
 
         io.seek(0)
         return io

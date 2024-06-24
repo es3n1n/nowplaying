@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import AsyncIterator
 from urllib.parse import urlencode
 
-from orjson import dumps, loads
+import orjson
 
 from ..core.config import config
 from ..core.database import db
@@ -28,7 +28,7 @@ class SpotifyClient(PlatformClientABC):
     features = {
         PlatformFeature.TRACK_GETTERS: True,
         PlatformFeature.ADD_TO_QUEUE: True,
-        PlatformFeature.PLAY: True
+        PlatformFeature.PLAY: True,
     }
 
     def __init__(self, spotify_app: Spotify, telegram_id: int):
@@ -45,23 +45,24 @@ class SpotifyClient(PlatformClientABC):
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
-        if track := await self.get_current_playing_track():
-            yield track
+        current_playing = await self.get_current_playing_track()
+        if current_playing:
+            yield current_playing
 
         history = await self.spotify_app.get_current_user_recently_played(limit=limit)
-        for item in history['items']:
+        for history_item in history['items']:
             yield await Track.from_spotify_item(
-                item['track'],
-                datetime.fromisoformat(item['played_at']).replace(tzinfo=UTC_TZ)
+                history_item['track'],
+                datetime.fromisoformat(history_item['played_at']).replace(tzinfo=UTC_TZ),
             )
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def get_track(self, track_id: str) -> Track | None:
-        result = await self.spotify_app.get_track(track_id)
-        if result is None:
+        track = await self.spotify_app.get_track(track_id)
+        if track is None:
             return None
 
-        return await Track.from_spotify_item(result)
+        return await Track.from_spotify_item(track)
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def add_to_queue(self, track_id: str) -> bool:
@@ -79,31 +80,21 @@ class SpotifyCacheHandler(SpotifyCacheHandlerABC):
         self.telegram_id = telegram_id
 
     async def get_cached_token(self) -> dict | None:
-        result = await db.get_user_token(self.telegram_id, TYPE)
-        return loads(result) if result is not None else None
+        cached_token = await db.get_user_token(self.telegram_id, TYPE)
+        return orjson.loads(cached_token) if cached_token is not None else None
 
     async def save_token_to_cache(self, token_info: dict) -> None:
-        token_info_str = dumps(token_info).decode()
+        token_info_str = orjson.dumps(token_info).decode()
         await db.store_user_token(self.telegram_id, TYPE, token_info_str)
 
 
 class SpotifyPlatform(PlatformABC):
     type = SongLinkPlatformType.SPOTIFY
 
-    @staticmethod
-    def _get_client(telegram_id: int) -> Spotify:
-        return Spotify(
-            client_id=config.SPOTIFY_CLIENT_ID,
-            client_secret=config.SPOTIFY_SECRET,
-            redirect_uri=config.SPOTIFY_REDIRECT_URL,
-            scope=SCOPE,
-            cache_handler=SpotifyCacheHandler(telegram_id),
-        )
-
     @classmethod
     async def from_auth_callback(cls, telegram_id: int, auth_code: str) -> PlatformClientABC:
+        client = cls._get_client(telegram_id)
         try:
-            client = cls._get_client(telegram_id)
             await client.get_access_token(auth_code)
         except SpotifyError:
             raise PlatformInvalidAuthCodeError(platform=cls.type, telegram_id=telegram_id)
@@ -121,11 +112,21 @@ class SpotifyPlatform(PlatformABC):
         return SpotifyClient(client, telegram_id)
 
     async def get_authorization_url(self, state: str) -> str:
-        kw = {
+        query = urlencode({
             'client_id': config.SPOTIFY_CLIENT_ID,
             'response_type': 'code',
             'redirect_uri': config.SPOTIFY_REDIRECT_URL,
             'state': state,
             'scope': SCOPE,
-        }
-        return f'https://accounts.spotify.com/authorize?{urlencode(kw)}'
+        })
+        return f'https://accounts.spotify.com/authorize?{query}'
+
+    @classmethod
+    def _get_client(cls, telegram_id: int) -> Spotify:
+        return Spotify(
+            client_id=config.SPOTIFY_CLIENT_ID,
+            client_secret=config.SPOTIFY_SECRET,
+            redirect_uri=config.SPOTIFY_REDIRECT_URL,
+            scope=SCOPE,
+            cache_handler=SpotifyCacheHandler(telegram_id),
+        )

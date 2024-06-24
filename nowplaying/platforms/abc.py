@@ -10,7 +10,7 @@ class PlatformClientABC(ABC):
     features: dict[PlatformFeature, bool] = {
         PlatformFeature.TRACK_GETTERS: True,
         PlatformFeature.ADD_TO_QUEUE: False,
-        PlatformFeature.PLAY: False
+        PlatformFeature.PLAY: False,
     }
 
     @abstractmethod
@@ -35,10 +35,10 @@ class PlatformClientABC(ABC):
 
     @property
     def can_control_playback(self) -> bool:
-        return self.features.get(
-            PlatformFeature.ADD_TO_QUEUE,
-            False
-        ) or self.features.get(PlatformFeature.ADD_TO_QUEUE, False)
+        can_control: bool = False
+        for feature in (PlatformFeature.ADD_TO_QUEUE, PlatformFeature.PLAY):
+            can_control = can_control or self.features.get(feature, False)
+        return can_control
 
 
 class PlatformABC(ABC):

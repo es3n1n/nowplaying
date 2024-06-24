@@ -8,7 +8,7 @@ from ..core.config import config
 from ..core.database import db
 from ..enums.platform_features import PlatformFeature
 from ..exceptions.platforms import PlatformInvalidAuthCodeError
-from ..external.yandex_yaynison import Yaynison, YaynisonException
+from ..external.yaynison import Yaynison, YaynisonError
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.exceptions import rethrow_platform_error
@@ -30,48 +30,38 @@ class YandexClient(PlatformClientABC):
         self._yaynison = Yaynison(app.token)
 
         self.telegram_id = telegram_id
-
         self._initialized_app: bool = False
-
-    async def get_app(self) -> ClientAsync:
-        if not self._initialized_app:
-            # There is no need to initialize this thing for our needs
-            # await self._app.init()
-            self._initialized_app = True
-        return self._app
 
     @rethrow_platform_error(YandexMusicError, TYPE)
     async def get_current_playing_track(self) -> Track | None:
         raise ValueError('not implemented')
 
     @rethrow_platform_error(YandexMusicError, TYPE)
-    @rethrow_platform_error(YaynisonException, TYPE)
+    @rethrow_platform_error(YaynisonError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
-        limit += 1  # the limit does not include currently playing track
         playable_items = await self._yaynison.one_shot_playable_items()
-        ids = [item.playable_id for item in playable_items[:limit]]
 
-        app = await self.get_app()
-        tracks = await app.tracks(track_ids=ids)
+        tracks = await self._app.tracks(
+            track_ids=[playable.playable_id for playable in playable_items[:limit + 1]],
+        )
         cur_time = datetime.utcnow()
 
-        for i, track in enumerate(tracks):
+        for index, track in enumerate(tracks):
             if not track:
                 continue
 
             yield await Track.from_yandex_item(
                 track,
-                played_at=cur_time - timedelta(minutes=i),  # used for sorting
+                played_at=cur_time - timedelta(minutes=index),  # used for sorting
             )
 
     @rethrow_platform_error(YandexMusicError, TYPE)
     async def get_track(self, track_id: str) -> Track | None:
-        app = await self.get_app()
-        result = await app.tracks(track_ids=[track_id])
-        if len(result) == 0:
+        tracks = await self._app.tracks(track_ids=[track_id])
+        if not tracks:
             return None
 
-        return await Track.from_yandex_item(result[0])
+        return await Track.from_yandex_item(tracks[0])
 
     async def add_to_queue(self, track_id: str) -> bool:
         return True
@@ -83,12 +73,9 @@ class YandexClient(PlatformClientABC):
 class YandexPlatform(PlatformABC):
     type = SongLinkPlatformType.YANDEX
 
-    def __init__(self):
-        pass
-
     async def from_auth_callback(self, telegram_id: int, auth_code: str) -> PlatformClientABC:
+        client = ClientAsync(auth_code)
         try:
-            client = ClientAsync(auth_code)
             await client.init()
         except Exception:
             raise PlatformInvalidAuthCodeError(platform=self.type, telegram_id=telegram_id)
@@ -98,7 +85,8 @@ class YandexPlatform(PlatformABC):
 
     async def from_telegram_id(self, telegram_id: int) -> PlatformClientABC:
         token = await db.get_user_token(telegram_id, self.type)
-        assert token is not None
+        if token is None:
+            raise ValueError('token is none')
         return YandexClient(ClientAsync(token), telegram_id)
 
     async def get_authorization_url(self, state: str) -> str:

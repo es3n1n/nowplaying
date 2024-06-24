@@ -18,9 +18,6 @@ from .abc import DownloaderABC
 class DeezerDownloader(DownloaderABC):
     platform = SongLinkPlatformType.DEEZER
 
-    def __init__(self):
-        pass
-
     async def download_mp3(self, platform: SongLinkPlatform) -> Optional[BytesIO]:
         deezer_id = platform.url.split('/')[-1]
         logger.debug(f'Downloading {deezer_id}')

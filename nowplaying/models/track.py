@@ -31,7 +31,8 @@ class Track(BaseModel):
 
     @property
     def uri(self) -> str:
-        return f'{self.platform.value}_{self.id}'
+        platform_name: str = self.platform.value
+        return f'{platform_name}_{self.id}'
 
     @property
     def is_available(self) -> bool:
@@ -39,15 +40,15 @@ class Track(BaseModel):
 
     @classmethod
     async def from_spotify_item(
-            cls,
-            track_item: dict,
-            played_at: datetime = _TS_NULL,
-            is_playing: bool = False
+        cls,
+        track_item: dict,
+        played_at: datetime = _TS_NULL,
+        is_playing: bool = False,
     ) -> 'Track':
         url: str = track_item['external_urls']['spotify']
         return cls(
             platform=SongLinkPlatformType.SPOTIFY,
-            artist=', '.join([x['name'] for x in track_item['artists']]),
+            artist=', '.join([artist['name'] for artist in track_item['artists']]),
             name=track_item['name'],
             id=track_item['id'],
             url=url,
@@ -58,12 +59,13 @@ class Track(BaseModel):
 
     @classmethod
     async def from_lastfm_item(
-            cls,
-            track: LastFMTrack,
-            track_id: str | None,
-            song_link_url: str | None,
-            played_at: datetime = _TS_NULL,
-            is_playing: bool = False
+        cls,
+        track: LastFMTrack,
+        *,
+        track_id: str | None,
+        song_link_url: str | None,
+        played_at: datetime = _TS_NULL,
+        is_playing: bool = False,
     ) -> 'Track':
         return cls(
             platform=SongLinkPlatformType.LASTFM,
@@ -78,10 +80,10 @@ class Track(BaseModel):
 
     @classmethod
     async def from_yandex_item(
-            cls,
-            track: YandexTrack,
-            played_at: datetime = _TS_NULL,
-            is_playing: bool = False
+        cls,
+        track: YandexTrack,
+        played_at: datetime = _TS_NULL,
+        is_playing: bool = False,
     ) -> 'Track':
         url = f'https://music.yandex.ru/track/{track.id}'
         return cls(

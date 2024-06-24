@@ -19,7 +19,7 @@ class AppleClient(PlatformClientABC):
     features = {
         PlatformFeature.TRACK_GETTERS: True,
         PlatformFeature.ADD_TO_QUEUE: True,
-        PlatformFeature.PLAY: True
+        PlatformFeature.PLAY: True,
     }
 
     def __init__(self, app: AppleMusicWrapperClient, telegram_id: int):
@@ -27,21 +27,15 @@ class AppleClient(PlatformClientABC):
         self.telegram_id = telegram_id
 
     async def get_current_playing_track(self) -> Track | None:
-        return None
+        raise NotImplementedError()
 
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
-        if track := await self.get_current_playing_track():
-            yield track
-
-        # history = self.spotify_app.current_user_recently_played(limit=limit)
-        # for item in history['items']:
-        #     yield await Track.from_spotify_item(
-        #         item['track'],
-        #         datetime.fromisoformat(item['played_at']).replace(tzinfo=UTC_TZ)
-        #     )
+        current_playing = await self.get_current_playing_track()
+        if current_playing:
+            yield current_playing
 
     async def get_track(self, track_id: str) -> Track | None:
-        return None
+        raise NotImplementedError()
 
     async def add_to_queue(self, track_id: str) -> bool:
         return True
@@ -50,7 +44,7 @@ class AppleClient(PlatformClientABC):
         return True
 
     async def is_alive(self) -> bool:
-        return True
+        return self.telegram_id != 0
 
 
 class ApplePlatform(PlatformABC):
@@ -70,7 +64,8 @@ class ApplePlatform(PlatformABC):
 
     async def from_telegram_id(self, telegram_id: int) -> PlatformClientABC:
         token = await db.get_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC)
-        assert token is not None
+        if token is None:
+            raise ValueError('token is none')
         return AppleClient(self.app.with_media_token(token), telegram_id)
 
     async def get_authorization_url(self, state: str) -> str:

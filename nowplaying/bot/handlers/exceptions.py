@@ -15,7 +15,7 @@ BROKE_MSG_TEXT: str = f'Something went wrong (┛ಠ_ಠ)┛彡┻━┻\nContac
 async def send_auth_code_error(exc: PlatformInvalidAuthCodeError) -> None:
     await bot.send_message(
         exc.telegram_id,
-        f'Error! Unable to authorize in {exc.platform.value.capitalize()}, please try again.'
+        f'Error! Unable to authorize in {exc.platform.value.capitalize()}, please try again.',
     )
 
 
@@ -35,7 +35,7 @@ async def on_token_invalidation(event: ErrorEvent) -> bool:
     logger.opt(exception=exc).warning('Invalidating platform session')
     await bot.send_message(
         exc.telegram_id,
-        f'Your {exc.platform.value.capitalize()} session has expired/got invalidated, please authorize again.'
+        f'Your {exc.platform.value.capitalize()} session has expired/got invalidated, please authorize again.',
     )
     await db.delete_user_token(exc.telegram_id, exc.platform)
     return True
@@ -48,7 +48,7 @@ async def on_exception_group(event: ErrorEvent) -> bool:
     for nested_exc in exc.exceptions:
         nested_event = ErrorEvent(
             update=event.update,
-            exception=nested_exc
+            exception=nested_exc,
         )
 
         # todo: feed them back to the dp
@@ -66,7 +66,7 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
     if event.update.message is not None:
         logger.opt(exception=event.exception).error(
             f'Something broke in message handler!\n'
-            f'Update: {event.update.model_dump_json(indent=3)}'
+            f'Update: {event.update.model_dump_json(indent=3)}',
         )
 
         try:
@@ -76,14 +76,14 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
                 reply_to_message_id=event.update.message.message_id,
             )
         except TelegramAPIError:
-            pass
+            return True
 
         return True
 
     if event.update.inline_query is not None:
         logger.opt(exception=event.exception).error(
             f'Something broke in inline query handler!\n'
-            f'Update: {event.update.model_dump_json(indent=3)}'
+            f'Update: {event.update.model_dump_json(indent=3)}',
         )
 
         try:
@@ -95,14 +95,14 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
                         title=f'Something went wrong, contact @{config.DEVELOPER_USERNAME}',
                         url=f'https://t.me/{config.DEVELOPER_USERNAME}',
                         input_message_content=InputTextMessageContent(
-                            message_text=BROKE_MSG_TEXT
-                        )
-                    )
+                            message_text=BROKE_MSG_TEXT,
+                        ),
+                    ),
                 ],
-                cache_time=1
+                cache_time=1,
             )
         except TelegramAPIError:
-            pass
+            return True
 
         return True
 

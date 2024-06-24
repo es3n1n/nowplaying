@@ -1,4 +1,7 @@
+from typing import Tuple
+
 from ..models.song_link import SongLinkPlatformType
+from ..models.track import Track
 from .abc import PlatformABC, PlatformClientABC
 from .apple import ApplePlatform
 from .lastfm import LastfmPlatform
@@ -37,3 +40,12 @@ async def get_platform_authorization_url(state: str, platform_type: SongLinkPlat
         return await platform.get_authorization_url(state)
 
     raise ValueError('Unsupported platform')
+
+
+async def get_platform_track(
+    track_id: str,
+    telegram_id: int,
+    platform_type: SongLinkPlatformType,
+) -> Tuple[PlatformClientABC, Track | None]:
+    platform = await get_platform_from_telegram_id(telegram_id, platform_type)
+    return platform, await platform.get_track(track_id)

@@ -22,24 +22,33 @@ async def get_cached_file_id(uri: str) -> str | None:
 
 
 async def cache_file(
-        uri: str,
-        data: BytesIO,
-        thumbnail_url: str,
-        performer: str,
-        name: str,
-        user: User
+    uri: str,
+    file_data: BytesIO,
+    thumbnail_url: str,
+    performer: str,
+    name: str,
+    user: User,
 ) -> str:
+    uri_safe: str = uri.replace('-', '_')
+
+    thumbnail: URLInputFile | None = None
+    if thumbnail_url != '':
+        thumbnail = URLInputFile(url=thumbnail_url)
+
     sent = await bot.send_audio(
         config.BOT_CACHE_CHAT_ID,
-        BufferedInputFile(file=data.read(), filename=f'{performer} - {name}.mp3'),
-        caption=f'#{uri.replace("-", "_")}\n'
-                f'#uid_{user.id} #u_{str(user.username)} {user.full_name}\n'
-                f'{performer} - {name}',
+        BufferedInputFile(file=file_data.read(), filename=f'{performer} - {name}.mp3'),
+        caption=(
+            f'#{uri_safe}\n'
+            f'#uid_{user.id} #u_{str(user.username)} {user.full_name}\n'
+            f'{performer} - {name}'
+        ),
         performer=performer,
         title=name,
-        thumbnail=URLInputFile(url=thumbnail_url) if thumbnail_url != '' else None,
+        thumbnail=thumbnail,
     )
-    assert sent.audio is not None
+    if sent.audio is None:
+        raise ValueError('Audio is none')
 
     await db.store_cached_file(uri, sent.audio.file_id)
     return sent.audio.file_id
