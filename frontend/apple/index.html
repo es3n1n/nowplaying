@@ -1,26 +1,96 @@
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>playinnowbot - Apple Music</title>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: rgb(28, 27, 34);
+            color: rgb(251, 251, 254);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 400px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            font-size: 1rem;
+            font-weight: normal;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+        .loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 1.5rem;
+                width: 100%;
+            }
+            h1 {
+                font-size: 1.3rem;
+            }
+            h2 {
+                font-size: 0.9rem;
+            }
+            .loading {
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
 
-    <h1>Please wait for the apple music authorization popup</h1>
-    <h2>Also please make sure that you allowed this page to create popups</h2>
-    <h2>If nothing happens please refresh this page</h2>
+    <div class="container">
+        <h1>playinnowbot - Apple Music</h1>
+        <div class="loading"></div>
+        <h2>Please wait for the Apple Music authorization popup</h2>
+        <h2>Make sure you've allowed this page to create popups</h2>
+        <h2>If nothing happens, please refresh this page</h2>
+    </div>
 
     <script>
         /* im so sorry for this shitcode, but as long as it works - it works */
-        if (window.location.search.indexOf('state=') == -1) {
+        if (window.location.search.indexOf('state=') === -1) {
             alert('no state found, please try again');
             window.location = '/';
         }
 
         (async () => {
-            const token_response = await fetch(
-                `/ext/apple/token${window.location.search}`
-            );
+            const token_response = await fetch(`/ext/apple/token${window.location.search}`);
             const token_json = await token_response.json();
             if (token_response.status === 403) {
                 window.location = token_json.redirect_to;
@@ -28,25 +98,23 @@
 
             window.token = token_json.token;
 
-            document.addEventListener('musickitloaded', async () => {
-                try {
-                    await MusicKit.configure({
-                        developerToken: token,
-                        app: {
-                            name: 'playinnow',
-                            build: '2024.22.6',
-                        },
-                    });
-                } catch (err) {
-                    alert(err);
-                }
+            try {
+                await MusicKit.configure({
+                    developerToken: token,
+                    app: {
+                        name: 'playinnow',
+                        build: '2024.22.6',
+                    },
+                });
+            } catch (err) {
+                alert(err);
+                return;
+            }
 
-                const music = MusicKit.getInstance();
-                const player = music.player;
-                const user_token = await music.authorize();
+            const music = MusicKit.getInstance();
+            const user_token = await music.authorize();
 
-                window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
-            });
+            window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
         })();
     </script>
 </body>
