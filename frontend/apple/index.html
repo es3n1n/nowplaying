@@ -72,8 +72,6 @@
 </head>
 
 <body>
-    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
-
     <div class="container">
         <h1>playinnowbot - Apple Music</h1>
         <div class="loading"></div>
@@ -98,24 +96,28 @@
 
             window.token = token_json.token;
 
-            try {
-                await MusicKit.configure({
-                    developerToken: token,
-                    app: {
-                        name: 'playinnow',
-                        build: '2024.22.6',
-                    },
-                });
-            } catch (err) {
-                alert(err);
-                return;
-            }
+            document.addEventListener('musickitloaded', async () => {
+                try {
+                    await MusicKit.configure({
+                        developerToken: token,
+                        app: {
+                            name: 'playinnow',
+                            build: '2024.6.22',
+                        },
+                    });
+                } catch (err) {
+                    alert(err);
+                    return;
+                }
 
-            const music = MusicKit.getInstance();
-            const user_token = await music.authorize();
+                const music = MusicKit.getInstance();
+                const user_token = await music.authorize();
 
-            window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
+                window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
+            });
         })();
     </script>
+
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
 </body>
 </html>

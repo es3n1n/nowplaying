@@ -4,18 +4,19 @@ version = "0.1.0"
 description = ""
 authors = ["es3n1n <me@es3n.in>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
-aiogram = "^3.7.0"
+aiogram = "^3.8.0"
 httpx = {extras = ["http2"], version = "^0.27.0"}
 fastapi = "^0.111.0"
 uvicorn = "^0.30.1"
 loguru = "^0.7.2"
 pydantic-settings = "^2.3.3"
-filelock = "^3.15.1"
+filelock = "^3.15.4"
 async-lru = "^2.0.4"
-scdl = {git = "https://github.com/flyingrub/scdl", rev = "42fbc5c23e3331059b05657f0819ac4835d6b83b"}
+scdl = {git = "https://github.com/flyingrub/scdl", rev = "d88897df0644371b553f353d54f857e8831ad91f"}
 pycryptodome = "^3.20.0"
 pyjwt = "^2.8.0"
 yandex-music = "^2.2.0"
@@ -25,7 +26,7 @@ asyncpg = "^0.29.0"
 cryptography = "^42.0.8"
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^7.0.0"
+flake8 = "^7.1.0"
 mypy = "^1.10.0"
 isort = "^5.13.2"
 flake8-quotes = "^3.4.0"

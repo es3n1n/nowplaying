@@ -1,6 +1,6 @@
 FROM python:3.11-buster as builder
 
-RUN pip install poetry==1.5.1
+RUN pip install poetry==1.8.1
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -9,11 +9,11 @@ ENV POETRY_NO_INTERACTION=1 \
 
 WORKDIR /app
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
+RUN poetry install --without dev && rm -rf $POETRY_CACHE_DIR
 
 FROM node:22.3-alpine as frontend-builder
 
-COPY frontend/ /frontend/
+COPY frontend/ym/ /frontend/ym/
 WORKDIR /frontend/ym/web-app/
 
 ENV NODE_ENV=production
