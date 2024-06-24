@@ -80,6 +80,8 @@
         <h2>If nothing happens, please refresh this page</h2>
     </div>
 
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
+
     <script>
         /* im so sorry for this shitcode, but as long as it works - it works */
         if (window.location.search.indexOf('state=') === -1) {
@@ -94,30 +96,24 @@
                 window.location = token_json.redirect_to;
             }
 
-            window.token = token_json.token;
+            try {
+                await MusicKit.configure({
+                    developerToken: token_json.token,
+                    app: {
+                        name: 'playinnow',
+                        build: '2024.6.22',
+                    },
+                });
+            } catch (err) {
+                alert(err);
+                return;
+            }
 
-            document.addEventListener('musickitloaded', async () => {
-                try {
-                    await MusicKit.configure({
-                        developerToken: token,
-                        app: {
-                            name: 'playinnow',
-                            build: '2024.6.22',
-                        },
-                    });
-                } catch (err) {
-                    alert(err);
-                    return;
-                }
+            const music = MusicKit.getInstance();
+            const user_token = await music.authorize();
 
-                const music = MusicKit.getInstance();
-                const user_token = await music.authorize();
-
-                window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
-            });
+            window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
         })();
     </script>
-
-    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
 </body>
 </html>
