@@ -15,14 +15,13 @@ FROM node:22.3-alpine as frontend-builder
 
 COPY frontend/ym/ /frontend/ym/
 WORKDIR /frontend/ym/web-app/
-
-ENV NODE_ENV=production
 RUN npm i
 
-ENV NODE_OPTIONS=--openssl-legacy-provider
+ENV NODE_ENV=production \
+    NODE_OPTIONS=--openssl-legacy-provider
 RUN npm run build
 
-FROM python:3.11-slim-buster as runtime
+FROM python:3.11-slim as runtime
 
 WORKDIR /app
 
@@ -40,6 +39,5 @@ COPY frontend/apple/ ./frontend/apple/
 COPY nowplaying/ ./nowplaying/
 COPY main.py .
 COPY init.sql .
-COPY .env .
 
 ENTRYPOINT ["python", "main.py"]
