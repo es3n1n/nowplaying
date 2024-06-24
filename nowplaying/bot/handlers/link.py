@@ -19,9 +19,10 @@ async def get_auth_keyboard(user_id: int) -> InlineKeyboardMarkup:
         if is_authorized:
             text = f'(re){text}'
 
+        url = await platform.get_authorization_url(sign(user_id))
         buttons.append(InlineKeyboardButton(
             text=text,
-            url=await platform.get_authorization_url(sign(user_id)),
+            url=url,
         ))
 
     return InlineKeyboardMarkup(inline_keyboard=chunks(buttons, 2))

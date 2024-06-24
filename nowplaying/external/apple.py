@@ -1,15 +1,17 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 import jwt
 import orjson
 from async_lru import alru_cache
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 
 from ..core.config import config
+from ..util.http import STATUS_NOT_FOUND, STATUS_OK
 from ..util.logger import logger
 
 
-SESSION_LIVE_TIME: timedelta = timedelta(hours=24)
+SESSION_LIVE_TIME: timedelta = timedelta(hours=6)
 
 client = AsyncClient(headers={
     'Pragma': 'no-cache',
@@ -54,6 +56,36 @@ async def find_song_in_apple_music(artist: str, name: str, country: str = 'US') 
     return search_results[0]['trackId']
 
 
+class AppleMusicError(Exception):
+    """Apple music base error class."""
+
+
+class AppleMusicInvalidResultCodeError(AppleMusicError):
+    """Would be raise if response code isn't 200."""
+
+
+@dataclass
+class AppleMusicTrack:
+    id: str
+    url: str
+    artist: str
+    name: str
+
+    @classmethod
+    def load(cls, track: dict) -> 'AppleMusicTrack':
+        return cls(
+            id=track['id'],
+            url=track['attributes']['url'],
+            artist=track['attributes']['artistName'],
+            name=track['attributes']['name'],
+        )
+
+
+def _validate_response_code(response: Response) -> None:
+    if response.status_code != STATUS_OK:
+        raise AppleMusicInvalidResultCodeError(str(response.status_code))
+
+
 class AppleMusicWrapperClient:
     def __init__(self, app: 'AppleMusicWrapper', media_user_token: str):
         self.app = app
@@ -65,6 +97,45 @@ class AppleMusicWrapperClient:
             headers_result['media-user-token'] = self.media_user_token
         return headers_result
 
+    # limit includes the currently playing track
+    async def recently_played(self, limit: int) -> list[AppleMusicTrack]:
+        response = await self.app.client.get(
+            'https://api.music.apple.com/v1/me/recent/played/tracks',
+            headers=self.headers(with_media_token=True),
+            params={
+                'limit': str(limit),
+            },
+        )
+        _validate_response_code(response)
+
+        response_json = orjson.loads(response.content)
+        if 'data' not in response_json:
+            raise AppleMusicError('got a weird json')
+
+        out_tracks = []
+        for track in response_json['data']:
+            out_tracks.append(AppleMusicTrack.load(track))
+
+        return out_tracks
+
+    async def get_track(self, track_id: str) -> AppleMusicTrack | None:
+        # fixme: instead of using US we should store the appropriate store id
+        response = await self.app.client.get(
+            f'https://api.music.apple.com/v1/catalog/us/songs/{track_id}',
+            headers=self.headers(),
+        )
+
+        if response.status_code == STATUS_NOT_FOUND:
+            return None
+
+        _validate_response_code(response)
+        response_json = orjson.loads(response.content)
+
+        if not response_json['data']:
+            raise AppleMusicError('got a weird track response huh?')
+
+        return AppleMusicTrack.load(response_json['data'][0])
+
 
 class AppleMusicWrapper:
     def __init__(self) -> None:
@@ -73,7 +144,10 @@ class AppleMusicWrapper:
         self.team_id = config.APPLE_TEAM_ID
         self.client = AsyncClient(headers={
             'User-Agent': 'playinnow/1.0',
+            'Origin': config.WEB_SERVER_PUBLIC_ENDPOINT,
         })
+
+        self._origins: list[str] = [config.WEB_SERVER_PUBLIC_ENDPOINT]
 
         self._alg: str = 'ES256'
 
@@ -97,6 +171,7 @@ class AppleMusicWrapper:
                 'iss': self.team_id,
                 'iat': int(now.timestamp()),
                 'exp': int(self._token_exp.timestamp()),
+                'origin': self._origins,
             },
             headers={
                 'alg': self._alg,

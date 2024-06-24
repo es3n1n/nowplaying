@@ -15,7 +15,7 @@ BROKE_MSG_TEXT: str = f'Something went wrong (┛ಠ_ಠ)┛彡┻━┻\nContac
 async def send_auth_code_error(exc: PlatformInvalidAuthCodeError) -> None:
     await bot.send_message(
         exc.telegram_id,
-        f'Error! Unable to authorize in {exc.platform.value.capitalize()}, please try again.',
+        f'Error! Unable to authorize in {exc.platform.name.capitalize()}, please try again.',
     )
 
 
@@ -35,7 +35,7 @@ async def on_token_invalidation(event: ErrorEvent) -> bool:
     logger.opt(exception=exc).warning('Invalidating platform session')
     await bot.send_message(
         exc.telegram_id,
-        f'Your {exc.platform.value.capitalize()} session has expired/got invalidated, please authorize again.',
+        f'Your {exc.platform.name.capitalize()} session has expired/got invalidated, please authorize again.',
     )
     await db.delete_user_token(exc.telegram_id, exc.platform)
     return True
@@ -106,4 +106,8 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
 
         return True
 
+    logger.opt(exception=event.exception).error(
+        f'Something went wrong! Not sure where though\n'
+        f'Update: {event.update.model_dump_json(indent=3)}',
+    )
     return False

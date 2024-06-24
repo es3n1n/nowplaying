@@ -1,0 +1,53 @@
+<html>
+<head>
+    <title>playinnowbot - Apple Music</title>
+</head>
+
+<body>
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
+
+    <h1>Please wait for the apple music authorization popup</h1>
+    <h2>Also please make sure that you allowed this page to create popups</h2>
+    <h2>If nothing happens please refresh this page</h2>
+
+    <script>
+        /* im so sorry for this shitcode, but as long as it works - it works */
+        if (window.location.search.indexOf('state=') == -1) {
+            alert('no state found, please try again');
+            window.location = '/';
+        }
+
+        (async () => {
+            const token_response = await fetch(
+                `/ext/apple/token${window.location.search}`
+            );
+            const token_json = await token_response.json();
+            if (token_response.status === 403) {
+                window.location = token_json.redirect_to;
+            }
+
+            window.token = token_json.token;
+
+            document.addEventListener('musickitloaded', async () => {
+                try {
+                    await MusicKit.configure({
+                        developerToken: token,
+                        app: {
+                            name: 'playinnow',
+                            build: '2024.22.6',
+                        },
+                    });
+                } catch (err) {
+                    alert(err);
+                }
+
+                const music = MusicKit.getInstance();
+                const player = music.player;
+                const user_token = await music.authorize();
+
+                window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
+            });
+        })();
+    </script>
+</body>
+</html>

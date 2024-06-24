@@ -18,6 +18,7 @@ from .abc import PlatformABC, PlatformClientABC
 
 TYPE = SongLinkPlatformType.SPOTIFY
 SCOPE = 'user-read-currently-playing,user-read-recently-played,streaming'
+REDIRECT_URI = config.redirect_url_for_ext_svc('spotify')
 
 
 def _to_uri(track_id: str) -> str:
@@ -115,7 +116,7 @@ class SpotifyPlatform(PlatformABC):
         query = urlencode({
             'client_id': config.SPOTIFY_CLIENT_ID,
             'response_type': 'code',
-            'redirect_uri': config.SPOTIFY_REDIRECT_URL,
+            'redirect_uri': REDIRECT_URI,
             'state': state,
             'scope': SCOPE,
         })
@@ -126,7 +127,7 @@ class SpotifyPlatform(PlatformABC):
         return Spotify(
             client_id=config.SPOTIFY_CLIENT_ID,
             client_secret=config.SPOTIFY_SECRET,
-            redirect_uri=config.SPOTIFY_REDIRECT_URL,
+            redirect_uri=REDIRECT_URI,
             scope=SCOPE,
             cache_handler=SpotifyCacheHandler(telegram_id),
         )

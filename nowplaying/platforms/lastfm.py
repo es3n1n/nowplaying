@@ -124,8 +124,9 @@ class LastfmPlatform(PlatformABC):
         state_query = urlencode({
             'state': state,
         })
+        redirect_url = config.redirect_url_for_ext_svc('lastfm')
         query = urlencode({
             'api_key': config.LASTFM_API_KEY,
-            'cb': f'{config.LASTFM_REDIRECT_URL}?{state_query}',
+            'cb': f'{redirect_url}?{state_query}',
         })
         return f'https://www.last.fm/api/auth/?{query}'

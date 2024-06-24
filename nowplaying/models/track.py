@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from yandex_music import Track as YandexTrack
 
+from ..external.apple import AppleMusicTrack
 from ..external.lastfm import LastFMTrack
 from ..external.song_link import get_song_link
 from .song_link import SongLinkPlatformType
@@ -94,5 +95,23 @@ class Track(BaseModel):
             url=url,
             song_link=await get_song_link(url),
             currently_playing=is_playing,
+            played_at=played_at,
+        )
+
+    @classmethod
+    async def from_apple_item(
+        cls,
+        track: AppleMusicTrack,
+        currently_playing: bool = False,
+        played_at: datetime = _TS_NULL,
+    ) -> 'Track':
+        return cls(
+            platform=SongLinkPlatformType.APPLE,
+            artist=track.artist,
+            name=track.name,
+            id=track.id,
+            url=track.url,
+            song_link=await get_song_link(track.url),
+            currently_playing=currently_playing,
             played_at=played_at,
         )

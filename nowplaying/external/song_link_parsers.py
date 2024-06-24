@@ -22,10 +22,16 @@ def get_yandex_link(url) -> str:
 def get_apple_link(url) -> str:
     path_parts = url.path.split('/')
     country = path_parts[1]
-    track_id = path_parts[-1]
-    if track_id.startswith('id'):
-        track_id = track_id[2:]
-    return f'https://song.link/{country}/i/{track_id}'
+    album_id = path_parts[-1]
+    if album_id.startswith('id'):
+        album_id = album_id[2:]
+
+    qs = parse_qs(url.query)
+    track_id: str | None = qs.get('i', [None])[0]
+    if track_id is not None:
+        return f'https://song.link/i/{track_id}'
+
+    return f'https://album.link/{country}/i/{album_id}'
 
 
 def get_geo_apple_link(url) -> str:

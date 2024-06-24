@@ -1,11 +1,12 @@
-from fastapi import APIRouter
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import ORJSONResponse, RedirectResponse
 
 from ..bot.bot import bot
 from ..core.config import config
 from ..core.sign import verify_sign
+from ..enums.start_actions import StartAction
 from ..platforms import apple, lastfm, spotify
-from ..util.http import STATUS_TEMPORARY_REDIRECT
+from ..util.http import STATUS_FORBIDDEN, STATUS_TEMPORARY_REDIRECT
 
 
 router = APIRouter(prefix='/ext')
@@ -47,3 +48,21 @@ async def apple_callback(token: str, state: str):
     await apple.from_auth_callback(telegram_id, token)
     await send_auth_msg(telegram_id, 'apple music')
     return redirect
+
+
+@router.get('/apple/token')
+async def apple_token(state: str):
+    try:
+        verify_sign(state, check_expiration=True)
+    except HTTPException:
+        return ORJSONResponse(
+            {
+                'detail': 'session expired',
+                'redirect_to': config.bot_plain_start_url(StartAction.SIGN_EXPIRED),
+            },
+            status_code=STATUS_FORBIDDEN,
+        )
+
+    return ORJSONResponse({
+        'token': apple.app.ensured_token,
+    })

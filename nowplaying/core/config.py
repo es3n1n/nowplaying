@@ -1,7 +1,10 @@
 from base64 import b64decode, b64encode
+from typing import Annotated
 
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from ..enums.start_actions import StartAction
 from ..util.fs import ROOT_DIR
 
 
@@ -15,15 +18,15 @@ class Settings(BaseSettings):
 
     DEVELOPER_USERNAME: str = 'invlpg'
 
-    WEB_SERVER_PUBLIC_ENDPOINT: str = 'https://now.es3n1n.eu'
+    WEB_SERVER_PUBLIC_ENDPOINT: Annotated[str, Field(validate_default=True)] = 'https://now.es3n1n.eu'
 
-    EMPTY_MP3_FILE_URL: str = 'https://es3n1n.eu/empty.mp3'
+    EMPTY_MP3_FILE_URL: Annotated[str, Field(validate_default=True)] = 'https://es3n1n.eu/empty.mp3'
     DEEZER_ARL_COOKIE: str
 
     BOT_DEV_CHAT_ID: int = 1490827215
     BOT_TOKEN: str
     BOT_CACHE_CHAT_ID: int = 1490827215
-    BOT_URL: str = 'https://t.me/playinnowbot'
+    BOT_URL: Annotated[str, Field(validate_default=True)] = 'https://t.me/playinnowbot'
 
     STATE_SECRET: str
 
@@ -33,11 +36,9 @@ class Settings(BaseSettings):
 
     SPOTIFY_CLIENT_ID: str
     SPOTIFY_SECRET: str
-    SPOTIFY_REDIRECT_URL: str
 
     LASTFM_API_KEY: str
     LASTFM_SHARED_SECRET: str
-    LASTFM_REDIRECT_URL: str
 
     APPLE_SECRET_KEY: str
     APPLE_KEY_ID: str
@@ -48,6 +49,15 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
+
+    @field_validator('WEB_SERVER_PUBLIC_ENDPOINT', 'EMPTY_MP3_FILE_URL', 'BOT_URL')
+    @classmethod
+    def validate_url(cls, val_to_validate: str) -> str:
+        return val_to_validate.rstrip('/')
+
+    def bot_plain_start_url(self, payload: str | StartAction) -> str:
+        payload_str: str = payload if isinstance(payload, str) else payload.value
+        return f'{self.BOT_URL}?start={payload_str}'
 
     @property
     def db_connection_info(self) -> str:
@@ -62,6 +72,9 @@ class Settings(BaseSettings):
     @property
     def is_dev_env(self):
         return self.ENVIRONMENT.lower() in {'dev', 'development'}
+
+    def redirect_url_for_ext_svc(self, svc_name: str) -> str:
+        return f'{self.WEB_SERVER_PUBLIC_ENDPOINT}/ext/{svc_name}/callback'
 
     def get_start_url(self, payload: str) -> str:
         payload_encoded = b64encode(payload.encode()).decode().rstrip('=')

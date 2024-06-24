@@ -1,15 +1,19 @@
+from datetime import datetime, timedelta
 from typing import AsyncIterator
+from urllib.parse import quote
 
+from ..core.config import config
 from ..core.database import db
 from ..enums.platform_features import PlatformFeature
 from ..exceptions.platforms import PlatformInvalidAuthCodeError
-from ..external.apple import AppleMusicWrapper, AppleMusicWrapperClient
+from ..external.apple import AppleMusicError, AppleMusicWrapper, AppleMusicWrapperClient
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
+from ..util.exceptions import rethrow_platform_error
 from .abc import PlatformABC, PlatformClientABC
 
 
-TYPE = SongLinkPlatformType.APPLE_MUSIC
+TYPE = SongLinkPlatformType.APPLE
 
 
 # todo: add rethrows once api is implemented
@@ -18,8 +22,8 @@ TYPE = SongLinkPlatformType.APPLE_MUSIC
 class AppleClient(PlatformClientABC):
     features = {
         PlatformFeature.TRACK_GETTERS: True,
-        PlatformFeature.ADD_TO_QUEUE: True,
-        PlatformFeature.PLAY: True,
+        PlatformFeature.ADD_TO_QUEUE: False,
+        PlatformFeature.PLAY: False,
     }
 
     def __init__(self, app: AppleMusicWrapperClient, telegram_id: int):
@@ -29,13 +33,24 @@ class AppleClient(PlatformClientABC):
     async def get_current_playing_track(self) -> Track | None:
         raise NotImplementedError()
 
+    @rethrow_platform_error(AppleMusicError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
-        current_playing = await self.get_current_playing_track()
-        if current_playing:
-            yield current_playing
+        cur_time = datetime.utcnow()
 
+        # +1 because we don't account currently playing track, but apple music includes
+        for index, track in enumerate(await self.app.recently_played(limit=limit + 1)):
+            yield await Track.from_apple_item(
+                track,
+                played_at=cur_time - timedelta(minutes=index),
+            )
+
+    @rethrow_platform_error(AppleMusicError, TYPE)
     async def get_track(self, track_id: str) -> Track | None:
-        raise NotImplementedError()
+        track_info = await self.app.get_track(track_id)
+        if track_info is None:
+            return None
+
+        return await Track.from_apple_item(track_info)
 
     async def add_to_queue(self, track_id: str) -> bool:
         return True
@@ -44,11 +59,16 @@ class AppleClient(PlatformClientABC):
         return True
 
     async def is_alive(self) -> bool:
+        try:
+            await self.app.recently_played(1)
+        except AppleMusicError:
+            return False
+
         return self.telegram_id != 0
 
 
 class ApplePlatform(PlatformABC):
-    type = SongLinkPlatformType.APPLE_MUSIC
+    type = TYPE
 
     def __init__(self):
         self.app = AppleMusicWrapper()
@@ -59,14 +79,14 @@ class ApplePlatform(PlatformABC):
         if not await client.is_alive():
             raise PlatformInvalidAuthCodeError(platform=self.type, telegram_id=telegram_id)
 
-        await db.store_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC, auth_code)
+        await db.store_user_token(telegram_id, TYPE, auth_code)
         return client
 
     async def from_telegram_id(self, telegram_id: int) -> PlatformClientABC:
-        token = await db.get_user_token(telegram_id, SongLinkPlatformType.APPLE_MUSIC)
+        token = await db.get_user_token(telegram_id, TYPE)
         if token is None:
             raise ValueError('token is none')
         return AppleClient(self.app.with_media_token(token), telegram_id)
 
     async def get_authorization_url(self, state: str) -> str:
-        return 'https://google.com/'
+        return f'{config.WEB_SERVER_PUBLIC_ENDPOINT}/apple/?state={quote(state)}'

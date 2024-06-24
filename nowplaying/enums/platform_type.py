@@ -8,7 +8,7 @@ class SongLinkPlatformType(Enum):
     AMAZON_MUSIC: str = 'amazonMusic'
     AMAZON_STORE: str = 'amazonStore'
     ANGHAMI: str = 'anghami'
-    APPLE_MUSIC: str = 'appleMusic'
+    APPLE: str = 'appleMusic'
     AUDIOMACK: str = 'audiomack'
     AUDIUS: str = 'audius'
     BOOM_PLAY: str = 'boomplay'

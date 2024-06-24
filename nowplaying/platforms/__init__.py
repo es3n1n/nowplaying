@@ -17,7 +17,7 @@ yandex = YandexPlatform()
 platforms: list[PlatformABC] = [
     spotify,
     lastfm,
-    # apple,
+    apple,
     yandex,
 ]
 

@@ -3,14 +3,15 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from ...core.config import config
 from ...core.database import db
+from ...enums.start_actions import StartAction
 from ...models.song_link import SongLinkPlatformType
 from ...platforms import get_platform_from_telegram_id, yandex
 from ...routes.ext import send_auth_msg
 from ..bot import dp
-from .link import get_auth_keyboard, link_command_handler
+from .link import get_auth_keyboard
 
 
-async def handle_controls(uri: str, message: Message) -> bool:
+async def _handle_controls(uri: str, message: Message) -> bool:
     if message.from_user is None:
         raise ValueError()
 
@@ -40,19 +41,44 @@ async def handle_controls(uri: str, message: Message) -> bool:
     return True
 
 
-async def try_controls(payload: str, message: Message) -> bool:
+async def _try_controls(payload: str, message: Message) -> bool:
     uri = config.decode_start_url(payload)
     if not uri:
         return False
 
-    if uri == 'link':
-        await link_command_handler(message)
-        return True
-
     if '_' not in uri:
         return False
 
-    return await handle_controls(uri, message)
+    return await _handle_controls(uri, message)
+
+
+async def _try_start_cmds(message: Message, authorized: bool) -> bool:
+    if message.text is None or message.from_user is None:
+        return False
+
+    if message.text.find(' ') == -1:
+        return False
+
+    payload = message.text.split(' ', maxsplit=1)[1]
+
+    if payload.startswith('ym_'):
+        token = payload[3:]
+        await yandex.from_auth_callback(message.from_user.id, token)
+        await send_auth_msg(message.from_user.id, 'yandex')
+        return True
+
+    if payload == StartAction.SIGN_EXPIRED.value:
+        await message.reply(
+            text=(
+                '<b>This authorization url has expired.</b>\n\n'
+                + 'Please try to authorize again using any any of the links above:'
+            ),
+            parse_mode='HTML',
+            reply_markup=await get_auth_keyboard(message.from_user.id),
+        )
+        return True
+
+    return authorized and await _try_controls(payload, message)
 
 
 @dp.message(CommandStart())
@@ -61,18 +87,8 @@ async def command_start_handler(message: Message) -> None:
         raise ValueError()
 
     authorized: bool = await db.is_user_authorized_globally(message.from_user.id)
-
-    if message.text.find(' ') != -1:
-        payload = message.text.split(' ', maxsplit=1)[1]
-
-        if payload.startswith('ym_'):
-            token = payload[3:]
-            await yandex.from_auth_callback(message.from_user.id, token)
-            await send_auth_msg(message.from_user.id, 'yandex')
-            return
-
-        if authorized and await try_controls(payload, message):
-            return
+    if await _try_start_cmds(message, authorized):
+        return
 
     msg = f'Hello, {message.from_user.full_name}'
     if authorized:

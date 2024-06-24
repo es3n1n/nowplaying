@@ -182,22 +182,6 @@ test = ["anyio[trio]", "coverage[toml] (>=7)", "exceptiongroup (>=1.2.0)", "hypo
 trio = ["trio (>=0.23)"]
 
 [[package]]
-name = "apple-music-python"
-version = "1.0.5"
-description = "A python wrapper for the Apple Music API"
-optional = false
-python-versions = "*"
-files = [
-    {file = "apple-music-python-1.0.5.tar.gz", hash = "sha256:a07323477432ebe62bc47880cba33480af0ce51f5ec56e7d08bb927ee19a3d96"},
-    {file = "apple_music_python-1.0.5-py3-none-any.whl", hash = "sha256:fab11302bb2182cc59323ac0d2246ed8cd94760d20bef7024fd682fb56510da3"},
-]
-
-[package.dependencies]
-cryptography = ">=3.2"
-pyjwt = ">=1.7.1"
-requests = ">=2.21"
-
-[[package]]
 name = "args"
 version = "0.1.0"
 description = "Command Arguments for Humans."
@@ -2973,4 +2957,4 @@ test = ["pytest (>=8.1,<9.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "603500f44eee5418f26c702a38c34421613261268e4c10fec6bfb368b5eabb7e"
+content-hash = "c3e79d69f29788e0548cfd269f47ec0aa477cc9e0e953cccb48fc9c66f38c75d"

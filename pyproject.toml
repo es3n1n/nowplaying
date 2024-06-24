@@ -23,7 +23,6 @@ websockets = "^12.0"
 yt-dlp = "2024.6.17.232743.dev0"
 asyncpg = "^0.29.0"
 cryptography = "^42.0.8"
-apple-music-python = "^1.0.5"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.0.0"

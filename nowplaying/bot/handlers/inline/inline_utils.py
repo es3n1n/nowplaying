@@ -34,7 +34,7 @@ def track_to_caption(
     elif not is_track_available:
         message_text += UNAVAILABLE_MSG + '\n'
 
-    message_text += f'{url(track.platform.value.capitalize(), track.url)}'
+    message_text += f'{url(track.platform.name.capitalize(), track.url)}'
 
     if client.can_control_playback:
         message_text += f' ({url("▶️", play_url)})'

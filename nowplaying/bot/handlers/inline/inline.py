@@ -56,6 +56,7 @@ async def fetch_feed_and_clients(
     authorized_platforms = await db.get_user_authorized_platforms(user_id)
 
     if not authorized_platforms:
+        auth_url: str = url('authorize', config.BOT_URL)
         await bot.answer_inline_query(
             inline_query_id=query_id,
             results=[
@@ -64,7 +65,7 @@ async def fetch_feed_and_clients(
                     title='Please authorize',
                     url=config.BOT_URL,
                     input_message_content=types.InputTextMessageContent(
-                        message_text=f'Please {url("authorize", config.get_start_url("link"))} first (╯°□°)╯︵ ┻━┻',
+                        message_text=f'Please {auth_url} first (╯°□°)╯︵ ┻━┻',
                         parse_mode='HTML',
                     ),
                 ),
@@ -143,7 +144,7 @@ def create_audio_result(
 
     name = track.name
     if multiple_clients:
-        name += f' ({track.platform.value.capitalize()})'
+        name += f' ({track.platform.name.capitalize()})'
 
     return types.InlineQueryResultAudio(
         id=track.uri if can_proceed else str(index),
