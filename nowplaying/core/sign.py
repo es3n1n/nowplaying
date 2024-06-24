@@ -2,6 +2,7 @@ import hmac
 from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Any
+from urllib.parse import unquote
 
 import orjson
 from fastapi import HTTPException
@@ -41,10 +42,14 @@ def _validate_fields(payload: Any | None, signature: str | None, expires_at: int
     return isinstance(expires_at, int)
 
 
-def verify_sign(state: str, check_expiration: bool = False) -> Any:
+def verify_sign(state: str, check_expiration: bool = False, unquoted: bool = False) -> Any:
     try:
         loaded = orjson.loads(state)
     except orjson.JSONDecodeError:
+        # note: some weird fix for safari when it double urlencodes the url, idek
+        if not unquoted:
+            return verify_sign(unquote(state), check_expiration=check_expiration, unquoted=True)
+
         loaded = None
 
     if not isinstance(loaded, dict):
