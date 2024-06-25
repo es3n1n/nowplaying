@@ -1,8 +1,10 @@
 from io import BytesIO
+from types import MappingProxyType
 from typing import Optional, Tuple
 
 from loguru import logger
 
+from ..enums.platform_type import SongLinkPlatformType
 from ..external.song_link import get_song_link_info
 from ..models.track import Track
 from .abc import DownloaderABC
@@ -12,11 +14,15 @@ from .youtube import YoutubeDownloader
 
 
 # Uses the same priority as declared
-downloaders: list[DownloaderABC] = [
-    DeezerDownloader(),
-    YoutubeDownloader(),
-    SoundcloudDownloader(),
-]
+DOWNLOADER_CLASSES = (
+    DeezerDownloader,
+    YoutubeDownloader,
+    SoundcloudDownloader,
+)
+DOWNLOADERS: MappingProxyType[SongLinkPlatformType, DownloaderABC] = MappingProxyType({
+    downloader_type.platform: downloader_type()  # type: ignore
+    for downloader_type in DOWNLOADER_CLASSES
+})
 
 
 async def download_mp3(track: Track) -> Tuple[str, Optional[BytesIO]]:
@@ -24,11 +30,11 @@ async def download_mp3(track: Track) -> Tuple[str, Optional[BytesIO]]:
 
     song_link_info = await get_song_link_info(track.song_link)
 
-    for downloader in downloaders:
-        if downloader.platform not in song_link_info.platforms:
+    for downloader_platform, downloader in DOWNLOADERS.items():
+        if downloader_platform not in song_link_info.platforms:
             continue
 
-        platform = song_link_info.platforms[downloader.platform]
+        platform = song_link_info.platforms[downloader_platform]
 
         logger.debug(f'Trying to download {platform.url} from {platform.platform.name}')
         result_mp3 = await downloader.download_mp3(platform)

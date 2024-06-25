@@ -5,8 +5,16 @@ from string import ascii_letters, digits
 ALPHABET = ascii_letters + digits
 
 
+# We only need these: https://core.telegram.org/bots/api#html-style
 def escape_html(string: str) -> str:
-    return string.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    escape_rules = [
+        ('&', '&amp;'),
+        ('<', '&lt;'),
+        ('>', '&gt;'),
+    ]
+    for old, new in escape_rules:
+        string = string.replace(old, new)
+    return string
 
 
 def random_string(length: int = 5) -> str:

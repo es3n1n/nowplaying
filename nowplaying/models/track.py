@@ -15,10 +15,10 @@ _TS_NULL = datetime.fromtimestamp(0)
 class Track(BaseModel):
     platform: SongLinkPlatformType = SongLinkPlatformType.UNKNOWN
 
-    artist: str
-    name: str
+    artist: str = ''
+    name: str = ''
 
-    id: str | None  # if set to none, the track is marked as unavailable
+    id: str | None
     url: str
 
     song_link: str | None
@@ -37,6 +37,7 @@ class Track(BaseModel):
 
     @property
     def is_available(self) -> bool:
+        # todo: implement unavailable logic :sadge:
         return self.id is not None
 
     @classmethod

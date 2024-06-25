@@ -21,24 +21,22 @@ def get_yandex_link(url) -> str:
 
 def get_apple_link(url) -> str:
     path_parts = url.path.split('/')
-    country = path_parts[1]
     album_id = path_parts[-1]
     if album_id.startswith('id'):
         album_id = album_id[2:]
+
+    # todo: should we include the country(`path_parts[1]`) here too?
+    #  not sure as
+    #  both https://album.link/i/1606018075 and https://album.link/fr/i/1606018075 works
+    #  also https://song.link/i/1606018581 and https://song.link/fr/i/1606018581 works just fine too
+    #  if we really decide to do this, then please note that geo apple music links doesn't include the region
 
     qs = parse_qs(url.query)
     track_id: str | None = qs.get('i', [None])[0]
     if track_id is not None:
         return f'https://song.link/i/{track_id}'
 
-    return f'https://album.link/{country}/i/{album_id}'
-
-
-def get_geo_apple_link(url) -> str:
-    track_id = url.path.split('/')[-1]
-    if track_id.startswith('id'):
-        track_id = track_id[2:]
-    return f'https://song.link/i/{track_id}'
+    return f'https://album.link/i/{album_id}'
 
 
 def get_youtube_link(url) -> str:
@@ -66,11 +64,20 @@ async def fallback_to_odesli(client: ClientSession, track_url: str):
     return f'https://song.link/{provider_prefix}/{response_json["id"]}'
 
 
+def get_song_link_parser(domain: str) -> Callable[[ParseResult], str] | None:
+    # Special silly handling for the yandex music as they have 20+ domains
+    if domain.startswith('music.yandex.'):
+        return SONG_LINK_PARSERS.get('music.yandex.com')
+    return SONG_LINK_PARSERS.get(domain)
+
+
 SONG_LINK_PARSERS: MappingProxyType[str, Callable[[ParseResult], str]] = MappingProxyType({
     'open.spotify.com': get_spotify_link,
-    'music.yandex.ru': get_yandex_link,
+
     'music.yandex.com': get_yandex_link,
+
     'music.apple.com': get_apple_link,
-    'geo.music.apple.com': get_geo_apple_link,
+    'geo.music.apple.com': get_apple_link,
+
     'youtube.com': get_youtube_link,
 })

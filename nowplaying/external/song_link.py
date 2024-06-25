@@ -1,5 +1,4 @@
 import re
-from urllib.parse import ParseResult, urlparse
 
 import orjson
 from aiohttp import ClientSession, ClientTimeout
@@ -8,7 +7,8 @@ from loguru import logger
 
 from ..models.song_link import SongLinkInfo, SongLinkPlatform, SongLinkPlatformType
 from ..util.http import STATUS_OK
-from .song_link_parsers import SONG_LINK_PARSERS, fallback_to_odesli
+from ..util.url import ParseResult, urlparse
+from .song_link_parsers import fallback_to_odesli, get_song_link_parser
 
 
 # For some reason httpx.AsyncClient sometimes just timeout shit for no reason, idek, tested on this url
@@ -44,14 +44,15 @@ async def _get_client() -> ClientSession:
 
 
 @alru_cache()
-async def get_song_link(track_url: str) -> str | None:
+async def get_song_link(track_url: str, allow_fallback: bool = True) -> str | None:
     url: ParseResult = urlparse(track_url)
 
-    if url.netloc.startswith('www.'):
-        url = url._replace(netloc=url.netloc[4:])  # noqa: WPS437
+    parser = get_song_link_parser(url.netloc)
+    if parser:
+        return parser(url)
 
-    if url.netloc in SONG_LINK_PARSERS:
-        return SONG_LINK_PARSERS[url.netloc](url)  # noqa: WPS529
+    if not allow_fallback:
+        return None
 
     return await fallback_to_odesli(await _get_client(), track_url)
 
@@ -118,18 +119,3 @@ async def get_song_link_info(song_link_url: str) -> SongLinkInfo:
     sections = props.get('pageData', {}).get('sections', [])
 
     return _parse_song_link_page_data(sections)
-
-
-# async def tests() -> None:
-#     assert (await get_song_link('https://www.youtube.com/watch?v=TsfJfn4Ow2Q&adhsjkasdhjk') ==
-#             'https://song.link/y/TsfJfn4Ow2Q')
-#     assert (await get_song_link('https://open.spotify.com/track/5L1eW2bt7pDbjhNLKWKom2?asdasdasd') ==
-#             'https://song.link/s/5L1eW2bt7pDbjhNLKWKom2')
-#     assert (await get_song_link('https://geo.music.apple.com/album/id1606018075?i=1606018581&at=10l3Sh') ==
-#             'https://song.link/i/1606018075')
-#     assert (await get_song_link('https://music.apple.com/fr/album/icarus/1606018075?i=1606018581') ==
-#             'https://song.link/fr/i/1606018075')
-#     assert (await get_song_link('https://music.yandex.ru/track/79714180') ==
-#             'https://song.link/ya/79714180')
-#     assert (await get_song_link('https://music.yandex.com/track/79714180') ==
-#             'https://song.link/ya/79714180')
