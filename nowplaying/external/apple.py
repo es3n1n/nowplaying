@@ -115,7 +115,7 @@ class AppleMusicWrapperClient:
         out_tracks = []
         for track in response_json['data']:
             # Skip custom uploaded tracks
-            if 'url' not in track:
+            if 'url' not in track['attributes']:
                 continue
 
             out_tracks.append(AppleMusicTrack.load(track))
