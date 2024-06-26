@@ -182,16 +182,6 @@ test = ["anyio[trio]", "coverage[toml] (>=7)", "exceptiongroup (>=1.2.0)", "hypo
 trio = ["trio (>=0.23)"]
 
 [[package]]
-name = "args"
-version = "0.1.0"
-description = "Command Arguments for Humans."
-optional = false
-python-versions = "*"
-files = [
-    {file = "args-0.1.0.tar.gz", hash = "sha256:a785b8d837625e9b61c39108532d95b85274acd679693b71ebb5156848fcf814"},
-]
-
-[[package]]
 name = "astor"
 version = "0.8.1"
 description = "Read/rewrite/write Python ASTs"
@@ -659,19 +649,6 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
-name = "clint"
-version = "0.5.1"
-description = "Python Command Line Interface Tools"
-optional = false
-python-versions = "*"
-files = [
-    {file = "clint-0.5.1.tar.gz", hash = "sha256:05224c32b1075563d0b16d0015faaf9da43aa214e4a2140e51f08789e7a4c5aa"},
-]
-
-[package.dependencies]
-args = "*"
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -781,13 +758,14 @@ trio = ["trio (>=0.23)"]
 wmi = ["wmi (>=1.5.1)"]
 
 [[package]]
-name = "docopt"
-version = "0.6.2"
-description = "Pythonic argument parser, that will make you smile"
+name = "docopt-ng"
+version = "0.9.0"
+description = "Jazzband-maintained fork of docopt, the humane command line arguments parser."
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "docopt-0.6.2.tar.gz", hash = "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"},
+    {file = "docopt_ng-0.9.0-py3-none-any.whl", hash = "sha256:bfe4c8b03f9fca424c24ee0b4ffa84bf7391cb18c29ce0f6a8227a3b01b81ff9"},
+    {file = "docopt_ng-0.9.0.tar.gz", hash = "sha256:91c6da10b5bb6f2e9e25345829fb8278c78af019f6fc40887ad49b060483b1d7"},
 ]
 
 [[package]]
@@ -2327,14 +2305,14 @@ files = []
 develop = false
 
 [package.dependencies]
-clint = "*"
-docopt = "*"
+docopt-ng = "*"
 filelock = ">=3.0.0"
 mutagen = ">=1.45.0"
 pathvalidate = "*"
 requests = "*"
 soundcloud-v2 = ">=1.3.10"
 termcolor = "*"
+tqdm = "*"
 
 [package.extras]
 test = ["music-tag", "pytest", "pytest-cov", "pytest-dotenv"]
@@ -2342,8 +2320,8 @@ test = ["music-tag", "pytest", "pytest-cov", "pytest-dotenv"]
 [package.source]
 type = "git"
 url = "https://github.com/flyingrub/scdl"
-reference = "c96b308d258b1780a901c209453c96084ca937b0"
-resolved_reference = "c96b308d258b1780a901c209453c96084ca937b0"
+reference = "7438d0b6006cfb20b5315e1075f60443ef74ce19"
+resolved_reference = "7438d0b6006cfb20b5315e1075f60443ef74ce19"
 
 [[package]]
 name = "setuptools"
@@ -2468,6 +2446,26 @@ files = [
 
 [package.extras]
 tests = ["pytest", "pytest-cov"]
+
+[[package]]
+name = "tqdm"
+version = "4.66.4"
+description = "Fast, Extensible Progress Meter"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "tqdm-4.66.4-py3-none-any.whl", hash = "sha256:b75ca56b413b030bc3f00af51fd2c1a1a5eac6a0c1cca83cbb37a5c52abce644"},
+    {file = "tqdm-4.66.4.tar.gz", hash = "sha256:e4d936c9de8727928f3be6079590e97d9abfe8d39a590be678eb5919ffc186bb"},
+]
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[package.extras]
+dev = ["pytest (>=6)", "pytest-cov", "pytest-timeout", "pytest-xdist"]
+notebook = ["ipywidgets (>=6)"]
+slack = ["slack-sdk"]
+telegram = ["requests"]
 
 [[package]]
 name = "typer"
@@ -3037,4 +3035,4 @@ test = ["pytest (>=8.1,<9.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "42e4982dc07b64f4452f3e526d3620921ef39ea04df088ef2fdfa6d7d133af89"
+content-hash = "5b205c71d39862925a1573f6283ed3d94b9bb066fe4842189a4008a8c6df64f5"
