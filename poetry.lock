@@ -2341,9 +2341,9 @@ test = ["music-tag", "pytest", "pytest-cov", "pytest-dotenv"]
 
 [package.source]
 type = "git"
-url = "https://github.com/es3n1n/scdl"
-reference = "cd89083e3573d7cae96b459b055c097ee8c9fe5b"
-resolved_reference = "cd89083e3573d7cae96b459b055c097ee8c9fe5b"
+url = "https://github.com/flyingrub/scdl"
+reference = "c96b308d258b1780a901c209453c96084ca937b0"
+resolved_reference = "c96b308d258b1780a901c209453c96084ca937b0"
 
 [[package]]
 name = "setuptools"
@@ -3037,4 +3037,4 @@ test = ["pytest (>=8.1,<9.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "49951473cc25a271821cb510e681da52ce8b78c9058eca90002fef88bd8d9763"
+content-hash = "42e4982dc07b64f4452f3e526d3620921ef39ea04df088ef2fdfa6d7d133af89"
