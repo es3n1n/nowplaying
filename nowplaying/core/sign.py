@@ -1,4 +1,6 @@
+import binascii
 import hmac
+from base64 import b64decode, b64encode
 from datetime import datetime, timedelta
 from hashlib import sha256
 from typing import Any
@@ -25,11 +27,11 @@ def _payload_to_sign(payload: Any, expires_at: int) -> str:
 
 def sign(payload: Any) -> str:
     expires_at = int((datetime.utcnow() + SIGN_EXPIRES_IN).timestamp())
-    return orjson.dumps({
+    return b64encode(orjson.dumps({
         'h': payload,
         'e': expires_at,
         'm': _hmac(_payload_to_sign(payload, expires_at)),
-    }).decode()
+    })).decode()
 
 
 def _validate_fields(payload: Any | None, signature: str | None, expires_at: int | None) -> bool:
@@ -44,8 +46,8 @@ def _validate_fields(payload: Any | None, signature: str | None, expires_at: int
 
 def verify_sign(state: str, check_expiration: bool = False, unquoted: bool = False) -> Any:
     try:
-        loaded = orjson.loads(state)
-    except orjson.JSONDecodeError:
+        loaded = orjson.loads(b64decode(state).decode())
+    except (binascii.Error, orjson.JSONDecodeError):
         # note: some weird fix for safari when it double urlencodes the url, idek
         if not unquoted:
             return verify_sign(unquote(state), check_expiration=check_expiration, unquoted=True)

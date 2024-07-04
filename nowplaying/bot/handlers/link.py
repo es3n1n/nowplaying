@@ -1,3 +1,5 @@
+from urllib.parse import unquote
+
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
@@ -22,7 +24,7 @@ async def get_auth_keyboard(user_id: int) -> InlineKeyboardMarkup:
         url = await platform.get_authorization_url(sign(user_id))
         buttons.append(InlineKeyboardButton(
             text=text,
-            url=url,
+            url=unquote(url),  # goofy fix for the macOS double urlencoding issue, idek don't ask me thx
         ))
 
     return InlineKeyboardMarkup(inline_keyboard=chunks(buttons, 2))

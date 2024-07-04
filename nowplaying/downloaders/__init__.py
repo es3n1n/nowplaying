@@ -14,6 +14,7 @@ from .youtube import YoutubeDownloader
 
 
 # Uses the same priority as declared
+# fixme: not sure about this ^ since we're using a dict nowadays
 DOWNLOADER_CLASSES = (
     DeezerDownloader,
     YoutubeDownloader,
