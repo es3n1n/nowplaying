@@ -38,7 +38,7 @@ A Telegram bot for sharing and discovering music across various platforms.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/es3n1n/nowplaying.git
+   git clone https://github.com/es3n1n/nowplaying.git --recursive
    cd nowplaying
    ```
 
