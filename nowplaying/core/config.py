@@ -60,16 +60,6 @@ class Settings(BaseSettings):
         return f'{self.BOT_URL}?start={payload_str}'
 
     @property
-    def db_connection_info(self) -> str:
-        return (
-            f'dbname={self.POSTGRES_DB} '
-            + f'user={self.POSTGRES_USER} '
-            + f'password={self.POSTGRES_PASSWORD} '
-            + f'host={self.POSTGRES_ADDRESS} '
-            + f'port={self.POSTGRES_PORT}'
-        )
-
-    @property
     def is_dev_env(self):
         return self.ENVIRONMENT.lower() in {'dev', 'development'}
 
