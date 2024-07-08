@@ -2,7 +2,8 @@ from asyncio import TaskGroup
 from typing import Set, Tuple
 from urllib.parse import quote
 
-from aiogram import types
+from aiogram import html, types
+from aiogram.enums import ParseMode
 
 from ....core.config import config
 from ....core.database import db
@@ -10,16 +11,17 @@ from ....enums.platform_features import PlatformFeature
 from ....models.song_link import SongLinkPlatformType
 from ....models.track import Track
 from ....platforms import PlatformClientABC, get_platform_from_telegram_id, get_platform_track
+from ....util.string import extract_from_query
 from ...bot import bot, dp
 from ...caching import get_cached_file_id
-from .inline_utils import NUM_OF_ITEMS_TO_QUERY, track_to_caption, url
+from .inline_utils import NUM_OF_ITEMS_TO_QUERY, track_to_caption
 
 
 async def parse_inline_result_query(
     inline_result: types.ChosenInlineResult,
 ) -> Tuple[PlatformClientABC | None, Track | None]:
     uri = inline_result.result_id
-    platform_name, track_id = uri.split('_', maxsplit=1)
+    platform_name, track_id = extract_from_query(uri, arguments_count=2)
     platform_type = SongLinkPlatformType(platform_name)
 
     if not await db.is_user_authorized(inline_result.from_user.id, platform_type):
@@ -56,7 +58,6 @@ async def fetch_feed_and_clients(
     authorized_platforms = await db.get_user_authorized_platforms(user_id)
 
     if not authorized_platforms:
-        auth_url: str = url('authorize', config.BOT_URL)
         await bot.answer_inline_query(
             inline_query_id=query_id,
             results=[
@@ -65,8 +66,8 @@ async def fetch_feed_and_clients(
                     title='Please authorize',
                     url=config.BOT_URL,
                     input_message_content=types.InputTextMessageContent(
-                        message_text=f'Please {auth_url} first (╯°□°)╯︵ ┻━┻',
-                        parse_mode='HTML',
+                        message_text=f'Please {html.link("authorize", config.BOT_URL)} first (╯°□°)╯︵ ┻━┻',
+                        parse_mode=ParseMode.HTML,
                     ),
                 ),
             ],
@@ -128,7 +129,7 @@ def create_cached_audio_result(
         id=track.uri,
         audio_file_id=cached_file_id,
         caption=track_to_caption(client, track),
-        parse_mode='HTML',
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -149,10 +150,13 @@ def create_audio_result(
     return types.InlineQueryResultAudio(
         id=track.uri if can_proceed else str(index),
         audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
+
         performer=track.artist,
         title=name,
+
         caption=track_to_caption(client, track, is_getter_available, is_track_available),
-        parse_mode='HTML',
+
+        parse_mode=ParseMode.HTML,
         reply_markup=types.InlineKeyboardMarkup(
             inline_keyboard=[[
                 types.InlineKeyboardButton(

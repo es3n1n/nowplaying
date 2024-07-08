@@ -1,6 +1,7 @@
 from io import BytesIO
 
-from aiogram import types
+from aiogram import html, types
+from aiogram.enums import ParseMode
 
 from ....core.config import config
 from ....models.track import Track
@@ -13,10 +14,6 @@ from ...caching import cache_file
 # This number also doesn't include the currently playing song
 NUM_OF_ITEMS_TO_QUERY: int = 2
 UNAVAILABLE_MSG: str = 'Error: this track is not available :('
-
-
-def url(text: str, href: str) -> str:
-    return f'<a href="{href}">{text}</a>'
 
 
 def track_to_caption(
@@ -34,13 +31,13 @@ def track_to_caption(
     elif not is_track_available:
         message_text += UNAVAILABLE_MSG + '\n'
 
-    message_text += f'{url(track.platform.name.capitalize(), track.url)}'
+    message_text += f'{html.link(track.platform.name.capitalize(), track.url)}'
 
     if client.can_control_playback:
-        message_text += f' ({url("▶️", play_url)})'
+        message_text += f' ({html.link("▶️", play_url)})'
 
     if track.song_link is not None:
-        message_text += f' | {url("Other", track.song_link)}'
+        message_text += f' | {html.link("Other", track.song_link)}'
 
     return message_text
 
@@ -68,7 +65,7 @@ async def cache_audio_and_edit(
             title=track.name,
             media=file_id,
             caption=caption,
-            parse_mode='HTML',
+            parse_mode=ParseMode.HTML,
         ),
         inline_message_id=inline_message_id,
     )

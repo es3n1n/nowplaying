@@ -29,6 +29,7 @@ async def cache_file(
     name: str,
     user: User,
 ) -> str:
+    # Special handling for UUIDs
     uri_safe: str = uri.replace('-', '_')
 
     thumbnail: URLInputFile | None = None
@@ -40,8 +41,8 @@ async def cache_file(
         BufferedInputFile(file=file_data.read(), filename=f'{performer} - {name}.mp3'),
         caption=(
             f'#{uri_safe}\n'
-            f'#uid_{user.id} #u_{str(user.username)} {user.full_name}\n'
-            f'{performer} - {name}'
+            + f'#uid_{user.id} #u_{str(user.username)} {user.full_name}\n'
+            + f'{performer} - {name}'
         ),
         performer=performer,
         title=name,

@@ -37,7 +37,7 @@ async def on_token_invalidation(event: ErrorEvent) -> bool:
     if exc.platform == SongLinkPlatformType.SPOTIFY:
         footer = (
             'This might be because spotify has not approved this application yet.\n'
-            + f'There might be some free dev user slots for the application dm @{config.DEVELOPER_USERNAME}'
+            + f'There might be some free dev user slots for the application, dm @{config.DEVELOPER_USERNAME}'
         )
 
     logger.opt(exception=exc).warning('Invalidating platform session')

@@ -1,3 +1,4 @@
+from aiogram.enums import ParseMode
 from aiogram.types import ChosenInlineResult
 
 from ....downloaders import download_mp3
@@ -25,7 +26,7 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
         await bot.edit_message_caption(
             inline_message_id=inline_result.inline_message_id,
             caption=caption,
-            parse_mode='HTML',
+            parse_mode=ParseMode.HTML,
         )
         return
 
