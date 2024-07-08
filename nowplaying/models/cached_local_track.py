@@ -1,10 +1,9 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 from ..enums.platform_type import SongLinkPlatformType
 
 
-@dataclass
-class CachedLocalTrack:
+class CachedLocalTrack(BaseModel):
     id: str
     platform_type: SongLinkPlatformType
     url: str

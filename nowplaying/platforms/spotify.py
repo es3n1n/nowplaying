@@ -12,7 +12,7 @@ from ..external.spotify import Spotify, SpotifyCacheHandlerABC, SpotifyError
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.exceptions import rethrow_platform_error
-from ..util.tz import UTC_TZ
+from ..util.time import UTC_TZ
 from .abc import PlatformABC, PlatformClientABC
 
 

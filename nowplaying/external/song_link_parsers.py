@@ -65,7 +65,7 @@ async def fallback_to_odesli(client: ClientSession, track_url: str):
 
 
 def get_song_link_parser(domain: str) -> Callable[[ParseResult], str] | None:
-    # Special silly handling for the yandex music as they have 20+ domains
+    # Special silly handling for the yandex music as they have lots of domains
     if domain.startswith('music.yandex.'):
         return SONG_LINK_PARSERS.get('music.yandex.com')
     return SONG_LINK_PARSERS.get(domain)

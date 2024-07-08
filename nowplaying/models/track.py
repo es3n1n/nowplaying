@@ -6,10 +6,8 @@ from yandex_music import Track as YandexTrack
 from ..external.apple import AppleMusicTrack
 from ..external.lastfm import LastFMTrack
 from ..external.song_link import get_song_link
+from ..util.time import TS_NULL
 from .song_link import SongLinkPlatformType
-
-
-_TS_NULL = datetime.fromtimestamp(0)
 
 
 class Track(BaseModel):
@@ -24,7 +22,7 @@ class Track(BaseModel):
     song_link: str | None
 
     currently_playing: bool = False
-    played_at: datetime = _TS_NULL
+    played_at: datetime = TS_NULL
 
     @property
     def full_title(self) -> str:
@@ -37,14 +35,14 @@ class Track(BaseModel):
 
     @property
     def is_available(self) -> bool:
-        # todo: implement unavailable logic :sadge:
+        # todo: implement the "unavailable" logic :sadge:
         return self.id is not None
 
     @classmethod
     async def from_spotify_item(
         cls,
         track_item: dict,
-        played_at: datetime = _TS_NULL,
+        played_at: datetime = TS_NULL,
         is_playing: bool = False,
     ) -> 'Track':
         url: str = track_item['external_urls']['spotify']
@@ -66,7 +64,7 @@ class Track(BaseModel):
         *,
         track_id: str | None,
         song_link_url: str | None,
-        played_at: datetime = _TS_NULL,
+        played_at: datetime = TS_NULL,
         is_playing: bool = False,
     ) -> 'Track':
         return cls(
@@ -84,7 +82,7 @@ class Track(BaseModel):
     async def from_yandex_item(
         cls,
         track: YandexTrack,
-        played_at: datetime = _TS_NULL,
+        played_at: datetime = TS_NULL,
         is_playing: bool = False,
     ) -> 'Track':
         url = f'https://music.yandex.ru/track/{track.id}'
@@ -104,7 +102,7 @@ class Track(BaseModel):
         cls,
         track: AppleMusicTrack,
         currently_playing: bool = False,
-        played_at: datetime = _TS_NULL,
+        played_at: datetime = TS_NULL,
     ) -> 'Track':
         return cls(
             platform=SongLinkPlatformType.APPLE,

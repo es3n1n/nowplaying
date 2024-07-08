@@ -32,16 +32,6 @@ async def get_platform_from_telegram_id(telegram_id: int, platform_type: SongLin
     raise ValueError('Unsupported platform')
 
 
-async def get_platform_authorization_url(state: str, platform_type: SongLinkPlatformType) -> str:
-    for platform in platforms:
-        if platform.type != platform_type:
-            continue
-
-        return await platform.get_authorization_url(state)
-
-    raise ValueError('Unsupported platform')
-
-
 async def get_platform_track(
     track_id: str,
     telegram_id: int,

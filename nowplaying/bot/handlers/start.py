@@ -5,7 +5,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from ...core.config import config
 from ...core.database import db
-from ...enums.callback_buttons import CallbackButtons
+from ...enums.callback_buttons import CallbackButton
 from ...enums.start_actions import StartAction
 from ...models.song_link import SongLinkPlatformType
 from ...platforms import get_platform_from_telegram_id, yandex
@@ -40,10 +40,10 @@ async def _handle_controls(uri: str, message: Message) -> bool:
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text='Play', callback_data=encode_query(CallbackButtons.PLAY_PREFIX, uri),
+                        text='Play', callback_data=encode_query(CallbackButton.PLAY_PREFIX, uri),
                     ),
                     InlineKeyboardButton(
-                        text='Add to queue', callback_data=encode_query(CallbackButtons.ADD_TO_QUEUE_PREFIX, uri),
+                        text='Add to queue', callback_data=encode_query(CallbackButton.ADD_TO_QUEUE_PREFIX, uri),
                     ),
                 ],
             ],

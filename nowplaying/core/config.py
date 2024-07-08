@@ -73,7 +73,8 @@ class Settings(BaseSettings):
 
     @staticmethod
     def decode_start_url(payload: str) -> str | None:  # noqa: WPS602
-        # fixme @es3n1n: ghetto workaround for paddings, we can't use = in start payload because telegram doesn't allows
+        # fixme @es3n1n: ghetto workaround for paddings, we can't use = in start payload because telegram doesn't allow
+        #   them
         try:
             return b64decode(payload + ('=' * 3)).decode()
         except ValueError:

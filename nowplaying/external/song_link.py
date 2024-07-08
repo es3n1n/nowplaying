@@ -11,7 +11,7 @@ from ..util.url import ParseResult, urlparse
 from .song_link_parsers import fallback_to_odesli, get_song_link_parser
 
 
-# For some reason httpx.AsyncClient sometimes just timeout shit for no reason, idek, tested on this url
+# For some reason httpx.AsyncClient sometimes just timeouts for no reason, idek, tested on this url
 # * https://song.link/ya/119843738
 _client: ClientSession | None = None
 

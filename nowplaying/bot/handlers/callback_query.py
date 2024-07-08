@@ -1,7 +1,7 @@
 from aiogram.types import CallbackQuery
 
 from ...core.database import db
-from ...enums.callback_buttons import CallbackButtons
+from ...enums.callback_buttons import CallbackButton
 from ...models.song_link import SongLinkPlatformType
 from ...platforms import get_platform_from_telegram_id
 from ...util.string import extract_from_query
@@ -35,9 +35,9 @@ async def handle_controls(query: CallbackQuery) -> None:
 
     client = await get_platform_from_telegram_id(query.from_user.id, platform_type)
 
-    if command == CallbackButtons.PLAY_PREFIX:
+    if command == CallbackButton.PLAY_PREFIX:
         await client.play(track_id)
-    elif command == CallbackButtons.ADD_TO_QUEUE_PREFIX:
+    elif command == CallbackButton.ADD_TO_QUEUE_PREFIX:
         await client.add_to_queue(track_id)
 
     await bot.answer_callback_query(query.id, text='Done')
@@ -48,11 +48,11 @@ async def controls_handler(query: CallbackQuery) -> None:
     if query.data is None:
         raise ValueError()
 
-    if query.data == CallbackButtons.LOADING:
+    if query.data == CallbackButton.LOADING:
         await bot.answer_callback_query(query.id, text='Downloading the audio, please wait.')
         return
 
-    if query.data.startswith(CallbackButtons.LOGOUT_PREFIX):
+    if query.data.startswith(CallbackButton.LOGOUT_PREFIX):
         await handle_logout(query)
         return
 

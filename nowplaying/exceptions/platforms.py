@@ -8,7 +8,7 @@ class BasePlatformError(Exception):
 
 
 class PlatformTokenInvalidateError(BasePlatformError):
-    """Token has expired, or something went wrong."""
+    """The token has expired, or something went wrong."""
 
 
 class PlatformInvalidAuthCodeError(BasePlatformError):

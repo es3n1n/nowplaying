@@ -42,7 +42,6 @@ class SoundcloudDownloader(DownloaderABC):
             return None
 
         filename = None
-        is_already_downloaded = False
 
         kw = {
             'name_format': temp_file(),
@@ -51,10 +50,10 @@ class SoundcloudDownloader(DownloaderABC):
         }
 
         if track.downloadable:
-            filename, is_already_downloaded = download_original_file(self.client, track, **kw)
+            filename, _ = download_original_file(self.client, track, **kw)
 
         if filename is None:
-            filename, is_already_downloaded = download_hls(self.client, track, **kw)
+            filename, _ = download_hls(self.client, track, **kw)
 
         if filename is None:
             return None

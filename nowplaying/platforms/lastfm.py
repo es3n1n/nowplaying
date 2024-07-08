@@ -14,11 +14,11 @@ from ..models.cached_local_track import CachedLocalTrack
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.exceptions import rethrow_platform_error
+from ..util.time import TS_NULL
 from .abc import PlatformABC, PlatformClientABC
 
 
 TYPE = SongLinkPlatformType.LASTFM
-_TS_NULL = datetime.utcfromtimestamp(0)
 
 
 @alru_cache()
@@ -80,7 +80,7 @@ class LastfmClient(PlatformClientABC):
     async def _parse_track(
         cls,
         track: LastFMTrack,
-        played_at: datetime = _TS_NULL,
+        played_at: datetime = TS_NULL,
         is_playing: bool = False,
     ) -> Track:
         out_track = await Track.from_lastfm_item(

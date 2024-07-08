@@ -16,9 +16,6 @@ from .abc import PlatformABC, PlatformClientABC
 TYPE = SongLinkPlatformType.APPLE
 
 
-# todo: add rethrows once api is implemented
-
-
 class AppleClient(PlatformClientABC):
     features = {
         PlatformFeature.TRACK_GETTERS: True,
@@ -37,7 +34,8 @@ class AppleClient(PlatformClientABC):
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
         cur_time = datetime.utcnow()
 
-        # +1 because we don't account currently playing track, but apple music includes
+        # Add 1 to the limit because the currently playing track is not counted,
+        # but Apple Music includes it in the recently played tracks.
         for index, track in enumerate(await self.app.recently_played(limit=limit + 1)):
             yield await Track.from_apple_item(
                 track,
