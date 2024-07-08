@@ -104,7 +104,7 @@ This project uses a few linters
    ```
 2. Mypy
    ```bash
-   run mypy .
+   mypy .
    ```
 
 ## Contributing
