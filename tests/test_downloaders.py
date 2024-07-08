@@ -1,7 +1,8 @@
 from io import BytesIO
 
-from pytest import mark
+from pytest import mark, skip
 
+from nowplaying.core.config import config
 from nowplaying.downloaders import DOWNLOADERS
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.models.song_link import SongLinkPlatform
@@ -14,6 +15,10 @@ async def _download(platform_type: SongLinkPlatformType, song_url: str) -> Bytes
 
 @mark.asyncio
 async def test_deezer() -> None:
+    # Deezer cookie isn't set, skip the test
+    if config.DEEZER_ARL_COOKIE in ('', '1'):
+        skip('Deezer cookie is not set')
+
     assert await _download(SongLinkPlatformType.DEEZER, 'https://www.deezer.com/track/1577218332') is not None
 
 
