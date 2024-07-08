@@ -19,6 +19,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -yq --no-install-recommends ffmpeg
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
