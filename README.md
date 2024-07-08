@@ -1,7 +1,7 @@
 # playinnowbot
 
 <p align="center">
-  <img src="https://i.imgur.com/sQQSbeY.png" alt="preview">
+  <img src="https://i.imgur.com/pmBfFF0.png" alt="preview">
 </p>
 
 A Telegram bot for sharing and discovering music across various platforms.
