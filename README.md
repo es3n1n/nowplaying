@@ -100,11 +100,11 @@ This project uses a few linters
 
 1. Flake8
    ```bash
-   poetry run flake8 .
+   flake8 .
    ```
 2. Mypy
    ```bash
-   poetry run mypy .
+   run mypy .
    ```
 
 ## Contributing
