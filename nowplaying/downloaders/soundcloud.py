@@ -1,25 +1,15 @@
+from contextlib import redirect_stdout
 from io import BytesIO
-from os import remove
-from pathlib import Path
 from typing import Optional
 
-from scdl import scdl as sc_dl
-from scdl.scdl import download_hls, download_original_file
-from soundcloud import BasicTrack, SoundCloud, Track
+from requests import HTTPError
+from scdl.scdl import SoundCloudException, download_hls, download_original_file
+from soundcloud import BasicTrack, SoundCloud
 
 from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
-from ..util.fs import temp_file
+from ..models.track import Track
 from ..util.logger import logger
 from .abc import DownloaderABC
-
-
-def get_filename(track: BasicTrack, original_filename=None, aac=False, playlist_info=None, **kwargs):
-    ext = '.m4a' if aac else '.mp3'  # contain aac in m4a to write metadata
-    path: Path = kwargs['name_format']
-    return path.parent / (path.name + ext)
-
-
-sc_dl.get_filename = get_filename
 
 
 class SoundcloudDownloader(DownloaderABC):
@@ -32,37 +22,37 @@ class SoundcloudDownloader(DownloaderABC):
         logger.debug(f'Downloading {platform.url}')
 
         track = self.client.resolve(platform.url)
-        if track is None:
-            return None
-
-        if track.kind != 'track' or not isinstance(track, (BasicTrack, Track)):
+        if track is None or not isinstance(track, (BasicTrack, Track)):
             return None
 
         if not track.streamable or track.policy == 'BLOCK':
             return None
 
-        filename = None
-
         kw = {
-            'name_format': temp_file(),
+            'name_format': '-',
             'onlymp3': True,
             'title': '',
+            'hide_progress': True,
         }
 
-        if track.downloadable:
-            filename, _ = download_original_file(self.client, track, **kw)
+        io = BytesIO()
+        io.close = lambda: None  # type: ignore
 
-        if filename is None:
-            filename, _ = download_hls(self.client, track, **kw)
+        filename = None
+
+        try:
+            with redirect_stdout(io):  # type: ignore
+                if track.downloadable:
+                    filename, _ = download_original_file(self.client, track, **kw)
+
+                if filename is None:
+                    filename, _ = download_hls(self.client, track, **kw)
+        except (SoundCloudException, HTTPError) as exc:
+            logger.opt(exception=exc).warning('Got a soundcloud error while downloading')
+            return None
 
         if filename is None:
             return None
 
-        # fixme: @es3n1n: not sure how to fix this epic overhead since ffmpeg encodes stuff to files :thinking:
-        io = BytesIO()
-        with open(filename, 'rb') as out_file:
-            io.write(out_file.read())
-
         io.seek(0)
-        remove(filename)
         return io

@@ -1,5 +1,5 @@
+from collections import OrderedDict
 from io import BytesIO
-from types import MappingProxyType
 from typing import Optional, Tuple
 
 from loguru import logger
@@ -14,16 +14,15 @@ from .youtube import YoutubeDownloader
 
 
 # Uses the same priority as declared
-# fixme: not sure about this ^ since we're using a dict nowadays
 DOWNLOADER_CLASSES = (
     DeezerDownloader,
-    YoutubeDownloader,
     SoundcloudDownloader,
+    YoutubeDownloader,
 )
-DOWNLOADERS: MappingProxyType[SongLinkPlatformType, DownloaderABC] = MappingProxyType({
-    downloader_type.platform: downloader_type()  # type: ignore
+DOWNLOADERS: OrderedDict[SongLinkPlatformType, DownloaderABC] = OrderedDict(
+    (downloader_type.platform, downloader_type())  # type: ignore
     for downloader_type in DOWNLOADER_CLASSES
-})
+)
 
 
 async def download_mp3(track: Track) -> Tuple[str, Optional[BytesIO]]:
