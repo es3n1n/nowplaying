@@ -4,6 +4,7 @@ from aiogram.types import ErrorEvent, InlineQueryResultArticle, InputTextMessage
 
 from ...core.config import config
 from ...core.database import db
+from ...enums.platform_type import SongLinkPlatformType
 from ...exceptions.platforms import PlatformInvalidAuthCodeError, PlatformTokenInvalidateError
 from ...util.logger import logger
 from ..bot import bot, dp
@@ -32,10 +33,17 @@ async def on_invalid_auth_code_error(event: ErrorEvent) -> bool:
 async def on_token_invalidation(event: ErrorEvent) -> bool:
     exc: PlatformTokenInvalidateError = event.exception  # type: ignore
 
+    footer: str = ''
+    if exc.platform == SongLinkPlatformType.SPOTIFY:
+        footer = (
+            'This might be because spotify has not approved this application yet.\n'
+            + f'There might be some free dev user slots for the application dm @{config.DEVELOPER_USERNAME}'
+        )
+
     logger.opt(exception=exc).warning('Invalidating platform session')
     await bot.send_message(
         exc.telegram_id,
-        f'Your {exc.platform.name.capitalize()} session has expired/got invalidated, please authorize again.',
+        f'Your {exc.platform.name.capitalize()} session has expired/got invalidated, please authorize again.\n{footer}',
     )
     await db.delete_user_token(exc.telegram_id, exc.platform)
     return True
