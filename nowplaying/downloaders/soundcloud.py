@@ -4,10 +4,9 @@ from typing import Optional
 
 from requests import HTTPError
 from scdl.scdl import SoundCloudException, download_hls, download_original_file
-from soundcloud import BasicTrack, SoundCloud
+from soundcloud import BasicTrack, SoundCloud, Track
 
 from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
-from ..models.track import Track
 from ..util.logger import logger
 from .abc import DownloaderABC
 
