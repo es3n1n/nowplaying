@@ -49,7 +49,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cp .env.example .env
-          pytest .
+          pytest . --exitfirst
 
       - name: mypy
         run: |
