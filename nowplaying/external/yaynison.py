@@ -162,8 +162,10 @@ class Yaynison:
         message = orjson.loads(await self._conn.recv())
         player_queue = message.get('player_state', {}).get('player_queue', {})
         current_index = player_queue.get('current_playable_index', 0)
+        playable_list = player_queue.get('playable_list', [])
 
-        for it in reversed(player_queue.get('playable_list', [])[:current_index]):
+        # note: + 1 because iteration starts from 0 yk
+        for it in reversed(playable_list[:(current_index + 1)]):
             if it['playable_type'] != 'TRACK':
                 continue
 
