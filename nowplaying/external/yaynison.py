@@ -163,8 +163,7 @@ class Yaynison:
         player_queue = message.get('player_state', {}).get('player_queue', {})
         current_index = player_queue.get('current_playable_index', 0)
 
-        # todo: iterate in reverse order
-        for it in player_queue.get('playable_list', [])[current_index:]:
+        for it in reversed(player_queue.get('playable_list', [])[:current_index]):
             if it['playable_type'] != 'TRACK':
                 continue
 
