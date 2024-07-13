@@ -22,7 +22,7 @@ class BotSession(AiohttpSession):
         form = self.build_form_data(bot=bot, method=method)
 
         if config.BOT_LOG_REQUESTS and method.__api_method__ != 'getUpdates':
-            logger.debug(f'Executing {url} with form {method.model_dump()}')
+            logger.info(f'Executing {url} with form {method.model_dump()}')
 
         try:
             async with session.post(
