@@ -8,6 +8,7 @@ from ...enums.platform_type import SongLinkPlatformType
 from ...exceptions.platforms import PlatformInvalidAuthCodeError, PlatformTokenInvalidateError
 from ...util.logger import logger
 from ..bot import bot, dp
+from ..reporter import report_error
 
 
 BROKE_MSG_TEXT: str = f'Something went wrong (┛ಠ_ಠ)┛彡┻━┻\nContact @{config.DEVELOPER_USERNAME}'
@@ -72,11 +73,6 @@ async def on_exception_group(event: ErrorEvent) -> bool:
 @dp.error()
 async def fallback_error_handler(event: ErrorEvent) -> bool:
     if event.update.message is not None:
-        logger.opt(exception=event.exception).error(
-            f'Something broke in message handler!\n'
-            f'Update: {event.update.model_dump_json(indent=3)}',
-        )
-
         try:
             await bot.send_message(
                 chat_id=event.update.message.chat.id,
@@ -86,14 +82,14 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
         except TelegramAPIError:
             return True
 
+        await report_error(
+            f'Something broke in message handler!\n'
+            f'Update: {event.update.model_dump_json(indent=3)}',
+            event.exception,
+        )
         return True
 
     if event.update.inline_query is not None:
-        logger.opt(exception=event.exception).error(
-            f'Something broke in inline query handler!\n'
-            f'Update: {event.update.model_dump_json(indent=3)}',
-        )
-
         try:
             await bot.answer_inline_query(
                 event.update.inline_query.id,
@@ -112,10 +108,16 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
         except TelegramAPIError:
             return True
 
+        await report_error(
+            f'Something broke in inline query handler!\n'
+            f'Update: {event.update.model_dump_json(indent=3)}',
+            event.exception,
+        )
         return True
 
-    logger.opt(exception=event.exception).error(
+    await report_error(
         f'Something went wrong! Not sure where though\n'
         f'Update: {event.update.model_dump_json(indent=3)}',
+        event.exception,
     )
     return False

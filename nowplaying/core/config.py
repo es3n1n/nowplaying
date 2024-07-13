@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
     BOT_CACHE_CHAT_ID: int = 1490827215
     BOT_URL: Annotated[str, Field(validate_default=True)] = 'https://t.me/playinnowbot'
+    BOT_LOG_REQUESTS: bool = False
+    BOT_TELEGRAM_ERROR_REPORTING: bool = True
 
     STATE_SECRET: str
 

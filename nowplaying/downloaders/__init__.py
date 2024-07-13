@@ -39,7 +39,7 @@ async def download_mp3(track: Track) -> Tuple[str, Optional[BytesIO]]:
         logger.debug(f'Trying to download {platform.url} from {platform.platform.name}')
         result_mp3 = await downloader.download_mp3(platform)
 
-        if result_mp3 is not None:
+        if result_mp3 is not None and result_mp3.getvalue():
             break
 
     return song_link_info.thumbnail_url, result_mp3

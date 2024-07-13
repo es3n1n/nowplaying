@@ -1,8 +1,7 @@
 from io import BytesIO
 from typing import Optional
 
-from ..bot.bot import bot
-from ..core.config import config
+from ..bot.reporter import report_error
 from ..external.deezer import (
     TYPE_TRACK,
     Deezer403Exception,
@@ -27,7 +26,7 @@ class DeezerDownloader(DownloaderABC):
         except Deezer404Exception:
             return None
         except Deezer403Exception:
-            await bot.send_message(config.BOT_DEV_CHAT_ID, 'Deezer apl cookie is dead!! please update senpai')
+            await report_error('Deezer apl cookie is dead!! please update senpai')
             return None
 
         io = BytesIO()

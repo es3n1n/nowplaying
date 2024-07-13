@@ -1,9 +1,11 @@
+from asyncio import create_task
 from contextlib import redirect_stdout
 from io import BytesIO
 from typing import Optional
 
 from yt_dlp import DownloadError, YoutubeDL
 
+from ..bot.reporter import report_error
 from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
 from ..util.logger import logger
 from .abc import DownloaderABC
@@ -20,7 +22,7 @@ class YoutubeDLLogger:
 
     @staticmethod
     def error(msg: str):  # noqa: WPS602
-        logger.error(msg)
+        create_task(report_error(f'Youtube error: {msg}'))
 
 
 class YoutubeDownloader(DownloaderABC):

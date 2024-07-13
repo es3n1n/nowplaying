@@ -3,12 +3,16 @@ from io import BytesIO
 from typing import Optional
 
 from requests import HTTPError
-from scdl.scdl import SoundCloudException, download_hls, download_original_file
+from scdl.scdl import SoundCloudException, download_hls, download_original_file, is_ffmpeg_available
 from soundcloud import BasicTrack, SoundCloud, Track
 
 from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
 from ..util.logger import logger
 from .abc import DownloaderABC
+
+
+if not is_ffmpeg_available():
+    raise ValueError('Please install ffmpeg (and add it to the PATH if needed)')
 
 
 class SoundcloudDownloader(DownloaderABC):
@@ -32,6 +36,7 @@ class SoundcloudDownloader(DownloaderABC):
             'onlymp3': True,
             'title': '',
             'hide_progress': True,
+            'c': True,
         }
 
         io = BytesIO()

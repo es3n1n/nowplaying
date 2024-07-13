@@ -68,7 +68,8 @@ def init_logger() -> None:
             handler_conf.pop('stream')
 
     fmt = (
-        '<level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
+        '<level>{time}</level> | <level>{level: <8}</level> | '
+        + '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
         + '<level>{message}</level>'
     )
 
