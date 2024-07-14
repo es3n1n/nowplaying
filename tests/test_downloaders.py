@@ -16,7 +16,7 @@ async def _download(platform_type: SongLinkPlatformType, song_url: str) -> Bytes
 @mark.asyncio
 async def test_deezer() -> None:
     # Deezer cookie isn't set, skip the test
-    if config.DEEZER_ARL_COOKIE in ('', '1'):
+    if not config.deezer_apl_cookie_set:
         skip('Deezer cookie is not set')
 
     assert await _download(SongLinkPlatformType.DEEZER, 'https://www.deezer.com/track/1577218332') is not None

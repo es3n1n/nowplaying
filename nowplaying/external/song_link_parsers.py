@@ -14,12 +14,12 @@ def get_spotify_link(url: ParseResult) -> str:
     return f'https://song.link/s/{track_id}'
 
 
-def get_yandex_link(url) -> str:
+def get_yandex_link(url: ParseResult) -> str:
     track_id = url.path.split('/')[-1]
     return f'https://song.link/ya/{track_id}'
 
 
-def get_apple_link(url) -> str:
+def get_apple_link(url: ParseResult) -> str:
     path_parts = url.path.split('/')
     album_id = path_parts[-1]
     if album_id.startswith('id'):
@@ -39,10 +39,15 @@ def get_apple_link(url) -> str:
     return f'https://album.link/i/{album_id}'
 
 
-def get_youtube_link(url) -> str:
+def get_youtube_link(url: ParseResult) -> str:
     qs = parse_qs(url.query)
     video_id = qs.get('v', [''])[0]
     return f'https://song.link/y/{video_id}'
+
+
+def get_deezer_link(url: ParseResult) -> str:
+    track_id = url.path.split('/')[-1]
+    return f'https://song.link/d/{track_id}'
 
 
 async def fallback_to_odesli(client: ClientSession, track_url: str):
@@ -80,4 +85,6 @@ SONG_LINK_PARSERS: MappingProxyType[str, Callable[[ParseResult], str]] = Mapping
     'geo.music.apple.com': get_apple_link,
 
     'youtube.com': get_youtube_link,
+
+    'deezer.com': get_deezer_link,
 })
