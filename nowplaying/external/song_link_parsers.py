@@ -5,8 +5,8 @@ from urllib.parse import ParseResult, parse_qs
 import orjson
 from aiohttp import ClientSession
 
+from ..bot.reporter import report_error
 from ..util.http import STATUS_OK
-from ..util.logger import logger
 
 
 def get_spotify_link(url: ParseResult) -> str:
@@ -51,7 +51,7 @@ def get_deezer_link(url: ParseResult) -> str:
 
 
 async def fallback_to_odesli(client: ClientSession, track_url: str):
-    logger.warning(f'Falling back to Odesli API for the URL: {track_url}')
+    await report_error(f'Falling back to Odesli API for the URL: {track_url}')
     response = await client.get('https://api.odesli.co/resolve', params={'url': track_url})
 
     if response.status != STATUS_OK:
