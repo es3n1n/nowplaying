@@ -82,5 +82,9 @@ class Settings(BaseSettings):
         except ValueError:
             return None
 
+    @property
+    def deezer_apl_cookie_set(self) -> bool:
+        return self.DEEZER_ARL_COOKIE not in {'', '1'}
+
 
 config = Settings()  # type: ignore

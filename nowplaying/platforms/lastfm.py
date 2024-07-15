@@ -8,7 +8,8 @@ from ..core.config import config
 from ..core.database import db
 from ..enums.platform_features import PlatformFeature
 from ..exceptions.platforms import PlatformInvalidAuthCodeError
-from ..external.lastfm import LastFMClient, LastFMError, LastFMTrack, query_lastfm_external_track_links
+from ..external.deezer import search_tracks
+from ..external.lastfm import LastFMClient, LastFMError, LastFMTrack, query_last_fm_url
 from ..external.song_link import get_song_link
 from ..models.cached_local_track import CachedLocalTrack
 from ..models.song_link import SongLinkPlatformType
@@ -22,14 +23,27 @@ TYPE = SongLinkPlatformType.LASTFM
 
 
 @alru_cache()
-async def _query_song_link(url: str) -> str | None:
-    for external_url in await query_lastfm_external_track_links(url):
+async def query_song_link(url: str, force_searching: bool = False) -> str | None:
+    track_info = await query_last_fm_url(url)
+
+    # Let's try to query external urls and try with them first
+    external_urls = [] if force_searching else track_info.external_urls
+    for external_url in external_urls:
         song_link = await get_song_link(external_url)
         if song_link is None:
             continue
 
         return song_link
 
+    # No external urls, let's get the first match from deezer :sadge:
+    for track in await search_tracks(f'{track_info.track.artist} - {track_info.track.name}'):
+        song_link = await get_song_link(track.url)
+        if song_link is None:
+            continue
+
+        return song_link
+
+    # No matches gg
     return None
 
 
@@ -86,7 +100,7 @@ class LastfmClient(PlatformClientABC):
         out_track = await Track.from_lastfm_item(
             track=track,
             track_id=None,
-            song_link_url=await _query_song_link(track.url),
+            song_link_url=await query_song_link(track.url),
             played_at=played_at,
             is_playing=is_playing,
         )

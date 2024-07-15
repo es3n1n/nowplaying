@@ -4,6 +4,7 @@ import json
 import re
 import struct
 from binascii import a2b_hex, b2a_hex
+from dataclasses import dataclass
 from io import BytesIO
 
 from Crypto.Cipher import AES, Blowfish
@@ -20,28 +21,30 @@ TYPE_PLAYLIST = 'playlist'
 TYPE_ALBUM_TRACK = 'album_track'  # used for listing songs of an album
 # END TYPES
 
-session = AsyncClient(
-    headers={
-        'Pragma': 'no-cache',
-        'Origin': 'https://www.deezer.com',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 '
-                      'Safari/537.36',
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Accept': '*/*',
-        'Cache-Control': 'no-cache',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Connection': 'keep-alive',
-        'Referer': 'https://www.deezer.com/login',
-        'DNT': '1',
-    },
-    cookies={
-        'arl': config.DEEZER_ARL_COOKIE,
-        'comeback': '1'
-    },
-    timeout=Timeout(timeout=60.)
-)
+
+def get_client() -> AsyncClient:
+    return AsyncClient(
+        headers={
+            'Pragma': 'no-cache',
+            'Origin': 'https://www.deezer.com',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 '
+                          'Safari/537.36',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Accept': '*/*',
+            'Cache-Control': 'no-cache',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Connection': 'keep-alive',
+            'Referer': 'https://www.deezer.com/login',
+            'DNT': '1',
+        },
+        cookies={
+            'arl': config.DEEZER_ARL_COOKIE,
+            'comeback': '1'
+        },
+        timeout=Timeout(timeout=60.)
+    )
 
 
 class Deezer404Exception(Exception):
@@ -69,6 +72,22 @@ class ScriptExtractor(html.parser.HTMLParser):
 
     def handle_endtag(self, tag):
         self.curtag = None
+
+
+@dataclass
+class DeezerTrack:
+    id: str
+    title: str
+
+    album: str
+    album_id: str
+
+    artist: str
+    artist_id: str
+
+    @property
+    def url(self) -> str:
+        return f'https://www.deezer.com/track/{self.id}'
 
 
 def md5hex(data):
@@ -181,7 +200,8 @@ def writeid3v1_1(fo, song):
 
 
 async def downloadpicture(pic_idid):
-    resp = await session.get(get_picture_link(pic_idid))
+    async with get_client() as session:
+        resp = await session.get(get_picture_link(pic_idid))
     return resp.content
 
 
@@ -359,7 +379,10 @@ async def download_song(song: dict, output_file: BytesIO) -> bool:
     urlkey = genurlkey(song['SNG_ID'], song['MD5_ORIGIN'], song['MEDIA_VERSION'], song_quality)
     key = calcbfkey(song['SNG_ID'])
     url = 'https://e-cdns-proxy-%s.dzcdn.net/mobile/1/%s' % (song['MD5_ORIGIN'][0], urlkey.decode())
-    fh = await session.get(url)
+
+    async with get_client() as session:
+        fh = await session.get(url)
+
     if fh.status_code != 200:
         # I don't why this happens. to reproduce:
         # go to https://www.deezer.com/de/playlist/1180748301
@@ -387,7 +410,10 @@ async def get_song_infos_from_deezer_website(search_type, id):
     # Deezer403Exception if we are not logged in
 
     url = 'https://www.deezer.com/de/{}/{}'.format(search_type, id)
-    resp = await session.get(url)
+
+    async with get_client() as session:
+        resp = await session.get(url)
+
     if resp.status_code == 404:
         raise Deezer404Exception('ERROR: Got a 404 for {} from Deezer'.format(url))
     if 'MD5_ORIGIN' not in resp.text:
@@ -412,3 +438,28 @@ async def get_song_infos_from_deezer_website(search_type, id):
                 # just one song on that page
                 songs.append(DZR_APP_STATE['DATA'])
     return songs[0] if search_type == TYPE_TRACK else songs
+
+
+async def search_tracks(query: str) -> list[DeezerTrack]:
+    async with get_client() as session:
+        resp = await session.get('https://api.deezer.com/search/track', params={
+            'q': query,
+        })
+        json_data = resp.json()
+
+    result = []
+    for data in json_data.get('data', []):
+        item_type = data.get('type', '')
+        if item_type != 'track':
+            continue
+
+        result.append(DeezerTrack(
+            id=str(data['id']),
+            title=data['title'],
+            album=data['album']['title'],
+            album_id=str(data['album']['id']),
+            artist=data['artist']['name'],
+            artist_id=str(data['artist']['id']),
+        ))
+
+    return result

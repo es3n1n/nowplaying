@@ -43,6 +43,7 @@ class YoutubeDownloader(DownloaderABC):
                     {
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'mp3',
+                        'preferredquality': '320',
                     },
                 ],
                 'logger': YoutubeDLLogger,

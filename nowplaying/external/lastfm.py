@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import md5
+from html import unescape
 from re import DOTALL
 from re import compile as re_compile
 from re import findall, search
@@ -13,28 +14,19 @@ from ..core.config import config
 from ..util.http import STATUS_OK
 
 
-client = AsyncClient(
-    headers={
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
-    },
-    follow_redirects=True,
-)
+def get_client() -> AsyncClient:
+    return AsyncClient(
+        headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
+        },
+        follow_redirects=True,
+    )
+
 
 PLAY_LINKS_REGEX = re_compile(r'<ul\sclass="play-this-track-playlinks">(.*?)</ul>', DOTALL)
 HREF_URL_REGEX = re_compile('href="(https://.{1,100})"')
-
-
-@alru_cache()
-async def query_lastfm_external_track_links(track: str) -> list[str]:
-    response = await client.get(track)
-    if response.status_code != STATUS_OK:
-        raise ValueError(f'Got status code {response.status_code}')
-
-    container = search(PLAY_LINKS_REGEX, response.text)
-    if container is None:
-        return []
-
-    return list(set(findall(HREF_URL_REGEX, container.group(1))))
+PAGE_RESOURCE_NAME_REGEX = re_compile('data-page-resource-name="(.{1,256})"')
+PAGE_RESOURCE_ARTIST_NAME_REGEX = re_compile('data-page-resource-artist-name="(.{1,256})"')
 
 
 class LastFMError(Exception):
@@ -53,6 +45,41 @@ class LastFMPlayedTrack:
     is_now_playing: bool
     track: LastFMTrack
     playback_date: datetime
+
+
+@dataclass
+class LastFMTrackFromURL:
+    track: LastFMTrack
+    external_urls: list[str]
+
+
+@alru_cache()
+async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
+    async with get_client() as client:
+        response = await client.get(track_url)
+
+    if response.status_code != STATUS_OK:
+        raise ValueError(f'Got status code {response.status_code}')
+
+    name_match = search(PAGE_RESOURCE_NAME_REGEX, response.text)
+    artist_match = search(PAGE_RESOURCE_ARTIST_NAME_REGEX, response.text)
+
+    track = LastFMTrackFromURL(
+        track=LastFMTrack(
+            url=track_url,
+            artist=unescape(artist_match.group(1)) if artist_match else '',
+            name=unescape(name_match.group(1)) if name_match else '',
+        ),
+        external_urls=[],
+    )
+
+    container = search(PLAY_LINKS_REGEX, response.text)
+    if container is None:
+        return track
+
+    external_urls = set(findall(HREF_URL_REGEX, container.group(1)))
+    track.external_urls = list(map(unescape, external_urls))
+    return track
 
 
 def _ensure_response(response: Response) -> None:
