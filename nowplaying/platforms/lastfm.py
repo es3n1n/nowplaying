@@ -23,16 +23,17 @@ TYPE = SongLinkPlatformType.LASTFM
 
 
 @alru_cache()
-async def query_song_link(url: str) -> str | None:
+async def query_song_link(url: str, force_searching: bool = False) -> str | None:
     track_info = await query_last_fm_url(url)
 
     # Let's try to query external urls and try with them first
-    for external_url in track_info.external_urls:
-        song_link = await get_song_link(external_url)
-        if song_link is None:
-            continue
+    if not force_searching:
+        for external_url in track_info.external_urls:
+            song_link = await get_song_link(external_url)
+            if song_link is None:
+                continue
 
-        return song_link
+            return song_link
 
     # No external urls, let's get the first match from deezer :sadge:
     for track in await search_tracks(f'{track_info.track.artist} - {track_info.track.name}'):

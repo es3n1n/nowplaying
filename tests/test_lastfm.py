@@ -21,6 +21,7 @@ async def test_lfm_song_link_via_ext() -> None:
 async def test_lfm_song_link_via_deezer() -> None:
     link = await query_song_link(
         'https://www.last.fm/music/My+Dead+Girlfriend/夏八+-+Single/natsu+no+hachiouji',
+        force_searching=True,
     )
 
     assert link == 'https://song.link/d/2622472712'
