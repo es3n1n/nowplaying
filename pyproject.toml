@@ -35,7 +35,7 @@ asyncpg-stubs = "^0.29.1"
 wemake-python-styleguide = "^0.19.2"
 pytest = "^8.2.2"
 pytest-asyncio = "^0.23.7"
-types-requests = "^2.32.0.20240622"
+types-requests = "^2.32.0.20240712"
 
 [tool.isort]
 profile = "black"
