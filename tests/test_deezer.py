@@ -15,4 +15,3 @@ async def test_deezer_search() -> None:
     assert results[0].artist == 'MK (JPN)'
     assert results[0].artist_id == '10934636'
     assert results[0].url == 'https://www.deezer.com/track/1265359402'
-

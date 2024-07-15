@@ -19,9 +19,11 @@ async def test_lfm_song_link_via_ext() -> None:
 
 @mark.asyncio
 async def test_lfm_song_link_via_deezer() -> None:
-    link = await query_song_link('https://www.last.fm/music/MK/_/Crescent+Moon')
+    link = await query_song_link(
+        'https://www.last.fm/music/My+Dead+Girlfriend/夏八+-+Single/natsu+no+hachiouji',
+    )
 
-    assert link == 'https://song.link/d/1265359402'
+    assert link == 'https://song.link/d/2622472712'
 
 
 @mark.asyncio
