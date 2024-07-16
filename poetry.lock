@@ -2313,12 +2313,14 @@ jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
 name = "scdl"
-version = "2.10.0"
+version = "2.11.1"
 description = "Download Music from Souncloud"
 optional = false
 python-versions = ">=3.7"
-files = []
-develop = false
+files = [
+    {file = "scdl-2.11.1-py3-none-any.whl", hash = "sha256:516026e0537f17458ee099c0fa69ab7acd1285673db0e00a23487ef1628c0c2f"},
+    {file = "scdl-2.11.1.tar.gz", hash = "sha256:5eb59b817682ec0918bf91aee206ffc1eeaeb7ebcdf494d96ab6c336c9a893d2"},
+]
 
 [package.dependencies]
 docopt-ng = "*"
@@ -2326,28 +2328,22 @@ filelock = ">=3.0.0"
 mutagen = ">=1.45.0"
 pathvalidate = "*"
 requests = "*"
-soundcloud-v2 = ">=1.3.10"
+soundcloud-v2 = ">=1.5.2"
 termcolor = "*"
 tqdm = "*"
 
 [package.extras]
-test = ["music-tag", "pytest", "pytest-cov", "pytest-dotenv"]
-
-[package.source]
-type = "git"
-url = "https://github.com/flyingrub/scdl"
-reference = "399ea88eaba859423ea41e7155e271ce7143686c"
-resolved_reference = "399ea88eaba859423ea41e7155e271ce7143686c"
+dev = ["music-tag", "mypy", "pytest", "pytest-cov", "pytest-dotenv", "ruff", "types-requests", "types-tqdm"]
 
 [[package]]
 name = "setuptools"
-version = "70.2.0"
+version = "70.3.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "setuptools-70.2.0-py3-none-any.whl", hash = "sha256:b8b8060bb426838fbe942479c90296ce976249451118ef566a5a0b7d8b78fb05"},
-    {file = "setuptools-70.2.0.tar.gz", hash = "sha256:bd63e505105011b25c3c11f753f7e3b8465ea739efddaccef8f0efac2137bac1"},
+    {file = "setuptools-70.3.0-py3-none-any.whl", hash = "sha256:fe384da74336c398e0d956d1cae0669bc02eed936cdb1d49b57de1990dc11ffc"},
+    {file = "setuptools-70.3.0.tar.gz", hash = "sha256:f171bab1dfbc86b132997f26a119f6056a57950d058587841a0082e8830f9dc5"},
 ]
 
 [package.extras]
@@ -2400,13 +2396,13 @@ files = [
 
 [[package]]
 name = "soundcloud-v2"
-version = "1.5.2"
+version = "1.5.3"
 description = "Python wrapper for the internal v2 SoundCloud API.Does not require an API key."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "soundcloud-v2-1.5.2.tar.gz", hash = "sha256:afa2430978350829d86addb9c6f0b4ce713df69b3e85a07492d1e374aa44ed94"},
-    {file = "soundcloud_v2-1.5.2-py3-none-any.whl", hash = "sha256:5b4369b07278aee299397c0479fed7daf546c3712af3bce2a866ddf32a039e6b"},
+    {file = "soundcloud-v2-1.5.3.tar.gz", hash = "sha256:0af8bc57052af3b6401f736dcc136b0369af380dc0bf8f1099e703ae53677155"},
+    {file = "soundcloud_v2-1.5.3-py3-none-any.whl", hash = "sha256:4c4ed4040391b1817707cd93ff61f0715c9df9692be35941089d858cd98eca6a"},
 ]
 
 [package.dependencies]
@@ -2978,4 +2974,4 @@ test = ["pytest (>=8.1,<9.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "cde64de09102e87b6e837617d7714ce9375471b8b4c080211499514cc838ecb7"
+content-hash = "d554316a01d32d476d1df1252f35a35abd0c2d9451afde32cb1e23fe302572d0"
