@@ -11,6 +11,7 @@ class SongLinkPlatformType(Enum):
     APPLE: str = 'appleMusic'
     AUDIOMACK: str = 'audiomack'
     AUDIUS: str = 'audius'
+    BANDCAMP: str = 'bandcamp'
     BOOM_PLAY: str = 'boomplay'
     DEEZER: str = 'deezer'
     GOOGLE: str = 'google'

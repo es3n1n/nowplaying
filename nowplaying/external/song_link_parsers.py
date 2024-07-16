@@ -6,17 +6,41 @@ import orjson
 from aiohttp import ClientSession
 
 from ..bot.reporter import report_error
+from ..enums.resolved_platform_type import ResolvedPlatformType
 from ..util.http import STATUS_OK
 
 
-def get_spotify_link(url: ParseResult) -> str:
-    track_id = url.path.split('/')[-1]
-    return f'https://song.link/s/{track_id}'
+# source: https://odesli.co/_next/static/chunks/pages/index-5b40c5e4b10da55d.js
+ODESLI_SHORT_NAMES: MappingProxyType[ResolvedPlatformType, str] = MappingProxyType({
+    ResolvedPlatformType.AMAZON_MUSIC: 'a',
+    ResolvedPlatformType.AUDIOMACK: 'am',
+    ResolvedPlatformType.AUDIUS: 'au',
+    ResolvedPlatformType.BANDCAMP: 'b',
+    ResolvedPlatformType.BOOM_PLAY: 'bp',
+    ResolvedPlatformType.DEEZER: 'd',
+    ResolvedPlatformType.ITUNES: 'i',
+    ResolvedPlatformType.NAPSTER: 'n',
+    ResolvedPlatformType.PANDORA: 'p',
+    ResolvedPlatformType.SOUNDCLOUD: 'sc',
+    ResolvedPlatformType.SPINRILLA: 'sp',
+    ResolvedPlatformType.SPOTIFY: 's',
+    ResolvedPlatformType.TIDAL: 't',
+    ResolvedPlatformType.YANDEX: 'ya',
+    ResolvedPlatformType.YOUTUBE: 'y',
+})
 
 
-def get_yandex_link(url: ParseResult) -> str:
-    track_id = url.path.split('/')[-1]
-    return f'https://song.link/ya/{track_id}'
+def get_stub_from_path(platform: ResolvedPlatformType) -> Callable[[ParseResult], str]:
+    platform_short_name: str | None = ODESLI_SHORT_NAMES.get(platform, None)
+
+    if platform_short_name is None:
+        raise ValueError(f'{platform} is unsupported')
+
+    def wrapper(url: ParseResult) -> str:
+        track_id: str = url.path.split('/')[-1]
+        return f'https://song.link/{platform_short_name}/{track_id}'
+
+    return wrapper
 
 
 def get_apple_link(url: ParseResult) -> str:
@@ -45,13 +69,9 @@ def get_youtube_link(url: ParseResult) -> str:
     return f'https://song.link/y/{video_id}'
 
 
-def get_deezer_link(url: ParseResult) -> str:
-    track_id = url.path.split('/')[-1]
-    return f'https://song.link/d/{track_id}'
-
-
-async def fallback_to_odesli(client: ClientSession, track_url: str):
-    await report_error(f'Falling back to Odesli API for the URL: {track_url}')
+async def fallback_to_odesli(client: ClientSession, track_url: str, ignore_reporting: bool = False):
+    if not ignore_reporting:
+        await report_error(f'Falling back to Odesli API for the URL: {track_url}')
     response = await client.get('https://api.odesli.co/resolve', params={'url': track_url})
 
     if response.status != STATUS_OK:
@@ -65,8 +85,13 @@ async def fallback_to_odesli(client: ClientSession, track_url: str):
     if 'id' not in response_json:
         return None
 
-    provider_prefix = response_json.get('provider', 'spotify')[0]
-    return f'https://song.link/{provider_prefix}/{response_json["id"]}'
+    provider = ResolvedPlatformType(response_json.get('provider', 'spotify'))
+    prefix: str | None = ODESLI_SHORT_NAMES.get(provider, None)
+
+    if prefix is None:
+        raise ValueError(f'provider {response_json.get("provider")} is unsupported. Body: {response_json}')
+
+    return f'https://song.link/{prefix}/{response_json["id"]}'
 
 
 def get_song_link_parser(domain: str) -> Callable[[ParseResult], str] | None:
@@ -77,14 +102,17 @@ def get_song_link_parser(domain: str) -> Callable[[ParseResult], str] | None:
 
 
 SONG_LINK_PARSERS: MappingProxyType[str, Callable[[ParseResult], str]] = MappingProxyType({
-    'open.spotify.com': get_spotify_link,
+    'open.spotify.com': get_stub_from_path(ResolvedPlatformType.SPOTIFY),
+    'play.spotify.com': get_stub_from_path(ResolvedPlatformType.SPOTIFY),
 
-    'music.yandex.com': get_yandex_link,
+    'music.yandex.com': get_stub_from_path(ResolvedPlatformType.YANDEX),
 
+    'itunes.apple.com': get_apple_link,
     'music.apple.com': get_apple_link,
     'geo.music.apple.com': get_apple_link,
 
     'youtube.com': get_youtube_link,
+    'youtu.be': get_stub_from_path(ResolvedPlatformType.YOUTUBE),
 
-    'deezer.com': get_deezer_link,
+    'deezer.com': get_stub_from_path(ResolvedPlatformType.DEEZER),
 })
