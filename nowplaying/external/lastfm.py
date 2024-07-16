@@ -164,7 +164,7 @@ class LastFMClient:
     def _get_signature(self, query_params: dict[str, str]):
         string = ''
         for name in sorted(query_params.keys()):  # noqa: WPS519
-            string += f'{name}{query_params[name]}'  # noqa: WPS336
+            string += f'{name}{query_params[name]}'
 
         string += self.api_secret
 
