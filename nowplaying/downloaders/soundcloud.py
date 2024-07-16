@@ -1,9 +1,10 @@
 from contextlib import redirect_stdout
 from io import BytesIO
+from shutil import which
 from typing import Optional
 
 from requests import HTTPError
-from scdl.scdl import SoundCloudException, download_hls, download_original_file, is_ffmpeg_available
+from scdl.scdl import SoundCloudException, download_hls, download_original_file
 from soundcloud import BasicTrack, SoundCloud, Track
 
 from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
@@ -11,7 +12,7 @@ from ..util.logger import logger
 from .abc import DownloaderABC
 
 
-if not is_ffmpeg_available():
+if which('ffmpeg') is None:
     raise ValueError('Please install ffmpeg (and add it to the PATH if needed)')
 
 
@@ -34,9 +35,9 @@ class SoundcloudDownloader(DownloaderABC):
         kw = {
             'name_format': '-',
             'onlymp3': True,
-            'title': '',
             'hide_progress': True,
             'c': True,
+            'debug': False,
         }
 
         io = BytesIO()
@@ -47,10 +48,10 @@ class SoundcloudDownloader(DownloaderABC):
         try:
             with redirect_stdout(io):  # type: ignore
                 if track.downloadable:
-                    filename, _ = download_original_file(self.client, track, **kw)
+                    filename, _ = download_original_file(self.client, track, title='', kwargs=kw)
 
                 if filename is None:
-                    filename, _ = download_hls(self.client, track, **kw)
+                    filename, _ = download_hls(self.client, track, title='', kwargs=kw)
         except (SoundCloudException, HTTPError) as exc:
             logger.opt(exception=exc).warning('Got a soundcloud error while downloading')
             return None
