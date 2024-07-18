@@ -11,7 +11,6 @@ from ..exceptions.platforms import PlatformInvalidAuthCodeError
 from ..external.deezer import search_tracks
 from ..external.lastfm import LastFMClient, LastFMError, LastFMTrack, query_last_fm_url
 from ..external.song_link import get_song_link
-from ..models.cached_local_track import CachedLocalTrack
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.exceptions import rethrow_platform_error
@@ -62,6 +61,7 @@ class LastfmClient(PlatformClientABC):
     async def get_current_playing_track(self) -> Track | None:
         raise NotImplementedError()
 
+    # No need to do auto_memorize_tracks, as we're storing stuff ourselves
     @rethrow_platform_error(LastFMError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
         # Limit is without the currently playing track, no need to do +1
@@ -71,18 +71,6 @@ class LastfmClient(PlatformClientABC):
                 played_at=track.playback_date,
                 is_playing=track.is_now_playing,
             )
-
-    @rethrow_platform_error(LastFMError, TYPE)
-    async def get_track(self, track_id: str) -> Track | None:
-        cached_track: CachedLocalTrack | None = await db.get_cached_local_track_info(track_id)
-        if cached_track is None:
-            return None
-
-        return await self._parse_track(LastFMTrack(
-            url=cached_track.url,
-            artist=cached_track.artist,
-            name=cached_track.name,
-        ))
 
     async def add_to_queue(self, track_id: str) -> bool:
         return False
@@ -106,9 +94,7 @@ class LastfmClient(PlatformClientABC):
         )
 
         if out_track.song_link is not None:  # otherwise, this track isn't available for a download
-            out_track.id = await db.cache_local_track(
-                platform=TYPE, url=out_track.url, artist=out_track.artist, name=out_track.name,
-            )
+            out_track.id = await db.cache_track_object(out_track)
 
         return out_track
 

@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from typing import AsyncIterator
 
 from yandex_music import ClientAsync
-from yandex_music.exceptions import YandexMusicError
+from yandex_music import Track as YandexTrack
+from yandex_music.exceptions import TimedOutError, YandexMusicError
 
 from ..core.config import config
 from ..core.database import db
@@ -12,10 +13,11 @@ from ..external.yaynison import Yaynison, YaynisonError
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.exceptions import rethrow_platform_error
-from .abc import PlatformABC, PlatformClientABC
+from .abc import PlatformABC, PlatformClientABC, auto_memorize_tracks
 
 
 TYPE = SongLinkPlatformType.YANDEX
+NUM_TIMEOUT_RETRIES = 5
 
 
 class YandexClient(PlatformClientABC):
@@ -38,14 +40,24 @@ class YandexClient(PlatformClientABC):
 
     @rethrow_platform_error(YandexMusicError, TYPE)
     @rethrow_platform_error(YaynisonError, TYPE)
+    @auto_memorize_tracks
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:  # noqa: WPS463
         playable_items = await self._yaynison.one_shot_playable_items()
         if not playable_items:
             return
 
-        tracks = await self._app.tracks(
-            track_ids=[playable.playable_id for playable in playable_items[:limit + 1]],
-        )
+        tracks: list[YandexTrack] = []
+
+        for _ in range(NUM_TIMEOUT_RETRIES):
+            try:
+                tracks = await self._app.tracks(
+                    track_ids=[playable.playable_id for playable in playable_items[:limit + 1]],
+                )
+            except TimedOutError:
+                continue
+
+            break
+
         cur_time = datetime.utcnow()
 
         for index, track in enumerate(tracks):
@@ -56,14 +68,6 @@ class YandexClient(PlatformClientABC):
                 track,
                 played_at=cur_time - timedelta(minutes=index),  # used for sorting
             )
-
-    @rethrow_platform_error(YandexMusicError, TYPE)
-    async def get_track(self, track_id: str) -> Track | None:
-        tracks = await self._app.tracks(track_ids=[track_id])
-        if not tracks:
-            return None
-
-        return await Track.from_yandex_item(tracks[0])
 
     async def add_to_queue(self, track_id: str) -> bool:
         return True

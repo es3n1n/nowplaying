@@ -3,6 +3,7 @@ from asyncpg import Pool, create_pool
 from ..core.config import config
 from ..models.cached_local_track import CachedLocalTrack
 from ..models.song_link import SongLinkPlatformType
+from ..models.track import Track
 from ..util.fs import ROOT_DIR
 from ..util.logger import logger
 from ..util.worker import worker
@@ -41,12 +42,17 @@ class Database:
                 async with conn.transaction():
                     await conn.execute(init_sql)
 
+                logger.info('Initialized the database')
+
         return self._pool
 
     async def is_user_authorized_globally(self, telegram_id: int) -> bool:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
-            auth_result = await conn.fetch('SELECT 1 FROM tokens WHERE telegram_id = $1 LIMIT 1', telegram_id)
+            auth_result = await conn.fetch(
+                'SELECT 1 FROM tokens WHERE telegram_id = $1 LIMIT 1',
+                telegram_id,
+            )
             return bool(auth_result)
 
     async def is_user_authorized(self, telegram_id: int, platform: SongLinkPlatformType) -> bool:
@@ -61,7 +67,10 @@ class Database:
     async def get_user_authorized_platforms(self, telegram_id: int) -> list[SongLinkPlatformType]:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
-            platforms = await conn.fetch('SELECT (platform_name) FROM tokens WHERE telegram_id = $1', telegram_id)
+            platforms = await conn.fetch(
+                'SELECT (platform_name) FROM tokens WHERE telegram_id = $1',
+                telegram_id,
+            )
             return [SongLinkPlatformType(row['platform_name']) for row in platforms]
 
     async def delete_user_token(self, telegram_id: int, platform: SongLinkPlatformType) -> bool:
@@ -93,12 +102,6 @@ class Database:
             )
             return None if user_token is None else user_token['token']
 
-    async def is_file_cached(self, uri: str) -> bool:
-        pool = await self.get_pool()
-        async with pool.acquire() as conn:
-            cached_file_result = await conn.fetch('SELECT 1 FROM cached_files WHERE spotify_uri = $1 LIMIT 1', uri)
-            return bool(cached_file_result)
-
     async def store_cached_file(self, uri: str, file_id: str) -> None:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
@@ -112,23 +115,59 @@ class Database:
     async def get_cached_file(self, uri: str) -> str | None:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
-            cached_file = await conn.fetchrow('SELECT (file_id) FROM cached_files WHERE uri = $1 LIMIT 1', uri)
+            cached_file = await conn.fetchrow(
+                'SELECT (file_id) FROM cached_files WHERE uri = $1 LIMIT 1',
+                uri,
+            )
             return None if cached_file is None else cached_file['file_id']
 
-    async def cache_local_track(self, platform: SongLinkPlatformType, url: str, artist: str, name: str) -> str:
+    async def cache_local_track(
+        self,
+        platform: SongLinkPlatformType,
+        url: str,
+        artist: str,
+        name: str,
+        track_id: str | None,
+    ) -> str:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
             cache_result = await conn.fetchval(
-                'SELECT cache_local_track_id($1, $2, $3, $4)', platform.value, url, artist, name,
+                'SELECT cache_local_track_id($1, $2, $3, $4, $5)',
+                track_id, platform.value, url, artist, name,
             )
             return str(cache_result[0])
 
-    async def get_cached_local_track_info(self, our_id: str) -> CachedLocalTrack | None:
+    async def cache_track_objects(self, tracks: list[Track]) -> list[str]:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn:
+
+            # fixme: There doesn't seem to be a `fetchmany` function that would behave like `executemany`
+            cache_results: list[str] = []
+            for track in tracks:
+                cached = await conn.fetchval(
+                    'SELECT cache_local_track_id($1, $2, $3, $4, $5)',
+                    track.id, track.platform.value, track.url, track.artist, track.name,
+                )
+                cache_results.append(cached[0])  # store id
+
+            return cache_results
+
+    async def cache_track_object(self, track: Track) -> str:
+        track_ids = await self.cache_track_objects([track])
+        return track_ids[0]
+
+    async def get_cached_local_track_info(
+        self,
+        track_id: str,
+        platform: SongLinkPlatformType,
+    ) -> CachedLocalTrack | None:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
             local_track = await conn.fetchval(
-                'SELECT (id, platform_name, url, artist, name) FROM local_tracks WHERE id = $1 LIMIT 1',
-                our_id,
+                'SELECT (id, platform_name, url, artist, name) FROM local_tracks '
+                + 'WHERE id = $1 AND platform_name = $2 '
+                + 'LIMIT 1',
+                track_id, platform.value,
             )
 
         if local_track is None:

@@ -47,6 +47,9 @@ async def _get_client() -> ClientSession:
 async def get_song_link(track_url: str, allow_fallback: bool = True) -> str | None:
     url: ParseResult = urlparse(track_url)
 
+    if 'last.fm' in track_url:
+        raise NotImplementedError()
+
     parser = get_song_link_parser(url.netloc)
     if parser:
         return parser(url)

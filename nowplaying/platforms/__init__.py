@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from ..core.database import db
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from .abc import PlatformABC, PlatformClientABC
@@ -38,4 +39,9 @@ async def get_platform_track(
     platform_type: SongLinkPlatformType,
 ) -> Tuple[PlatformClientABC, Track | None]:
     platform = await get_platform_from_telegram_id(telegram_id, platform_type)
-    return platform, await platform.get_track(track_id)
+    cached_track = await db.get_cached_local_track_info(track_id, platform_type)
+
+    if cached_track is None:
+        return platform, None
+
+    return platform, await Track.from_cached(cached_track)

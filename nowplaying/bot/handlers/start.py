@@ -6,6 +6,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from ...core.config import config
 from ...core.database import db
 from ...enums.callback_buttons import CallbackButton
+from ...enums.platform_features import PlatformFeature
 from ...enums.start_actions import StartAction
 from ...models.song_link import SongLinkPlatformType
 from ...platforms import get_platform_from_telegram_id, yandex
@@ -26,9 +27,24 @@ async def _handle_controls(uri: str, message: Message) -> bool:
         return False
 
     client = await get_platform_from_telegram_id(message.from_user.id, platform_type)
-    track = await client.get_track(track_id)
+    track = await db.get_cached_local_track_info(track_id, platform_type)
 
     if not track:
+        return False
+
+    buttons: list[InlineKeyboardButton] = []
+
+    if client.features.get(PlatformFeature.PLAY):
+        buttons.append(InlineKeyboardButton(
+            text='Play', callback_data=encode_query(CallbackButton.PLAY_PREFIX, uri),
+        ))
+
+    if client.features.get(PlatformFeature.ADD_TO_QUEUE):
+        buttons.append(InlineKeyboardButton(
+            text='Add to queue', callback_data=encode_query(CallbackButton.ADD_TO_QUEUE_PREFIX, uri),
+        ))
+
+    if not buttons:
         return False
 
     await message.reply(
@@ -38,14 +54,7 @@ async def _handle_controls(uri: str, message: Message) -> bool:
         ),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text='Play', callback_data=encode_query(CallbackButton.PLAY_PREFIX, uri),
-                    ),
-                    InlineKeyboardButton(
-                        text='Add to queue', callback_data=encode_query(CallbackButton.ADD_TO_QUEUE_PREFIX, uri),
-                    ),
-                ],
+                buttons,
             ],
         ),
     )

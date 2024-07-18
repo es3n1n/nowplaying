@@ -10,7 +10,7 @@ from ..external.apple import AppleMusicError, AppleMusicWrapper, AppleMusicWrapp
 from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.exceptions import rethrow_platform_error
-from .abc import PlatformABC, PlatformClientABC
+from .abc import PlatformABC, PlatformClientABC, auto_memorize_tracks
 
 
 TYPE = SongLinkPlatformType.APPLE
@@ -31,6 +31,7 @@ class AppleClient(PlatformClientABC):
         raise NotImplementedError()
 
     @rethrow_platform_error(AppleMusicError, TYPE)
+    @auto_memorize_tracks
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
         cur_time = datetime.utcnow()
 
@@ -41,14 +42,6 @@ class AppleClient(PlatformClientABC):
                 track,
                 played_at=cur_time - timedelta(minutes=index),
             )
-
-    @rethrow_platform_error(AppleMusicError, TYPE)
-    async def get_track(self, track_id: str) -> Track | None:
-        track_info = await self.app.get_track(track_id)
-        if track_info is None:
-            return None
-
-        return await Track.from_apple_item(track_info)
 
     async def add_to_queue(self, track_id: str) -> bool:
         return True

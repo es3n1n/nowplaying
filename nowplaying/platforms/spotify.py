@@ -13,7 +13,7 @@ from ..models.song_link import SongLinkPlatformType
 from ..models.track import Track
 from ..util.exceptions import rethrow_platform_error
 from ..util.time import UTC_TZ
-from .abc import PlatformABC, PlatformClientABC
+from .abc import PlatformABC, PlatformClientABC, auto_memorize_tracks
 
 
 TYPE = SongLinkPlatformType.SPOTIFY
@@ -45,6 +45,7 @@ class SpotifyClient(PlatformClientABC):
         return await Track.from_spotify_item(track['item'], datetime.utcnow(), is_playing=True)
 
     @rethrow_platform_error(SpotifyError, TYPE)
+    @auto_memorize_tracks
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
         current_playing = await self.get_current_playing_track()
         if current_playing:
@@ -56,14 +57,6 @@ class SpotifyClient(PlatformClientABC):
                 history_item['track'],
                 datetime.fromisoformat(history_item['played_at']).replace(tzinfo=UTC_TZ),
             )
-
-    @rethrow_platform_error(SpotifyError, TYPE)
-    async def get_track(self, track_id: str) -> Track | None:
-        track = await self.spotify_app.get_track(track_id)
-        if track is None:
-            return None
-
-        return await Track.from_spotify_item(track)
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def add_to_queue(self, track_id: str) -> bool:
