@@ -8,7 +8,7 @@ from re import findall, search
 
 import orjson
 from async_lru import alru_cache
-from httpx import AsyncClient, Response
+from httpx import AsyncClient, AsyncHTTPTransport, Response
 
 from ..core.config import config
 from ..util.http import STATUS_OK
@@ -20,6 +20,8 @@ def get_client() -> AsyncClient:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
         },
         follow_redirects=True,
+        # last.fm doesn't like ipv6 idk why. when requesting with ipv6 it returns 403
+        transport=AsyncHTTPTransport(local_address='0.0.0.0'),
     )
 
 
