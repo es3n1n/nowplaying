@@ -30,14 +30,18 @@ def start_bot() -> None:
 
 
 def main() -> None:
-    process = Process(target=start_bot)
-    process.start()
+    # Initialize the database
+    asyncio_run(db.init())
+
+    # Start the telegram bot process
+    tg_process = Process(target=start_bot)
+    tg_process.start()
 
     kw = {}
-
     if not config.is_dev_env:
         kw['workers'] = config.WEB_WORKERS
 
+    # Start the web server
     logger.info('Starting web-server...')
     run(
         'nowplaying.web_app:app', host=config.WEB_HOST, port=config.WEB_PORT,

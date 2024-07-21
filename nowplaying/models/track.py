@@ -7,6 +7,7 @@ from ..external.apple import AppleMusicTrack
 from ..external.lastfm import LastFMTrack
 from ..external.song_link import get_song_link
 from ..util.time import TS_NULL
+from .cached_local_track import CachedLocalTrack
 from .song_link import SongLinkPlatformType
 
 
@@ -35,8 +36,18 @@ class Track(BaseModel):
 
     @property
     def is_available(self) -> bool:
-        # todo: implement the "unavailable" logic :sadge:
         return self.id is not None
+
+    @classmethod
+    async def from_cached(cls, track: CachedLocalTrack) -> 'Track':
+        return Track(
+            platform=track.platform_type,
+            artist=track.artist,
+            name=track.name,
+            id=track.id,
+            url=track.url,
+            song_link=await get_song_link(track.url),
+        )
 
     @classmethod
     async def from_spotify_item(
