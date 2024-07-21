@@ -39,5 +39,6 @@ COPY frontend/apple/ ./frontend/apple/
 COPY nowplaying/ ./nowplaying/
 COPY main.py .
 COPY init.sql .
+COPY .youtube-cookies.tx[t] .
 
 ENTRYPOINT ["python", "main.py"]

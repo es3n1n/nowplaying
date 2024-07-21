@@ -72,7 +72,7 @@ class Settings(BaseSettings):
 
         out_path = ROOT_DIR / path
         if not out_path.exists():
-            raise ValueError(f'{path} file does not exist')
+            raise ValueError(f'{out_path} file does not exist')
 
         return str(out_path.resolve().absolute())
 
