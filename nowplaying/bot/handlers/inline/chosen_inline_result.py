@@ -3,6 +3,7 @@ from aiogram.types import ChosenInlineResult
 
 from ....downloaders import download_mp3
 from ...bot import bot, dp
+from ...reporter import report_error
 from .inline import parse_inline_result_query
 from .inline_utils import UNAVAILABLE_MSG, cache_audio_and_edit, track_to_caption
 
@@ -28,6 +29,7 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
             caption=caption,
             parse_mode=ParseMode.HTML,
         )
+        await report_error(f'Unable to download {track.model_dump_json()}')
         return
 
     await cache_audio_and_edit(
