@@ -5,3 +5,4 @@
 .env
 db_data/**
 worker.lock
+.youtube-cookies.txt

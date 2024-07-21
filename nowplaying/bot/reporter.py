@@ -6,12 +6,15 @@ from ..core.config import config
 from .bot import bot
 
 
+TEXT_MESSAGE_LIMIT: int = 500
+
+
 async def report_to_dev(message: str) -> None:
     if not config.BOT_TELEGRAM_ERROR_REPORTING:
         return
 
     try:
-        if len(message) > 100:
+        if len(message) > TEXT_MESSAGE_LIMIT:
             await bot.send_document(
                 chat_id=config.BOT_DEV_CHAT_ID,
                 document=BufferedInputFile(file=message.encode(), filename='log.txt'),

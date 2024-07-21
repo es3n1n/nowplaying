@@ -1,4 +1,5 @@
 from base64 import b64decode, b64encode
+from pathlib import Path
 from typing import Annotated
 
 from pydantic import Field, field_validator
@@ -37,6 +38,8 @@ class Settings(BaseSettings):
     WEB_PORT: int = 1337
     WEB_WORKERS: int = 2
 
+    YOUTUBE_COOKIES_PATH: str | None = None
+
     SPOTIFY_CLIENT_ID: str
     SPOTIFY_SECRET: str
 
@@ -57,6 +60,21 @@ class Settings(BaseSettings):
     @classmethod
     def validate_url(cls, val_to_validate: str) -> str:
         return val_to_validate.rstrip('/')
+
+    @field_validator('YOUTUBE_COOKIES_PATH')
+    @classmethod
+    def validate_path(cls, path: str | None) -> str | None:
+        if not path:
+            return None
+
+        if Path(path).exists():
+            return path
+
+        out_path = ROOT_DIR / path
+        if not out_path.exists():
+            raise ValueError(f'{path} file does not exist')
+
+        return str(out_path.resolve().absolute())
 
     def bot_plain_start_url(self, payload: str | StartAction) -> str:
         payload_str: str = payload if isinstance(payload, str) else payload.value

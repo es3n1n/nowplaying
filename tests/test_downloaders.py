@@ -39,3 +39,11 @@ async def test_youtube() -> None:
         SongLinkPlatformType.YOUTUBE,
         'https://www.youtube.com/watch?v=bp3991bNGO4',
     ) is not None
+
+
+@mark.asyncio
+async def test_youtube_18plus() -> None:
+    assert await _download(
+        SongLinkPlatformType.YOUTUBE,
+        'https://www.youtube.com/watch?v=R1M2Wnc5LYc',
+    ) is not None
