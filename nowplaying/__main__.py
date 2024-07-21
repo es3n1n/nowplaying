@@ -32,7 +32,7 @@ def start_bot() -> None:
 def main() -> None:
     # Initialize the database
     # fixme: figure why it produces an unclosed transaction in production
-    # asyncio_run(db.init())
+    # asyncio_run(db.init())  # noqa: E800
 
     # Start the telegram bot process
     tg_process = Process(target=start_bot)
