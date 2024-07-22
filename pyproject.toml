@@ -34,7 +34,7 @@ flake8-bugbear = "^24.4.26"
 flake8-print = "^5.0.0"
 asyncpg-stubs = "^0.29.1"
 wemake-python-styleguide = "^0.19.2"
-pytest = "^8.2.2"
+pytest = "^8.3.1"
 pytest-asyncio = "^0.23.7"
 types-requests = "^2.32.0.20240712"
 
