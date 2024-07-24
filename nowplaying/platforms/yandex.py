@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import AsyncIterator
 
 from yandex_music import ClientAsync
-from yandex_music.exceptions import YandexMusicError
+from yandex_music.exceptions import TimedOutError, YandexMusicError
 
 from ..core.config import config
 from ..core.database import db
@@ -43,9 +43,14 @@ class YandexClient(PlatformClientABC):
         if not playable_items:
             return
 
-        tracks = await self._app.tracks(
-            track_ids=[playable.playable_id for playable in playable_items[:limit + 1]],
-        )
+        try:
+            tracks = await self._app.tracks(
+                track_ids=[playable.playable_id for playable in playable_items[:limit + 1]],
+            )
+        except TimedOutError:
+            # :shrug:
+            return
+
         cur_time = datetime.utcnow()
 
         for index, track in enumerate(tracks):
