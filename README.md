@@ -31,8 +31,8 @@ A Telegram bot for sharing and discovering music across various platforms.
 ### Downloading tracks from:
 
 * Deezer
-* Soundcloud
-* Youtube
+* Soundcloud (via [scdl](https://github.com/scdl-org/scdl))
+* Youtube (via [cobalt](https://github.com/imputnet/cobalt) and [yt-dlp](https://github.com/yt-dlp/yt-dlp))
 
 ## Installation
 
