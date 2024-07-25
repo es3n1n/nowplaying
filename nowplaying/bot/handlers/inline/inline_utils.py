@@ -2,10 +2,12 @@ from io import BytesIO
 
 from aiogram import html, types
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramBadRequest
 
 from ....core.config import config
 from ....models.track import Track
 from ....platforms import PlatformClientABC
+from ....util.retries import retry
 from ...bot import bot
 from ...caching import cache_file
 
@@ -59,13 +61,25 @@ async def cache_audio_and_edit(
         name=track.name,
         user=user,
     )
-    await bot.edit_message_media(
-        media=types.InputMediaAudio(
-            performer=track.artist,
-            title=track.name,
-            media=file_id,
-            caption=caption,
-            parse_mode=ParseMode.HTML,
-        ),
-        inline_message_id=inline_message_id,
-    )
+
+    # We are trying to lose a race with telegram's cache here, because sometimes we're too fast
+    async for _ in retry(5):
+        try:
+            await bot.edit_message_media(
+                media=types.InputMediaAudio(
+                    performer=track.artist,
+                    title=track.name,
+                    media=file_id,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                ),
+                inline_message_id=inline_message_id,
+            )
+        except TelegramBadRequest as exc:
+            if exc.message != 'Bad Request: MEDIA_EMPTY':
+                raise exc
+
+            continue
+
+        # Edited successfully
+        break
