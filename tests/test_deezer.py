@@ -35,3 +35,8 @@ async def test_deezer_search_jp_artist() -> None:
     assert results_en[0] == results_jp[0]
     assert results_jp[0].title == 'That band'
     assert results_jp[0].artist == 'kessoku band'
+
+
+@mark.asyncio
+async def test_deezer_search_banned_chars() -> None:
+    await search_tracks('Hatsune Miku?')
