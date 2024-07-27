@@ -44,24 +44,13 @@ def track_to_caption(
     return message_text
 
 
-async def cache_audio_and_edit(
+async def _update_inline_message_audio(
     *,
     track: Track,
-    mp3: BytesIO,
-    thumbnail: str,
-    user: types.User,
+    file_id: str,
     caption: str,
     inline_message_id: str,
 ) -> None:
-    file_id = await cache_file(
-        uri=track.uri,
-        file_data=mp3,
-        thumbnail_url=thumbnail,
-        performer=track.artist,
-        name=track.name,
-        user=user,
-    )
-
     # We are trying to lose a race with telegram's cache here, because sometimes we're too fast
     async for _ in retry(5):
         try:
@@ -86,5 +75,30 @@ async def cache_audio_and_edit(
 
             raise exc
 
-        # Edited successfully
-        break
+        break  # Edited successfully
+
+
+async def cache_audio_and_edit(
+    *,
+    track: Track,
+    mp3: BytesIO,
+    thumbnail: str,
+    user: types.User,
+    caption: str,
+    inline_message_id: str,
+) -> None:
+    file_id = await cache_file(
+        uri=track.uri,
+        file_data=mp3,
+        thumbnail_url=thumbnail,
+        performer=track.artist,
+        name=track.name,
+        user=user,
+    )
+
+    await _update_inline_message_audio(
+        track=track,
+        file_id=file_id,
+        caption=caption,
+        inline_message_id=inline_message_id,
+    )
