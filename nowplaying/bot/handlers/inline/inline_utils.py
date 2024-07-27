@@ -76,10 +76,15 @@ async def cache_audio_and_edit(
                 inline_message_id=inline_message_id,
             )
         except TelegramBadRequest as exc:
-            if exc.message != 'Bad Request: MEDIA_EMPTY':
-                raise exc
+            # We just won the race
+            if exc.message == 'Bad Request: MEDIA_EMPTY':
+                continue
 
-            continue
+            # The message was deleted, no need to edit anything
+            if exc.message == 'Bad Request - MESSAGE_ID_INVALID':
+                break
+
+            raise exc
 
         # Edited successfully
         break
