@@ -22,7 +22,14 @@ TYPE_ALBUM_TRACK = 'album_track'  # used for listing songs of an album
 # END TYPES
 
 
-def get_client() -> AsyncClient:
+def get_client(include_cookies: bool = True) -> AsyncClient:
+    cookies: dict[str, str] | None = {
+        'arl': config.DEEZER_ARL_COOKIE,
+        'comeback': '1'
+    }
+    if not include_cookies:
+        cookies = None
+
     return AsyncClient(
         headers={
             'Pragma': 'no-cache',
@@ -39,10 +46,7 @@ def get_client() -> AsyncClient:
             'Referer': 'https://www.deezer.com/login',
             'DNT': '1',
         },
-        cookies={
-            'arl': config.DEEZER_ARL_COOKIE,
-            'comeback': '1'
-        },
+        cookies=cookies,
         timeout=Timeout(timeout=60.)
     )
 
@@ -441,7 +445,10 @@ async def get_song_infos_from_deezer_website(search_type, id):
 
 
 async def search_tracks(query: str) -> list[DeezerTrack]:
-    async with get_client() as session:
+    # Note: For some reason, deezer returns a 403 error if query includes a `?` character
+    query = query.replace('?', '')
+
+    async with get_client(include_cookies=False) as session:
         resp = await session.get('https://api.deezer.com/search/track', params={
             'q': query,
         })

@@ -44,6 +44,40 @@ def track_to_caption(
     return message_text
 
 
+async def _update_inline_message_audio(
+    *,
+    track: Track,
+    file_id: str,
+    caption: str,
+    inline_message_id: str,
+) -> None:
+    # We are trying to lose a race with telegram's cache here, because sometimes we're too fast
+    async for _ in retry(5):
+        try:
+            await bot.edit_message_media(
+                media=types.InputMediaAudio(
+                    performer=track.artist,
+                    title=track.name,
+                    media=file_id,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                ),
+                inline_message_id=inline_message_id,
+            )
+        except TelegramBadRequest as exc:
+            # We just won the race
+            if exc.message == 'Bad Request: MEDIA_EMPTY':
+                continue
+
+            # The message was deleted, no need to edit anything
+            if exc.message == 'Bad Request - MESSAGE_ID_INVALID':
+                break
+
+            raise exc
+
+        break  # Edited successfully
+
+
 async def cache_audio_and_edit(
     *,
     track: Track,
@@ -62,24 +96,9 @@ async def cache_audio_and_edit(
         user=user,
     )
 
-    # We are trying to lose a race with telegram's cache here, because sometimes we're too fast
-    async for _ in retry(5):
-        try:
-            await bot.edit_message_media(
-                media=types.InputMediaAudio(
-                    performer=track.artist,
-                    title=track.name,
-                    media=file_id,
-                    caption=caption,
-                    parse_mode=ParseMode.HTML,
-                ),
-                inline_message_id=inline_message_id,
-            )
-        except TelegramBadRequest as exc:
-            if exc.message != 'Bad Request: MEDIA_EMPTY':
-                raise exc
-
-            continue
-
-        # Edited successfully
-        break
+    await _update_inline_message_audio(
+        track=track,
+        file_id=file_id,
+        caption=caption,
+        inline_message_id=inline_message_id,
+    )
