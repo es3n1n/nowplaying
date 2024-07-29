@@ -70,7 +70,7 @@ async def _update_inline_message_audio(
                 continue
 
             # The message was deleted, no need to edit anything
-            if exc.message == 'Bad Request - MESSAGE_ID_INVALID':
+            if exc.message == 'Bad Request: MESSAGE_ID_INVALID':
                 break
 
             raise exc
