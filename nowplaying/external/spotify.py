@@ -133,7 +133,7 @@ class Spotify:
         )
         _raise_for_status(response)
 
-        if response.status_code == STATUS_NO_CONTENT:  # No content
+        if response.status_code == STATUS_NO_CONTENT:
             return None
 
         return orjson.loads(response.content)
