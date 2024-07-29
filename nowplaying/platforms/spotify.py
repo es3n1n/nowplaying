@@ -39,7 +39,7 @@ class SpotifyClient(PlatformClientABC):
     @rethrow_platform_error(SpotifyError, TYPE)
     async def get_current_playing_track(self) -> Track | None:
         track = await self.spotify_app.get_current_user_playing_track()
-        if track is None:
+        if track is None or not track.get('item'):
             return None
 
         return await Track.from_spotify_item(track['item'], datetime.utcnow(), is_playing=True)
@@ -52,6 +52,9 @@ class SpotifyClient(PlatformClientABC):
 
         history = await self.spotify_app.get_current_user_recently_played(limit=limit)
         for history_item in history['items']:
+            if not history_item.get('track'):
+                continue
+
             yield await Track.from_spotify_item(
                 history_item['track'],
                 datetime.fromisoformat(history_item['played_at']).replace(tzinfo=UTC_TZ),
