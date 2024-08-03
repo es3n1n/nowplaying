@@ -309,10 +309,10 @@ async def writeid3v2(fo, song):
         # total numer of tracks/elements on the original recording. E.g. '4/9'.
         maketag('TLEN', makeutf8(str(int(song['DURATION']) * 1000))),
         # The 'Length' frame contains the length of the audiofile in milliseconds, represented as a numeric string.
-        maketag('TORY', makeutf8(str(album_get('PHYSICAL_RELEASE_DATE')[:4]))),
+        maketag('TORY', makeutf8(str((album_get('PHYSICAL_RELEASE_DATE') or '')[:4]))),
         # The 'Original release year' frame is intended for the year when the original recording was released. if for
         # example the music in the file should be a cover of a previously released song
-        maketag('TYER', makeutf8(str(album_get('DIGITAL_RELEASE_DATE')[:4]))),
+        maketag('TYER', makeutf8(str((album_get('DIGITAL_RELEASE_DATE') or '')[:4]))),
         # The 'Year' frame is a numeric string with a year of the recording. This frames is always four characters
         # long (until the year 10000).
         maketag('TDAT', makeutf8(str(phyDate_DDMM))),

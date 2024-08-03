@@ -19,9 +19,10 @@ async def test_deezer() -> None:
     if not config.deezer_apl_cookie_set:
         skip('Deezer cookie is not set')
 
+    # Digital release date of this track is eq to None
     assert await _download(
         SongLinkPlatformType.DEEZER,
-        'https://www.deezer.com/track/1577218332'
+        'https://www.deezer.com/track/2931496091'
     ) is not None
 
 
