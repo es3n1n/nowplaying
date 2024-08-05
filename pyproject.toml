@@ -27,7 +27,7 @@ orjson = "^3.10.6"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^7.1.0"
-mypy = "^1.11.0"
+mypy = "^1.11.1"
 isort = "^5.13.2"
 flake8-quotes = "^3.4.0"
 flake8-bugbear = "^24.4.26"
