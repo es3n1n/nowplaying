@@ -2308,13 +2308,13 @@ jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
 name = "scdl"
-version = "2.11.3"
+version = "2.11.4"
 description = "Download Music from Souncloud"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "scdl-2.11.3-py3-none-any.whl", hash = "sha256:9f931c7c1c2362dc3f64ca890b77b90033b5ea9a42853f522671d7e838396765"},
-    {file = "scdl-2.11.3.tar.gz", hash = "sha256:dc69a6199dae4c4d93d066a05b305d6ed16c4d4de9711c61d2e87afd5d7a714c"},
+    {file = "scdl-2.11.4-py3-none-any.whl", hash = "sha256:463794effe96bed695eb55fa13c42285774fef93d440bedae9bb2bc0c474e49e"},
+    {file = "scdl-2.11.4.tar.gz", hash = "sha256:da1c3d9d5292851018e8ad315e156e71efdd02ee30fc113670a28a9ddccf277b"},
 ]
 
 [package.dependencies]
@@ -2970,4 +2970,4 @@ test = ["pytest (>=8.1,<9.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "3b76f7f338e92a88cc2625f4a238980ea34a47d0788d92d04f082f07b0215048"
+content-hash = "d84a9589a61033d3810ffb352362099592e8bc44c8bd411b5beb1518524cd801"
