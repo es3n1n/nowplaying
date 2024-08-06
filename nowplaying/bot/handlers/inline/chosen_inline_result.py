@@ -2,6 +2,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import ChosenInlineResult
 
 from ....downloaders import download_mp3
+from ....util.logger import logger
 from ...bot import bot, dp
 from ...reporter import report_error
 from .inline import parse_inline_result_query
@@ -17,9 +18,17 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
     client, track = await parse_inline_result_query(inline_result)
     if track is None or client is None:
         # :shrug:, there's nothing we can do
+        logger.error(inline_result.model_dump())
+        logger.error(f'client: {client} | track: {track}')
+        await report_error('Something unusual happened, track or client is None')
         return
 
     caption = track_to_caption(client, track, is_getter_available=True)
+    logger.info(
+        f'Downloading {track.artist} - {track.name} from '
+        + f'{track.platform.name}',
+    )
+
     thumbnail, mp3 = await download_mp3(track)
 
     if mp3 is None:
