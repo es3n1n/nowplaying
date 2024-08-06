@@ -2,6 +2,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import ChosenInlineResult
 
 from ....downloaders import download_mp3
+from ....util.logger import logger
 from ...bot import bot, dp
 from ...reporter import report_error
 from .inline import parse_inline_result_query
