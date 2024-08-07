@@ -9,3 +9,7 @@ STATUS_NOT_FOUND: int = 404
 
 def is_clientside_error(http_code: int) -> bool:
     return 400 <= http_code <= 499  # noqa: WPS432
+
+
+def is_serverside_error(http_code: int) -> bool:
+    return 500 <= http_code <= 599  # noqa: WPS432
