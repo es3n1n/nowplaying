@@ -6,7 +6,9 @@ import orjson
 from httpx import AsyncClient, Response
 
 from ..core.config import config
-from ..util.http import STATUS_NOT_FOUND, STATUS_OK
+from ..enums.platform_type import SongLinkPlatformType
+from ..exceptions.platforms import PlatformTemporarilyUnavailableError
+from ..util.http import STATUS_NOT_FOUND, STATUS_OK, is_serverside_error
 
 
 SESSION_LIVE_TIME: timedelta = timedelta(hours=6)
@@ -38,6 +40,8 @@ class AppleMusicTrack:
 
 
 def _validate_response_code(response: Response) -> None:
+    if is_serverside_error(response.status_code):
+        raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.APPLE)
     if response.status_code != STATUS_OK:
         raise AppleMusicInvalidResultCodeError(str(response.status_code))
 

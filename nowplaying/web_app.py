@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.responses import RedirectResponse
 
-from .bot.handlers.exceptions import send_auth_code_error
+from .bot.handlers.exceptions import send_auth_code_error_msg
 from .core.config import config
 from .core.database import db
 from .core.sign import SIGN_EXPIRED_EXCEPTION
@@ -41,7 +41,7 @@ mount_static('/apple', 'apple')
 
 @app.exception_handler(PlatformInvalidAuthCodeError)
 async def invalid_code_handler(_: Request, exc: PlatformInvalidAuthCodeError) -> RedirectResponse:
-    await send_auth_code_error(exc)
+    await send_auth_code_error_msg(exc)
     return RedirectResponse(
         url=config.BOT_URL,
         status_code=STATUS_TEMPORARY_REDIRECT,

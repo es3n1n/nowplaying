@@ -11,7 +11,9 @@ from async_lru import alru_cache
 from httpx import AsyncClient, AsyncHTTPTransport, Response
 
 from ..core.config import config
-from ..util.http import STATUS_OK
+from ..enums.platform_type import SongLinkPlatformType
+from ..exceptions.platforms import PlatformTemporarilyUnavailableError
+from ..util.http import STATUS_OK, is_serverside_error
 
 
 def get_client() -> AsyncClient:
@@ -85,6 +87,8 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
 
 
 def _ensure_response(response: Response) -> None:
+    if is_serverside_error(response.status_code):
+        raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.LASTFM)
     if response.status_code != STATUS_OK:
         raise LastFMError(f'status {response.status_code} != 200 {response.text}')
 
