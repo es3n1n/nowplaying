@@ -43,9 +43,8 @@ async def test_youtube() -> None:
 
 
 @mark.asyncio
-@mark.skip(reason='Yt-dlp is having a bad time right now and cobalt doesnt always let you download this video')
-async def test_youtube_18plus() -> None:
+async def test_youtube_2() -> None:
     assert await _download(
         SongLinkPlatformType.YOUTUBE,
-        'https://www.youtube.com/watch?v=R1M2Wnc5LYc',
+        'https://www.youtube.com/watch?v=cUtOgwdJNUE',
     ) is not None

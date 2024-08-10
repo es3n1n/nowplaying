@@ -48,6 +48,10 @@ use_parentheses = true
 lines_after_imports = 2
 combine_as_imports = false
 
+[tool.pytest.ini_options]
+addopts = "-s -v -rf"
+testpaths = ["tests"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
