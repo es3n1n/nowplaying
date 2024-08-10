@@ -3,16 +3,19 @@ from contextlib import redirect_stdout
 from io import BytesIO
 from typing import Optional, Type
 
-import orjson
 from httpx import AsyncClient, Timeout
 from yt_dlp import DownloadError, YoutubeDL
 
 from ..bot.reporter import report_error
 from ..core.config import config
+from ..external.cobalt import Cobalt
 from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
-from ..util.http import STATUS_OK
 from ..util.logger import logger
 from .abc import DownloaderABC
+
+
+cobalt = Cobalt()
+COBALT_RETRIES = 3
 
 
 class YoutubeDLLogger:
@@ -30,36 +33,26 @@ class YoutubeDLLogger:
 
 
 async def download_through_cobalt(platform: SongLinkPlatform) -> Optional[BytesIO]:
-    # Might be useful: https://instances.hyper.lol/instances.json
+    stream: str | None = None
+
+    # Retry with different instances
+    for _ in range(COBALT_RETRIES):
+        stream = await cobalt.get_mp3_stream_url(platform.url)
+
+        if stream:
+            break
+
+        # Change instance on error
+        await cobalt.re_roll_instance()
+
+    # Still no stream
+    if not stream:
+        return None
+
     async with AsyncClient(
-        headers={
-            'User-Agent': 'playinnowbot/1.0',
-            'Accept': 'application/json',
-        },
         timeout=Timeout(timeout=60),
     ) as client:
-        json_response = await client.post(f'{config.COBALT_API_BASE_URL}/api/json', json={
-            'isAudioOnly': 'true',
-            'url': platform.url,
-            'aFormat': 'mp3',
-        })
-        if json_response.status_code != STATUS_OK:
-            await report_error(f'Got {json_response.status_code} from cobalt: {json_response.text}')
-            return None
-
-        try:
-            json_data = orjson.loads(json_response.content)
-        except orjson.JSONDecodeError:
-            await report_error(f'Got unsupported json from cobalt: {json_response.text}')
-            return None
-
-        status: str = json_data.get('status', 'error')
-        url: str | None = json_data.get('url', None)
-        if status in {'error', 'rate-limit'} or url is None:
-            await report_error(f'Got an error/ratelimit from cobalt: {json_response.text}')
-            return None
-
-        audio_data = await client.get(url)
+        audio_data = await client.get(stream)
         return BytesIO(audio_data.content)
 
 

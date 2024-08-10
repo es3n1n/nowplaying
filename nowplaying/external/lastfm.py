@@ -19,7 +19,19 @@ from ..util.http import STATUS_OK, is_serverside_error
 def get_client() -> AsyncClient:
     return AsyncClient(
         headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'Accept-Language': 'en;q=0.8',
+            'DNT': '1',
+            'Sec-GPC': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Priority': 'u=0, i',
         },
         follow_redirects=True,
         # last.fm doesn't like ipv6 idk why. when requesting with ipv6 it returns 403
@@ -63,7 +75,7 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
         response = await client.get(track_url)
 
     if response.status_code != STATUS_OK:
-        raise ValueError(f'Got status code {response.status_code}')
+        raise ValueError(f'Got status code {response.status_code}: {response.text}')
 
     name_match = search(PAGE_RESOURCE_NAME_REGEX, response.text)
     artist_match = search(PAGE_RESOURCE_ARTIST_NAME_REGEX, response.text)
