@@ -3,7 +3,7 @@ from contextlib import redirect_stdout
 from io import BytesIO
 from typing import Optional, Type
 
-from httpx import AsyncClient, Timeout
+from httpx import AsyncClient, HTTPError, Timeout
 from yt_dlp import DownloadError, YoutubeDL
 
 from ..bot.reporter import report_error
@@ -52,8 +52,12 @@ async def download_through_cobalt(platform: SongLinkPlatform) -> Optional[BytesI
     async with AsyncClient(
         timeout=Timeout(timeout=60),
     ) as client:
-        audio_req = await client.get(stream)
-        audio_data = audio_req.content
+        try:
+            audio_req = await client.get(stream)
+            audio_data = audio_req.content
+        except HTTPError:
+            # huh??? http error? get banned then.
+            audio_data = b''
 
         # Detect mp3 magic bytes, this is needed because for some reason some cobalt apis return an error as a string
         #   instead of the file we're requesting.
