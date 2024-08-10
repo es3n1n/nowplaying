@@ -57,8 +57,12 @@ def get_client() -> AsyncClient:
 class Cobalt:
     def __init__(self) -> None:
         self.instance: CobaltInstance = CobaltInstance.default()
+        self.banned_instances: list[str] = []
 
-    async def re_roll_instance(self) -> None:
+    async def re_roll_instance(self, ban_current: bool = False) -> None:
+        if ban_current:
+            self.banned_instances.append(self.instance.address)
+
         try:
             async with get_client() as client:
                 instances_request = await client.get('https://instances.hyper.lol/instances.json')
@@ -89,7 +93,7 @@ class Cobalt:
 
         # Get a new random available instance
         instance_json: CobaltAPIInstance | None = None
-        while not instance_json or instance_json['api'] == self.instance.address:
+        while not instance_json or instance_json['api'] in {*self.banned_instances, self.instance.address}:
             instance_json = choice(instances_data)
 
         self.instance = CobaltInstance(
