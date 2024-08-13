@@ -10,7 +10,7 @@ python = "^3.11"
 aiogram = "^3.10.0"
 httpx = {extras = ["http2"], version = "^0.27.0"}
 fastapi = "^0.112.0"
-uvicorn = "^0.30.5"
+uvicorn = "^0.30.6"
 loguru = "^0.7.2"
 pydantic-settings = "^2.4.0"
 filelock = "^3.15.4"
