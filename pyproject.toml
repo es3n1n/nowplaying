@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-aiogram = "^3.10.0"
+aiogram = "^3.11.0"
 httpx = {extras = ["http2"], version = "^0.27.0"}
 fastapi = "^0.112.0"
 uvicorn = "^0.30.6"
