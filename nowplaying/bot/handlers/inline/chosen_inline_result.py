@@ -13,6 +13,8 @@ from .inline_utils import UNAVAILABLE_MSG, cache_audio_and_edit, track_to_captio
 async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> None:
     # todo @es3n1n: multiprocess queue
     if inline_result.inline_message_id is None:
+        logger.warning('Got an update without an inline message')
+        logger.warning(inline_result.model_dump())
         return
 
     client, track = await parse_inline_result_query(inline_result)
