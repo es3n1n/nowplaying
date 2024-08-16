@@ -8,7 +8,7 @@ from re import findall, search
 
 import orjson
 from async_lru import alru_cache
-from httpx import AsyncClient, AsyncHTTPTransport, Response
+from httpx import AsyncClient, AsyncHTTPTransport, HTTPError, Response
 
 from ..core.config import config
 from ..enums.platform_type import SongLinkPlatformType
@@ -71,11 +71,23 @@ class LastFMTrackFromURL:
 
 @alru_cache()
 async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
-    async with get_client() as client:
-        response = await client.get(track_url)
+    response: Response | None = None
+
+    # Retry 5 times
+    for _ in range(5):
+        async with get_client() as client:
+            try:
+                response = await client.get(track_url)
+            except HTTPError:
+                # Retry on errors
+                continue
+            break
+
+    if not response:
+        raise ValueError('(last.fm) All queries got timed out')
 
     if response.status_code != STATUS_OK:
-        raise ValueError(f'Got status code {response.status_code}: {response.text}')
+        raise ValueError(f'(last.fm) Got status code {response.status_code}: {response.text}')
 
     name_match = search(PAGE_RESOURCE_NAME_REGEX, response.text)
     artist_match = search(PAGE_RESOURCE_ARTIST_NAME_REGEX, response.text)
