@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.11"
 aiogram = "^3.11.0"
 httpx = {extras = ["http2"], version = "^0.27.0"}
-fastapi = "^0.112.0"
+fastapi = "^0.112.1"
 uvicorn = "^0.30.6"
 loguru = "^0.7.2"
 pydantic-settings = "^2.4.0"
