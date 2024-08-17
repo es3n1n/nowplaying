@@ -1,10 +1,13 @@
-name: Lint and test
+name: Lint and Test
 
 on:
-  pull_request: {}
+  pull_request:
   push:
     branches:
       - master
+
+env:
+  PYTHON_VERSION: '3.11'
 
 jobs:
   lint_test:
@@ -13,10 +16,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -30,7 +33,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -39,33 +42,24 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
+      - name: Activate virtual environment
+        run: echo "${{ github.workspace }}/.venv/bin" >> $GITHUB_PATH
+
       - name: Type check
-        if: '!cancelled()'
-        run: |
-          source .venv/bin/activate
-          mypy nowplaying
+        run: mypy nowplaying
 
       - name: Lint
-        if: '!cancelled()'
-        run: |
-          source .venv/bin/activate
-          ruff check --output-format=github
+        run: ruff check --output-format=github
 
       - name: Format check
-        if: '!cancelled()'
-        run: |
-          source .venv/bin/activate
-          ruff format --check
+        run: ruff format --check
 
       - name: Install FFmpeg
-        if: '!cancelled()'
         run: |
           sudo apt-get update
           sudo apt-get install -yq --no-install-recommends ffmpeg
 
-      - name: Test
-        if: '!cancelled()'
+      - name: Run tests
         run: |
-          source .venv/bin/activate
           cp .env.example .env
           pytest . --exitfirst
