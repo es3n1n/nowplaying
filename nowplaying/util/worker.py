@@ -1,11 +1,9 @@
-from typing import Optional
-
 from filelock import FileLock, Timeout
 
 
 class Worker:
     def __init__(self) -> None:
-        self.lock: Optional[FileLock] = None
+        self.lock: FileLock | None = None
         self.setup()
 
     def setup(self) -> None:

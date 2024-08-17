@@ -1,18 +1,19 @@
 from io import BytesIO
+from typing import cast
 
 from aiogram import html, types
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 
-from ....core.config import config
-from ....models.track import Track
-from ....platforms import PlatformClientABC
-from ....util.retries import retry
-from ...bot import bot
-from ...caching import cache_file
+from nowplaying.bot.bot import bot
+from nowplaying.bot.caching import cache_file
+from nowplaying.core.config import config
+from nowplaying.models.track import Track
+from nowplaying.platforms import PlatformClientABC
+from nowplaying.util.retries import retry
 
 
-# Only 2 because for some fxxcked up platforms like lastfm it takes so much time to gather all the info
+# Only 2 because for some slow platforms like lastfm it takes so much time to gather all the info
 # This number also doesn't include the currently playing song
 NUM_OF_ITEMS_TO_QUERY: int = 2
 UNAVAILABLE_MSG: str = 'Error: this track is not available :('
@@ -21,6 +22,7 @@ UNAVAILABLE_MSG: str = 'Error: this track is not available :('
 def track_to_caption(
     client: PlatformClientABC,
     track: Track,
+    *,
     is_getter_available: bool = True,
     is_track_available: bool = True,
 ) -> str:
@@ -73,7 +75,7 @@ async def _update_inline_message_audio(
             if exc.message == 'Bad Request: MESSAGE_ID_INVALID':
                 break
 
-            raise exc
+            raise
 
         break  # Edited successfully
 
@@ -83,22 +85,19 @@ async def cache_audio_and_edit(
     track: Track,
     mp3: BytesIO,
     thumbnail: str,
-    user: types.User,
+    inline_result: types.ChosenInlineResult,
     caption: str,
-    inline_message_id: str,
 ) -> None:
     file_id = await cache_file(
-        uri=track.uri,
+        track=track,
         file_data=mp3,
         thumbnail_url=thumbnail,
-        performer=track.artist,
-        name=track.name,
-        user=user,
+        user=inline_result.from_user,
     )
 
     await _update_inline_message_audio(
         track=track,
         file_id=file_id,
         caption=caption,
-        inline_message_id=inline_message_id,
+        inline_message_id=cast(str, inline_result.inline_message_id),
     )

@@ -1,23 +1,23 @@
 from io import BytesIO
-from typing import Optional
 
-from ..bot.reporter import report_error
-from ..external.deezer import (
+from nowplaying.bot.reporter import report_error
+from nowplaying.external.deezer import (
     TYPE_TRACK,
     Deezer403Exception,
     Deezer404Exception,
     download_song,
     get_song_infos_from_deezer_website,
 )
-from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
-from ..util.logger import logger
+from nowplaying.models.song_link import SongLinkPlatform, SongLinkPlatformType
+from nowplaying.util.logger import logger
+
 from .abc import DownloaderABC
 
 
 class DeezerDownloader(DownloaderABC):
     platform = SongLinkPlatformType.DEEZER
 
-    async def download_mp3(self, platform: SongLinkPlatform) -> Optional[BytesIO]:
+    async def download_mp3(self, platform: SongLinkPlatform) -> BytesIO | None:
         deezer_id = platform.url.split('/')[-1]
         logger.debug(f'Downloading {deezer_id}')
 

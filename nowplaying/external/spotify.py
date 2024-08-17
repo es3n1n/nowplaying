@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
 from base64 import b64encode
 from time import time
+from typing import cast
 
 import orjson
 from httpx import AsyncClient, Response
 
-from ..enums.platform_type import SongLinkPlatformType
-from ..exceptions.platforms import PlatformTemporarilyUnavailableError
-from ..util.http import STATUS_BAD_REQUEST, STATUS_NO_CONTENT, STATUS_NOT_FOUND, STATUS_OK, is_serverside_error
+from nowplaying.enums.platform_type import SongLinkPlatformType
+from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
+from nowplaying.util.http import STATUS_BAD_REQUEST, STATUS_NO_CONTENT, STATUS_NOT_FOUND, STATUS_OK, is_serverside_error
 
 
 class SpotifyError(Exception):
@@ -37,23 +38,22 @@ SpotifyToken = dict[str, int | str]
 
 def _is_scope_subset(needle_scope: str, haystack_scope: str) -> bool:
     needle_scope_set = set(needle_scope.split()) if needle_scope else set()
-    haystack_scope_set = (
-        set(haystack_scope.split()) if haystack_scope else set()
-    )
+    haystack_scope_set = set(haystack_scope.split()) if haystack_scope else set()
     return needle_scope_set <= haystack_scope_set
 
 
 def _is_token_expired(token_info: SpotifyToken) -> bool:
     now = int(time())
-    expires_at: int = token_info['expires_at']  # type: ignore
-    return expires_at - now < 60
+    expires_at: int = int(token_info['expires_at'])
+    return expires_at - now < 60  # noqa: PLR2004
 
 
 def _raise_for_status(response: Response) -> None:
     if is_serverside_error(response.status_code):
         raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.SPOTIFY)
     if response.status_code not in {STATUS_OK, STATUS_NO_CONTENT}:
-        raise SpotifyInvalidStatusCodeError(f'status {response.status_code} {response.text}')
+        msg = f'status {response.status_code} {response.text}'
+        raise SpotifyInvalidStatusCodeError(msg)
 
 
 def _is_clientside_error(response: Response) -> bool:
@@ -68,7 +68,7 @@ class Spotify:
         redirect_uri: str,
         scope: str,
         cache_handler: SpotifyCacheHandlerABC,
-    ):
+    ) -> None:
         self._client_id = client_id
         self._client_secret = client_secret
         self._redirect_uri = redirect_uri
@@ -77,9 +77,11 @@ class Spotify:
 
         self._token: SpotifyToken | None = None
 
-        self._client = AsyncClient(headers={
-            'User-Agent': 'playinnowbot',
-        })
+        self._client = AsyncClient(
+            headers={
+                'User-Agent': 'playinnowbot',
+            }
+        )
 
         self._basic_auth_header: str | None = None
 
@@ -129,7 +131,7 @@ class Spotify:
 
     async def get_current_user_playing_track(self) -> dict | None:
         if self._token is None:
-            raise SpotifyNoTokenError()
+            raise SpotifyNoTokenError
 
         response = await self._client.get(
             f'{self._api_base}/me/player/currently-playing',
@@ -144,7 +146,7 @@ class Spotify:
 
     async def get_current_user_recently_played(self, limit: int = 50) -> dict:
         if self._token is None:
-            raise SpotifyNoTokenError()
+            raise SpotifyNoTokenError
 
         response = await self._client.get(
             f'{self._api_base}/me/player/recently-played',
@@ -157,7 +159,7 @@ class Spotify:
 
     async def get_track(self, track_id: str) -> dict | None:
         if self._token is None:
-            raise SpotifyNoTokenError()
+            raise SpotifyNoTokenError
 
         response = await self._client.get(
             f'{self._api_base}/tracks/{track_id}',
@@ -171,7 +173,7 @@ class Spotify:
 
     async def add_to_queue(self, track_uri: str) -> None:
         if self._token is None:
-            raise SpotifyNoTokenError()
+            raise SpotifyNoTokenError
 
         response = await self._client.post(
             f'{self._api_base}/me/player/queue',
@@ -185,7 +187,8 @@ class Spotify:
 
     async def start_playback(self, uris: list[str]) -> None:
         if self._token is None:
-            raise SpotifyError('token is none')
+            msg = 'token is none'
+            raise SpotifyError(msg)
 
         response = await self._client.put(
             f'{self._api_base}/me/player/play',
@@ -211,7 +214,7 @@ class Spotify:
         return {'Authorization': self._basic_auth_header}
 
     def _add_attrs_to_token(self, token: SpotifyToken) -> SpotifyToken:
-        token['expires_at'] = int(time()) + token['expires_in']  # type: ignore
+        token['expires_at'] = int(time()) + cast(int, token['expires_in'])
         token['scope'] = self._scope
         return token
 
@@ -223,12 +226,12 @@ class Spotify:
             return None
 
         # if scopes don't match, then bail
-        if not _is_scope_subset(self._scope, token_info.get('scope', '')):  # type: ignore
+        if not _is_scope_subset(self._scope, cast(str, token_info.get('scope', ''))):
             return None
 
         if _is_token_expired(token_info):
             token_info = await self.refresh_access_token(
-                token_info['refresh_token'],  # type: ignore
+                cast(str, token_info['refresh_token']),
             )
 
         return token_info

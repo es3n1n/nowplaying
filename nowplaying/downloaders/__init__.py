@@ -1,12 +1,12 @@
 from collections import OrderedDict
 from io import BytesIO
-from typing import Optional, Tuple
 
 from loguru import logger
 
-from ..enums.platform_type import SongLinkPlatformType
-from ..external.song_link import get_song_link_info
-from ..models.track import Track
+from nowplaying.enums.platform_type import SongLinkPlatformType
+from nowplaying.external.song_link import get_song_link_info
+from nowplaying.models.track import Track
+
 from .abc import DownloaderABC
 from .deezer import DeezerDownloader
 from .soundcloud import SoundcloudDownloader
@@ -20,13 +20,12 @@ DOWNLOADER_CLASSES = (
     YoutubeDownloader,
 )
 DOWNLOADERS: OrderedDict[SongLinkPlatformType, DownloaderABC] = OrderedDict(
-    (downloader_type.platform, downloader_type())  # type: ignore
-    for downloader_type in DOWNLOADER_CLASSES
+    (downloader_type.platform, downloader_type()) for downloader_type in DOWNLOADER_CLASSES
 )
 
 
-async def download_mp3(track: Track) -> Tuple[str, Optional[BytesIO]]:
-    result_mp3: Optional[BytesIO] = None
+async def download_mp3(track: Track) -> tuple[str, BytesIO | None]:
+    result_mp3: BytesIO | None = None
 
     song_link_info = await get_song_link_info(track.song_link)
 

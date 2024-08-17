@@ -3,11 +3,11 @@ from urllib.parse import unquote
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from ...core.database import db
-from ...core.sign import sign
-from ...platforms import platforms
-from ...util.string import chunks
-from ..bot import dp
+from nowplaying.bot.bot import dp
+from nowplaying.core.database import db
+from nowplaying.core.sign import sign
+from nowplaying.platforms import platforms
+from nowplaying.util.string import chunks
 
 
 async def get_auth_keyboard(user_id: int) -> InlineKeyboardMarkup:
@@ -22,10 +22,12 @@ async def get_auth_keyboard(user_id: int) -> InlineKeyboardMarkup:
             text = f'(re){text}'
 
         url = await platform.get_authorization_url(sign(user_id))
-        buttons.append(InlineKeyboardButton(
-            text=text,
-            url=unquote(url),  # goofy fix for the macOS double urlencoding issue, idek don't ask me thx
-        ))
+        buttons.append(
+            InlineKeyboardButton(
+                text=text,
+                url=unquote(url),  # goofy fix for the macOS double urlencoding issue, idek don't ask me thx
+            )
+        )
 
     return InlineKeyboardMarkup(inline_keyboard=chunks(buttons, 2))
 
@@ -33,7 +35,7 @@ async def get_auth_keyboard(user_id: int) -> InlineKeyboardMarkup:
 @dp.message(Command('link', ignore_case=True))
 async def link_command_handler(message: Message) -> None:
     if message.from_user is None:
-        raise ValueError()
+        raise ValueError
 
     await message.reply(
         'Click on the buttons below to authorize in platforms',

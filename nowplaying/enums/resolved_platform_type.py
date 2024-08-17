@@ -3,6 +3,7 @@ from enum import Enum, unique
 
 # No, this is not the same thing as `SongLinkPlatformType`. See `song_link_parsers.py`
 
+
 @unique
 class ResolvedPlatformType(str, Enum):
     AMAZON_MUSIC = 'amazon'

@@ -8,4 +8,3 @@ def test_chunks() -> None:
 def test_query_builder() -> None:
     query = encode_query('test', 'hello', 'asdasd')
     assert extract_from_query(query, arguments_count=3) == ['test', 'hello', 'asdasd']
-

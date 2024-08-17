@@ -5,10 +5,11 @@ import jwt
 import orjson
 from httpx import AsyncClient, Response
 
-from ..core.config import config
-from ..enums.platform_type import SongLinkPlatformType
-from ..exceptions.platforms import PlatformTemporarilyUnavailableError
-from ..util.http import STATUS_NOT_FOUND, STATUS_OK, is_serverside_error
+from nowplaying.core.config import config
+from nowplaying.enums.platform_type import SongLinkPlatformType
+from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
+from nowplaying.util.http import STATUS_NOT_FOUND, STATUS_OK, is_serverside_error
+from nowplaying.util.time import UTC_TZ
 
 
 SESSION_LIVE_TIME: timedelta = timedelta(hours=6)
@@ -47,11 +48,11 @@ def _validate_response_code(response: Response) -> None:
 
 
 class AppleMusicWrapperClient:
-    def __init__(self, app: 'AppleMusicWrapper', media_user_token: str):
+    def __init__(self, app: 'AppleMusicWrapper', media_user_token: str) -> None:
         self.app = app
         self.media_user_token = media_user_token
 
-    def headers(self, with_media_token: bool = False) -> dict[str, str]:
+    def headers(self, *, with_media_token: bool = False) -> dict[str, str]:
         headers_result = self.app.headers
         if with_media_token:
             headers_result['media-user-token'] = self.media_user_token
@@ -70,7 +71,8 @@ class AppleMusicWrapperClient:
 
         response_json = orjson.loads(response.content)
         if 'data' not in response_json:
-            raise AppleMusicError('got a weird json')
+            msg = 'got a weird json'
+            raise AppleMusicError(msg)
 
         out_tracks = []
         for track in response_json['data']:
@@ -83,7 +85,7 @@ class AppleMusicWrapperClient:
         return out_tracks
 
     async def get_track(self, track_id: str) -> AppleMusicTrack | None:
-        # fixme: instead of using US we should store the appropriate store id
+        # TODO(es3n1n): instead of using US we should store the appropriate store id
         response = await self.app.client.get(
             f'https://api.music.apple.com/v1/catalog/us/songs/{track_id}',
             headers=self.headers(),
@@ -96,7 +98,8 @@ class AppleMusicWrapperClient:
         response_json = orjson.loads(response.content)
 
         if not response_json['data']:
-            raise AppleMusicError('got a weird track response huh?')
+            msg = 'got a weird track response huh?'
+            raise AppleMusicError(msg)
 
         return AppleMusicTrack.load(response_json['data'][0])
 
@@ -106,17 +109,19 @@ class AppleMusicWrapper:
         self.secret = config.APPLE_SECRET_KEY
         self.key_id = config.APPLE_KEY_ID
         self.team_id = config.APPLE_TEAM_ID
-        self.client = AsyncClient(headers={
-            'User-Agent': 'playinnow/1.0',
-            'Origin': config.WEB_SERVER_PUBLIC_ENDPOINT,
-        })
+        self.client = AsyncClient(
+            headers={
+                'User-Agent': 'playinnow/1.0',
+                'Origin': config.WEB_SERVER_PUBLIC_ENDPOINT,
+            }
+        )
 
         self._origins: list[str] = [config.WEB_SERVER_PUBLIC_ENDPOINT]
 
         self._alg: str = 'ES256'
 
         self._token: str | None = None
-        self._token_exp: datetime = datetime.utcnow()
+        self._token_exp: datetime = datetime.now(tz=UTC_TZ)
 
     def with_media_token(self, media_token: str) -> 'AppleMusicWrapperClient':
         return AppleMusicWrapperClient(self, media_token)
@@ -125,10 +130,11 @@ class AppleMusicWrapper:
     def ensured_token(self) -> str:
         if self.token_valid:
             if not self._token:
-                raise ValueError('No token')
+                msg = 'No token'
+                raise ValueError(msg)
             return self._token
 
-        now = datetime.utcnow()
+        now = datetime.now(tz=UTC_TZ)
         self._token_exp = now + SESSION_LIVE_TIME
         self._token = jwt.encode(
             payload={
@@ -158,5 +164,5 @@ class AppleMusicWrapper:
         if self._token is None:
             return False
 
-        dt = datetime.utcnow()
+        dt = datetime.now(tz=UTC_TZ)
         return dt <= self._token_exp

@@ -23,18 +23,18 @@ app = FastAPI(
 app.include_router(ext_router)
 
 
-def mount_static(web_path: str, *path) -> None:
+def mount_static(web_path: str, *path: str) -> None:
     result_path = ROOT_DIR / 'frontend'
     for arg in path:
         result_path /= arg
 
     if not result_path.exists():
-        raise ValueError(f'{web_path} frontend data doesnt exist')
+        raise FileNotFoundError(web_path)
 
     app.mount(web_path, StaticFiles(directory=result_path, html=True))
 
 
-# todo: move to a router once it would be possible (not implemented in fastapi atm)
+# TODO(es3n1n): move to a router once it would be possible (not implemented in fastapi atm)
 mount_static('/ym', 'ym', 'web-app', 'build')
 mount_static('/apple', 'apple')
 

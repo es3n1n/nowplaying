@@ -1,16 +1,16 @@
 from aiogram.types import CallbackQuery
 
-from ...core.database import db
-from ...enums.callback_buttons import CallbackButton
-from ...models.song_link import SongLinkPlatformType
-from ...platforms import get_platform_from_telegram_id
-from ...util.string import extract_from_query
-from ..bot import bot, dp
+from nowplaying.bot.bot import bot, dp
+from nowplaying.core.database import db
+from nowplaying.enums.callback_buttons import CallbackButton
+from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.platforms import get_platform_from_telegram_id
+from nowplaying.util.string import extract_from_query
 
 
 async def handle_logout(query: CallbackQuery) -> None:
     if query.data is None:
-        raise ValueError()
+        raise ValueError
 
     command, platform_name = extract_from_query(query.data, arguments_count=2)
     platform_type = SongLinkPlatformType(platform_name)
@@ -24,7 +24,7 @@ async def handle_logout(query: CallbackQuery) -> None:
 
 async def handle_controls(query: CallbackQuery) -> None:
     if query.data is None:
-        raise ValueError()
+        raise ValueError
 
     command, platform_name, track_id = extract_from_query(query.data, arguments_count=3)
     platform_type = SongLinkPlatformType(platform_name)
@@ -46,7 +46,7 @@ async def handle_controls(query: CallbackQuery) -> None:
 @dp.callback_query()
 async def controls_handler(query: CallbackQuery) -> None:
     if query.data is None:
-        raise ValueError()
+        raise ValueError
 
     if query.data == CallbackButton.LOADING:
         await bot.answer_callback_query(query.id, text='Downloading the audio, please wait.')

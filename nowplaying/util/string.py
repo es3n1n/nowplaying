@@ -10,10 +10,10 @@ def random_string(length: int = 5) -> str:
     return ''.join([choice(ALPHABET) for _ in range(length)])
 
 
-def chunks(line, size: int) -> list:
+def chunks(line: str | bytes | list, size: int) -> list:
     result_chunks = []
     for index in range(0, len(line), size):
-        result_chunks.append(line[index:index + size])
+        result_chunks.append(line[index : index + size])  # noqa: PERF401
     return result_chunks
 
 

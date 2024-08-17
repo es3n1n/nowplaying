@@ -1,5 +1,5 @@
 from asyncio import sleep
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 
 class OutOfRetriesError(Exception):
@@ -13,4 +13,4 @@ async def retry(max_retries: int) -> AsyncIterator[int]:
 
         yield index
 
-    raise OutOfRetriesError()
+    raise OutOfRetriesError

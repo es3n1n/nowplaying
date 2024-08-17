@@ -1,17 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+from types import MappingProxyType
 
-from ..enums.platform_features import PlatformFeature
-from ..models.song_link import SongLinkPlatformType
-from ..models.track import Track
+from nowplaying.enums.platform_features import PlatformFeature
+from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.models.track import Track
 
 
 class PlatformClientABC(ABC):
-    features: dict[PlatformFeature, bool] = {
-        PlatformFeature.TRACK_GETTERS: True,
-        PlatformFeature.ADD_TO_QUEUE: False,
-        PlatformFeature.PLAY: False,
-    }
+    features: MappingProxyType[PlatformFeature, bool] = MappingProxyType(
+        {
+            PlatformFeature.TRACK_GETTERS: True,
+            PlatformFeature.ADD_TO_QUEUE: False,
+            PlatformFeature.PLAY: False,
+        }
+    )
 
     @abstractmethod
     async def get_current_playing_track(self) -> Track | None:

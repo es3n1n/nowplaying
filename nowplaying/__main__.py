@@ -13,11 +13,13 @@ from .util.logger import logger
 
 async def async_start_bot() -> None:
     logger.info('Setting up bot commands')
-    await bot.set_my_commands(commands=[
-        BotCommand(command='start', description='Start'),
-        BotCommand(command='link', description='Link account'),
-        BotCommand(command='logout', description='Logout from platforms'),
-    ])
+    await bot.set_my_commands(
+        commands=[
+            BotCommand(command='start', description='Start'),
+            BotCommand(command='link', description='Link account'),
+            BotCommand(command='logout', description='Logout from platforms'),
+        ]
+    )
 
     logger.info('Starting long polling')
     dp.startup.register(db.init)
@@ -31,8 +33,8 @@ def start_bot() -> None:
 
 def main() -> None:
     # Initialize the database
-    # fixme: figure why it produces an unclosed transaction in production
-    # asyncio_run(db.init())  # noqa: E800
+    # TODO(es3n1n): figure why it produces an unclosed transaction in production
+    # asyncio_run(db.init())  # noqa: ERA001
 
     # Start the telegram bot process
     tg_process = Process(target=start_bot)
@@ -45,8 +47,10 @@ def main() -> None:
     # Start the web server
     logger.info('Starting web-server...')
     run(
-        'nowplaying.web_app:app', host=config.WEB_HOST, port=config.WEB_PORT,
-        **kw,  # type: ignore
+        'nowplaying.web_app:app',
+        host=config.WEB_HOST,
+        port=config.WEB_PORT,
+        **kw,  # type: ignore[arg-type]
     )
 
 

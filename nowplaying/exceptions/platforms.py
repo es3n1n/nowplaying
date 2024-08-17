@@ -1,13 +1,13 @@
-from ..enums.platform_type import SongLinkPlatformType
+from nowplaying.enums.platform_type import SongLinkPlatformType
 
 
 class BasePlatformError(Exception):
-    def __init__(self, platform: SongLinkPlatformType):
+    def __init__(self, platform: SongLinkPlatformType) -> None:
         self.platform = platform
 
 
 class BasePlatformWithIDError(BasePlatformError):
-    def __init__(self, platform: SongLinkPlatformType, telegram_id: int):
+    def __init__(self, platform: SongLinkPlatformType, telegram_id: int) -> None:
         super().__init__(platform)
         self.telegram_id = telegram_id
 
