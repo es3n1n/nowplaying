@@ -1,9 +1,9 @@
-from pytest import mark, raises
+import pytest
 
 from nowplaying.util.retries import OutOfRetriesError, retry
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_retry_basic() -> None:
     checked: bool = False
 
@@ -16,9 +16,7 @@ async def test_retry_basic() -> None:
     assert checked
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_retry_timeout() -> None:
-    with raises(OutOfRetriesError):
-        async for _ in retry(1):
-            pass
-
+    with pytest.raises(OutOfRetriesError):
+        _ = [None async for _ in retry(1)]

@@ -1,11 +1,11 @@
 from asyncpg import Pool, create_pool
 
-from ..core.config import config
-from ..models.cached_local_track import CachedLocalTrack
-from ..models.song_link import SongLinkPlatformType
-from ..util.fs import ROOT_DIR
-from ..util.logger import logger
-from ..util.worker import worker
+from nowplaying.core.config import config
+from nowplaying.models.cached_local_track import CachedLocalTrack
+from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.util.fs import ROOT_DIR
+from nowplaying.util.logger import logger
+from nowplaying.util.worker import worker
 
 
 init_sql = (ROOT_DIR / 'init.sql').read_text()
@@ -18,7 +18,7 @@ class Database:
     async def init(self) -> None:
         await self.get_pool()
 
-    async def get_pool(self) -> Pool:  # noqa: WPS615
+    async def get_pool(self) -> Pool:
         if self._pool is None:
             logger.info('Connecting to the database')
 
@@ -31,15 +31,15 @@ class Database:
             )
 
             if self._pool is None:
-                raise ValueError('pool is none')
+                msg = 'pool is none'
+                raise ValueError(msg)
 
             if not worker.is_first:
                 return self._pool
 
             logger.info('Initializing the database')
-            async with self._pool.acquire() as conn:
-                async with conn.transaction():
-                    await conn.execute(init_sql)
+            async with self._pool.acquire() as conn, conn.transaction():
+                await conn.execute(init_sql)
 
         return self._pool
 
@@ -54,7 +54,8 @@ class Database:
         async with pool.acquire() as conn:
             auth_result = await conn.fetch(
                 'SELECT 1 FROM tokens WHERE telegram_id = $1 AND platform_name = $2 LIMIT 1',
-                telegram_id, platform.value,
+                telegram_id,
+                platform.value,
             )
             return bool(auth_result)
 
@@ -70,26 +71,29 @@ class Database:
             async with conn.transaction():
                 delete_stat = await conn.fetch(
                     'DELETE FROM tokens WHERE telegram_id = $1 AND platform_name = $2 RETURNING *',
-                    telegram_id, platform.value,
+                    telegram_id,
+                    platform.value,
                 )
             return bool(delete_stat)
 
     async def store_user_token(self, telegram_id: int, platform: SongLinkPlatformType, token: str) -> None:
         pool = await self.get_pool()
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                await conn.execute(
-                    'INSERT INTO tokens (telegram_id, platform_name, token) VALUES ($1, $2, $3) '
-                    'ON CONFLICT (telegram_id, platform_name) DO UPDATE SET token = $3',
-                    telegram_id, platform.value, token,
-                )
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                'INSERT INTO tokens (telegram_id, platform_name, token) VALUES ($1, $2, $3) '
+                'ON CONFLICT (telegram_id, platform_name) DO UPDATE SET token = $3',
+                telegram_id,
+                platform.value,
+                token,
+            )
 
     async def get_user_token(self, telegram_id: int, platform: SongLinkPlatformType) -> str | None:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
             user_token = await conn.fetchrow(
                 'SELECT (token) FROM tokens WHERE telegram_id = $1 AND platform_name = $2 LIMIT 1',
-                telegram_id, platform.value,
+                telegram_id,
+                platform.value,
             )
             return None if user_token is None else user_token['token']
 
@@ -101,13 +105,13 @@ class Database:
 
     async def store_cached_file(self, uri: str, file_id: str) -> None:
         pool = await self.get_pool()
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                await conn.execute(
-                    'INSERT INTO cached_files (uri, file_id) VALUES ($1, $2) '
-                    'ON CONFLICT (uri) DO UPDATE SET file_id = $2',
-                    uri, file_id,
-                )
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                'INSERT INTO cached_files (uri, file_id) VALUES ($1, $2) '
+                'ON CONFLICT (uri) DO UPDATE SET file_id = $2',
+                uri,
+                file_id,
+            )
 
     async def get_cached_file(self, uri: str) -> str | None:
         pool = await self.get_pool()
@@ -119,7 +123,11 @@ class Database:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
             cache_result = await conn.fetchval(
-                'SELECT cache_local_track_id($1, $2, $3, $4)', platform.value, url, artist, name,
+                'SELECT cache_local_track_id($1, $2, $3, $4)',
+                platform.value,
+                url,
+                artist,
+                name,
             )
             return str(cache_result[0])
 

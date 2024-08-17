@@ -3,10 +3,11 @@ from datetime import datetime
 from pydantic import BaseModel
 from yandex_music import Track as YandexTrack
 
-from ..external.apple import AppleMusicTrack
-from ..external.lastfm import LastFMTrack
-from ..external.song_link import get_song_link
-from ..util.time import TS_NULL
+from nowplaying.external.apple import AppleMusicTrack
+from nowplaying.external.lastfm import LastFMTrack
+from nowplaying.external.song_link import get_song_link
+from nowplaying.util.time import TS_NULL
+
 from .song_link import SongLinkPlatformType
 
 
@@ -35,13 +36,14 @@ class Track(BaseModel):
 
     @property
     def is_available(self) -> bool:
-        # todo: implement the "unavailable" logic :sadge:
+        # TODO(es3n1n): implement the "unavailable" logic :sadge:
         return self.id is not None
 
     @classmethod
     async def from_spotify_item(
         cls,
         track_item: dict,
+        *,
         played_at: datetime = TS_NULL,
         is_playing: bool = False,
     ) -> 'Track':
@@ -82,6 +84,7 @@ class Track(BaseModel):
     async def from_yandex_item(
         cls,
         track: YandexTrack,
+        *,
         played_at: datetime = TS_NULL,
         is_playing: bool = False,
     ) -> 'Track':
@@ -101,6 +104,7 @@ class Track(BaseModel):
     async def from_apple_item(
         cls,
         track: AppleMusicTrack,
+        *,
         currently_playing: bool = False,
         played_at: datetime = TS_NULL,
     ) -> 'Track':

@@ -1,7 +1,6 @@
-from typing import Tuple
+from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.models.track import Track
 
-from ..models.song_link import SongLinkPlatformType
-from ..models.track import Track
 from .abc import PlatformABC, PlatformClientABC
 from .apple import ApplePlatform
 from .lastfm import LastfmPlatform
@@ -29,13 +28,14 @@ async def get_platform_from_telegram_id(telegram_id: int, platform_type: SongLin
 
         return await platform.from_telegram_id(telegram_id)
 
-    raise ValueError('Unsupported platform')
+    msg = 'Unsupported platform'
+    raise ValueError(msg)
 
 
 async def get_platform_track(
     track_id: str,
     telegram_id: int,
     platform_type: SongLinkPlatformType,
-) -> Tuple[PlatformClientABC, Track | None]:
+) -> tuple[PlatformClientABC, Track | None]:
     platform = await get_platform_from_telegram_id(telegram_id, platform_type)
     return platform, await platform.get_track(track_id)

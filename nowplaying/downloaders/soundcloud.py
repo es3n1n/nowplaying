@@ -1,32 +1,33 @@
 from contextlib import redirect_stdout
 from io import BytesIO
 from shutil import which
-from typing import Optional
 
 from requests import HTTPError
 from scdl.scdl import SoundCloudException, download_hls, download_original_file
 from soundcloud import BasicTrack, SoundCloud, Track
 
-from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
-from ..util.logger import logger
+from nowplaying.models.song_link import SongLinkPlatform, SongLinkPlatformType
+from nowplaying.util.logger import logger
+
 from .abc import DownloaderABC
 
 
 if which('ffmpeg') is None:
-    raise ValueError('Please install ffmpeg (and add it to the PATH if needed)')
+    msg = 'Please install ffmpeg (and add it to the PATH if needed)'
+    raise ValueError(msg)
 
 
 class SoundcloudDownloader(DownloaderABC):
     platform = SongLinkPlatformType.SOUNDCLOUD
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = SoundCloud(client_id=None, auth_token=None)
 
-    async def download_mp3(self, platform: SongLinkPlatform) -> Optional[BytesIO]:
+    async def download_mp3(self, platform: SongLinkPlatform) -> BytesIO | None:
         logger.debug(f'Downloading {platform.url}')
 
         track = self.client.resolve(platform.url)
-        if track is None or not isinstance(track, (BasicTrack, Track)):
+        if track is None or not isinstance(track, BasicTrack | Track):
             return None
 
         if not track.streamable or track.policy == 'BLOCK':
@@ -41,12 +42,10 @@ class SoundcloudDownloader(DownloaderABC):
         }
 
         io = BytesIO()
-        io.close = lambda: None  # type: ignore
-
         filename = None
 
         try:
-            with redirect_stdout(io):  # type: ignore
+            with redirect_stdout(io):  # type: ignore[type-var]
                 if track.downloadable:
                     filename, _ = download_original_file(self.client, track, title='', kwargs=kw)
 

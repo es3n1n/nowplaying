@@ -1,16 +1,17 @@
 from asyncio import create_task
 from contextlib import redirect_stdout
 from io import BytesIO
-from typing import Optional, Type
 
 from httpx import AsyncClient, HTTPError, Timeout
 from yt_dlp import DownloadError, YoutubeDL
 
-from ..bot.reporter import report_error
-from ..core.config import config
-from ..external.cobalt import Cobalt
-from ..models.song_link import SongLinkPlatform, SongLinkPlatformType
-from ..util.logger import logger
+from nowplaying.bot.reporter import report_error
+from nowplaying.core.config import config
+from nowplaying.external.cobalt import Cobalt
+from nowplaying.models.song_link import SongLinkPlatform, SongLinkPlatformType
+from nowplaying.util.binary import is_mp3
+from nowplaying.util.logger import logger
+
 from .abc import DownloaderABC
 
 
@@ -20,19 +21,19 @@ COBALT_RETRIES = 3
 
 class YoutubeDLLogger:
     @staticmethod
-    def debug(msg: str):  # noqa: WPS602
+    def debug(msg: str) -> None:
         """Do nothing."""
 
     @staticmethod
-    def warning(msg: str):  # noqa: WPS602
+    def warning(msg: str) -> None:
         logger.warning(msg)
 
     @staticmethod
-    def error(msg: str):  # noqa: WPS602
-        create_task(report_error(f'Youtube error: {msg}'))
+    def error(msg: str) -> None:
+        create_task(report_error(f'Youtube error: {msg}'))  # noqa: RUF006
 
 
-async def download_through_cobalt(platform: SongLinkPlatform) -> Optional[BytesIO]:
+async def download_through_cobalt(platform: SongLinkPlatform) -> BytesIO | None:
     stream: str | None = None
 
     # Retry with different instances
@@ -61,10 +62,7 @@ async def download_through_cobalt(platform: SongLinkPlatform) -> Optional[BytesI
 
         # Detect mp3 magic bytes, this is needed because for some reason some cobalt apis return an error as a string
         #   instead of the file we're requesting.
-        if audio_data[:3] == b'ID3':
-            return BytesIO(audio_data)
-
-        if audio_data[:2] in {b'\xFF\xFB', b'\xFF\xF3', b'\xFF\xF2'}:
+        if is_mp3(audio_data):
             return BytesIO(audio_data)
 
         # Ban this instance and reroll a new one
@@ -72,8 +70,8 @@ async def download_through_cobalt(platform: SongLinkPlatform) -> Optional[BytesI
         return await download_through_cobalt(platform)
 
 
-async def download_through_youtube_dl(platform: SongLinkPlatform) -> Optional[BytesIO]:
-    youtube_params: dict[str, str | bool | list[dict] | Type] = {
+async def download_through_youtube_dl(platform: SongLinkPlatform) -> BytesIO | None:
+    youtube_params: dict[str, str | bool | list[dict] | type] = {
         'format': 'bestaudio/best',
         'geo_bypass': True,
         'nocheckcertificate': True,
@@ -92,13 +90,14 @@ async def download_through_youtube_dl(platform: SongLinkPlatform) -> Optional[By
         youtube_params['cookiefile'] = config.YOUTUBE_COOKIES_PATH
 
     io = BytesIO()
-    io.close = lambda: None  # type: ignore
-    with redirect_stdout(io):  # type: ignore
-        with YoutubeDL(params=youtube_params) as ydl:
-            try:
-                result_stat: int = ydl.download(url_list=[platform.url])
-            except DownloadError:
-                return None
+    with (
+        redirect_stdout(io),  # type: ignore[type-var]
+        YoutubeDL(params=youtube_params) as ydl,
+    ):
+        try:
+            result_stat: int = ydl.download(url_list=[platform.url])
+        except DownloadError:
+            return None
 
     if result_stat != 0:
         return None
@@ -110,7 +109,7 @@ async def download_through_youtube_dl(platform: SongLinkPlatform) -> Optional[By
 class YoutubeDownloader(DownloaderABC):
     platform = SongLinkPlatformType.YOUTUBE
 
-    async def download_mp3(self, platform: SongLinkPlatform) -> Optional[BytesIO]:
+    async def download_mp3(self, platform: SongLinkPlatform) -> BytesIO | None:
         logger.debug(f'Downloading {platform.url}')
 
         io = await download_through_cobalt(platform)

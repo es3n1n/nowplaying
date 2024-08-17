@@ -1,25 +1,25 @@
 from asyncio import TaskGroup
-from typing import Set, Tuple
 from urllib.parse import quote
 
 from aiogram import html, types
 from aiogram.enums import ParseMode
 
-from ....core.config import config
-from ....core.database import db
-from ....enums.platform_features import PlatformFeature
-from ....models.song_link import SongLinkPlatformType
-from ....models.track import Track
-from ....platforms import PlatformClientABC, get_platform_from_telegram_id, get_platform_track
-from ....util.string import extract_from_query
-from ...bot import bot, dp
-from ...caching import get_cached_file_id
+from nowplaying.bot.bot import bot, dp
+from nowplaying.bot.caching import get_cached_file_id
+from nowplaying.core.config import config
+from nowplaying.core.database import db
+from nowplaying.enums.platform_features import PlatformFeature
+from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.models.track import Track
+from nowplaying.platforms import PlatformClientABC, get_platform_from_telegram_id, get_platform_track
+from nowplaying.util.string import extract_from_query
+
 from .inline_utils import NUM_OF_ITEMS_TO_QUERY, track_to_caption
 
 
 async def parse_inline_result_query(
     inline_result: types.ChosenInlineResult,
-) -> Tuple[PlatformClientABC | None, Track | None]:
+) -> tuple[PlatformClientABC | None, Track | None]:
     uri = inline_result.result_id
     platform_name, track_id = extract_from_query(uri, arguments_count=2)
     platform_type = SongLinkPlatformType(platform_name)
@@ -42,16 +42,14 @@ async def _fetch_feed(
 ) -> None:
     client = await get_platform_from_telegram_id(user_id, platform_type)
 
-    async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY):
-        feed.append(track)
-
+    feed.extend([track async for track in client.get_current_and_recent_tracks(NUM_OF_ITEMS_TO_QUERY)])
     clients[platform_type] = client
 
 
 async def fetch_feed_and_clients(
     query_id: str,
     user_id: int,
-) -> Tuple[list[Track] | None, dict[SongLinkPlatformType, PlatformClientABC] | None]:
+) -> tuple[list[Track] | None, dict[SongLinkPlatformType, PlatformClientABC] | None]:
     feed: list[Track] = []
     clients: dict[SongLinkPlatformType, PlatformClientABC] = {}
 
@@ -86,7 +84,7 @@ async def feed_to_inline_results(
     feed: list[Track],
     clients: dict[SongLinkPlatformType, PlatformClientABC],
 ) -> list[types.InlineQueryResultArticle | types.InlineQueryResultAudio | types.InlineQueryResultCachedAudio]:
-    seen_uris: Set[str] = set()
+    seen_uris: set[str] = set()
     sorted_feed = sort_feed(feed)
 
     return [
@@ -117,7 +115,7 @@ async def create_result_item(
     if cached_file_id:
         return create_cached_audio_result(track, cached_file_id, client)
 
-    return create_audio_result(track, client, index, len(clients) > 1)
+    return create_audio_result(track, client, index=index, multiple_clients=len(clients) > 1)
 
 
 def create_cached_audio_result(
@@ -136,6 +134,7 @@ def create_cached_audio_result(
 def create_audio_result(
     track: Track,
     client: PlatformClientABC,
+    *,
     index: int,
     multiple_clients: bool,
 ) -> types.InlineQueryResultAudio:
@@ -150,21 +149,24 @@ def create_audio_result(
     return types.InlineQueryResultAudio(
         id=track.uri if can_proceed else str(index),
         audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
-
         performer=track.artist,
         title=name,
-
-        caption=track_to_caption(client, track, is_getter_available, is_track_available),
-
+        caption=track_to_caption(
+            client, track, is_getter_available=is_getter_available, is_track_available=is_track_available
+        ),
         parse_mode=ParseMode.HTML,
         reply_markup=types.InlineKeyboardMarkup(
-            inline_keyboard=[[
-                types.InlineKeyboardButton(
-                    text='Downloading the audio',
-                    callback_data='loading',
-                ),
-            ]],
-        ) if can_proceed else None,
+            inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text='Downloading the audio',
+                        callback_data='loading',
+                    ),
+                ]
+            ],
+        )
+        if can_proceed
+        else None,
     )
 
 
@@ -176,12 +178,14 @@ async def inline_query_handler(query: types.InlineQuery) -> None:
 
     result_items = await feed_to_inline_results(feed, clients)
     if not result_items:
-        result_items.append(types.InlineQueryResultArticle(
-            id='0',
-            title='Hmm, no recent tracks found',
-            input_message_content=types.InputTextMessageContent(
-                message_text='No recent tracks found (┛ಠ_ಠ)┛彡┻━┻',
-            ),
-        ))
+        result_items.append(
+            types.InlineQueryResultArticle(
+                id='0',
+                title='Hmm, no recent tracks found',
+                input_message_content=types.InputTextMessageContent(
+                    message_text='No recent tracks found (┛ಠ_ಠ)┛彡┻━┻',
+                ),
+            )
+        )
 
-    await bot.answer_inline_query(query.id, results=result_items, cache_time=1)  # type: ignore
+    await bot.answer_inline_query(query.id, results=result_items, cache_time=1)  # type: ignore[arg-type]

@@ -5,9 +5,9 @@ from typing import TypedDict
 import orjson
 from httpx import AsyncClient, HTTPError, Timeout
 
-from ..bot.reporter import report_error
-from ..util.http import STATUS_OK
-from ..util.logger import logger
+from nowplaying.bot.reporter import report_error
+from nowplaying.util.http import STATUS_OK
+from nowplaying.util.logger import logger
 
 
 class CobaltAPIInstance(TypedDict):
@@ -40,7 +40,7 @@ class CobaltInstance:
         )
 
     @property
-    def url(self):
+    def url(self) -> str:
         return f'{self.proto}://{self.address}'
 
 
@@ -59,7 +59,7 @@ class Cobalt:
         self.instance: CobaltInstance = CobaltInstance.default()
         self.banned_instances: list[str] = []
 
-    async def re_roll_instance(self, ban_current: bool = False) -> None:
+    async def re_roll_instance(self, *, ban_current: bool = False) -> None:
         if ban_current:
             self.banned_instances.append(self.instance.address)
 
@@ -80,7 +80,7 @@ class Cobalt:
             inst
             for inst in instances_data
             if (
-                inst.get('score', 0) == 100
+                inst.get('score', 0) == 100  # noqa: PLR2004
                 and inst.get('services', {}).get('youtube', False)
                 and inst.get('api_online')
             )
@@ -105,11 +105,14 @@ class Cobalt:
     async def get_mp3_stream_url(self, youtube_url: str) -> str | None:
         try:
             async with get_client() as client:
-                json_response = await client.post(f'{self.instance.url}/api/json', json={
-                    'isAudioOnly': 'true',
-                    'url': youtube_url,
-                    'aFormat': 'mp3',
-                })
+                json_response = await client.post(
+                    f'{self.instance.url}/api/json',
+                    json={
+                        'isAudioOnly': 'true',
+                        'url': youtube_url,
+                        'aFormat': 'mp3',
+                    },
+                )
         except HTTPError:
             return None
 

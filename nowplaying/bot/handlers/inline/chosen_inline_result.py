@@ -1,17 +1,18 @@
 from aiogram.enums import ParseMode
 from aiogram.types import ChosenInlineResult
 
-from ....downloaders import download_mp3
-from ....util.logger import logger
-from ...bot import bot, dp
-from ...reporter import report_error
+from nowplaying.bot.bot import bot, dp
+from nowplaying.bot.reporter import report_error
+from nowplaying.downloaders import download_mp3
+from nowplaying.util.logger import logger
+
 from .inline import parse_inline_result_query
 from .inline_utils import UNAVAILABLE_MSG, cache_audio_and_edit, track_to_caption
 
 
 @dp.chosen_inline_result()
 async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> None:
-    # todo @es3n1n: multiprocess queue
+    # TODO @es3n1n: multiprocess queue
     if inline_result.inline_message_id is None:
         logger.warning('Got an update without an inline message')
         logger.warning(inline_result.model_dump())
@@ -27,8 +28,7 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
 
     caption = track_to_caption(client, track, is_getter_available=True)
     logger.info(
-        f'Downloading {track.artist} - {track.name} from '
-        + f'{track.platform.name}',
+        f'Downloading {track.artist} - {track.name} from {track.platform.name}',
     )
 
     thumbnail, mp3 = await download_mp3(track)
@@ -47,7 +47,6 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
         track=track,
         mp3=mp3,
         thumbnail=thumbnail,
-        user=inline_result.from_user,
+        inline_result=inline_result,
         caption=caption,
-        inline_message_id=inline_result.inline_message_id,
     )

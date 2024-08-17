@@ -2,18 +2,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from hashlib import md5
 from html import unescape
-from re import DOTALL
+from re import DOTALL, findall, search
 from re import compile as re_compile
-from re import findall, search
 
 import orjson
 from async_lru import alru_cache
 from httpx import AsyncClient, AsyncHTTPTransport, HTTPError, Response
 
-from ..core.config import config
-from ..enums.platform_type import SongLinkPlatformType
-from ..exceptions.platforms import PlatformTemporarilyUnavailableError
-from ..util.http import STATUS_OK, is_serverside_error
+from nowplaying.core.config import config
+from nowplaying.enums.platform_type import SongLinkPlatformType
+from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
+from nowplaying.util.http import STATUS_OK, is_serverside_error
+from nowplaying.util.time import UTC_TZ
 
 
 def get_client() -> AsyncClient:
@@ -36,6 +36,8 @@ def get_client() -> AsyncClient:
         follow_redirects=True,
         # last.fm doesn't like ipv6 idk why. when requesting with ipv6 it returns 403
         transport=AsyncHTTPTransport(local_address='0.0.0.0'),
+        proxy=config.LASTFM_SEARCH_PROXY,
+        verify=not config.LASTFM_SEARCH_PROXY,
     )
 
 
@@ -84,10 +86,12 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
             break
 
     if not response:
-        raise ValueError('(last.fm) All queries got timed out')
+        msg = '(last.fm) All queries got timed out'
+        raise ValueError(msg)
 
     if response.status_code != STATUS_OK:
-        raise ValueError(f'(last.fm) Got status code {response.status_code}: {response.text}')
+        msg = f'(last.fm) Got status code {response.status_code}: {response.text}'
+        raise ValueError(msg)
 
     name_match = search(PAGE_RESOURCE_NAME_REGEX, response.text)
     artist_match = search(PAGE_RESOURCE_ARTIST_NAME_REGEX, response.text)
@@ -114,11 +118,12 @@ def _ensure_response(response: Response) -> None:
     if is_serverside_error(response.status_code):
         raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.LASTFM)
     if response.status_code != STATUS_OK:
-        raise LastFMError(f'status {response.status_code} != 200 {response.text}')
+        msg = f'status {response.status_code} != 200 {response.text}'
+        raise LastFMError(msg)
 
 
 class LastFMClient:
-    def __init__(self, session_key: str | None = None, token: str | None = None):
+    def __init__(self, session_key: str | None = None, token: str | None = None) -> None:
         self.api_key = config.LASTFM_API_KEY
         self.api_secret = config.LASTFM_SHARED_SECRET
         self.session_key = session_key
@@ -130,9 +135,9 @@ class LastFMClient:
         )
         self.base_url = 'https://ws.audioscrobbler.com/2.0/'
 
-    async def get_session_key(self) -> str:  # noqa: WPS615
+    async def get_session_key(self) -> str:
         if self.token is None:
-            raise LastFMError()
+            raise LastFMError
 
         response = await self.client.get(
             self.base_url,
@@ -146,13 +151,13 @@ class LastFMClient:
         session_data = orjson.loads(response.content)
         session_key: str | None = session_data.get('session', {}).get('key', None)
         if session_key is None:
-            raise LastFMError()
+            raise LastFMError
 
         return session_key
 
     async def get_username(self) -> str:
         if self.session_key is None:
-            raise LastFMError()
+            raise LastFMError
         response = await self.client.get(self.base_url, params=self._build_query('user.getInfo'))
         _ensure_response(response)
         user_data = orjson.loads(response.content)
@@ -160,13 +165,13 @@ class LastFMClient:
 
     async def get_recent_tracks(self, limit: int) -> list[LastFMPlayedTrack]:
         if self.session_key is None:
-            raise LastFMError()
+            raise LastFMError
         response = await self.client.get(
             self.base_url,
             params=self._build_query(
                 'user.getRecentTracks',
                 user=await self.get_username(),
-                limit=limit,
+                limit=str(limit),
             ),
         )
         _ensure_response(response)
@@ -177,23 +182,27 @@ class LastFMClient:
             is_now_playing: bool = track.get('@attr', {}).get('nowplaying', False)
 
             played_ts: str | None = track.get('date', {}).get('uts', None)
-            played_at = datetime.utcnow() if played_ts is None else datetime.utcfromtimestamp(int(played_ts))
+            played_at = (
+                datetime.now(tz=UTC_TZ) if played_ts is None else datetime.fromtimestamp(int(played_ts), tz=UTC_TZ)
+            )
 
-            played_tracks.append(LastFMPlayedTrack(
-                is_now_playing=is_now_playing,
-                track=LastFMTrack(
-                    url=track['url'],
-                    artist=track['artist']['#text'],
-                    name=track['name'],
-                ),
-                playback_date=played_at,
-            ))
+            played_tracks.append(
+                LastFMPlayedTrack(
+                    is_now_playing=is_now_playing,
+                    track=LastFMTrack(
+                        url=track['url'],
+                        artist=track['artist']['#text'],
+                        name=track['name'],
+                    ),
+                    playback_date=played_at,
+                )
+            )
 
         return played_tracks
 
-    def _get_signature(self, query_params: dict[str, str]):
+    def _get_signature(self, query_params: dict[str, str]) -> str:
         string = ''
-        for name in sorted(query_params.keys()):  # noqa: WPS519
+        for name in sorted(query_params.keys()):
             string += f'{name}{query_params[name]}'
 
         string += self.api_secret
@@ -202,7 +211,7 @@ class LastFMClient:
         hashed.update(string.encode('utf-8'))
         return hashed.hexdigest()
 
-    def _build_query(self, method: str, **kwargs) -> dict[str, str]:
+    def _build_query(self, method: str, **kwargs: str) -> dict[str, str]:
         kwargs['method'] = method
         kwargs['api_key'] = self.api_key
         if self.session_key is not None:

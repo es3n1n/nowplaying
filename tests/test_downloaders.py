@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from pytest import mark, skip
+import pytest
 
 from nowplaying.core.config import config
 from nowplaying.downloaders import DOWNLOADERS
@@ -13,38 +13,44 @@ async def _download(platform_type: SongLinkPlatformType, song_url: str) -> Bytes
     return await downloader.download_mp3(SongLinkPlatform(platform=platform_type, url=song_url))
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_deezer() -> None:
     # Deezer cookie isn't set, skip the test
     if not config.deezer_apl_cookie_set:
-        skip('Deezer cookie is not set')
+        pytest.skip('Deezer cookie is not set')
 
     # Digital release date of this track is eq to None
-    assert await _download(
-        SongLinkPlatformType.DEEZER,
-        'https://www.deezer.com/track/2931496091'
-    ) is not None
+    assert await _download(SongLinkPlatformType.DEEZER, 'https://www.deezer.com/track/2931496091') is not None
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_soundcloud() -> None:
-    assert await _download(
-        SongLinkPlatformType.SOUNDCLOUD,
-        'https://soundcloud.com/vacationsfanclub/young-1',
-    ) is not None
+    assert (
+        await _download(
+            SongLinkPlatformType.SOUNDCLOUD,
+            'https://soundcloud.com/vacationsfanclub/young-1',
+        )
+        is not None
+    )
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_youtube() -> None:
-    assert await _download(
-        SongLinkPlatformType.YOUTUBE,
-        'https://www.youtube.com/watch?v=bp3991bNGO4',
-    ) is not None
+    assert (
+        await _download(
+            SongLinkPlatformType.YOUTUBE,
+            'https://www.youtube.com/watch?v=bp3991bNGO4',
+        )
+        is not None
+    )
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_youtube_2() -> None:
-    assert await _download(
-        SongLinkPlatformType.YOUTUBE,
-        'https://www.youtube.com/watch?v=cUtOgwdJNUE',
-    ) is not None
+    assert (
+        await _download(
+            SongLinkPlatformType.YOUTUBE,
+            'https://www.youtube.com/watch?v=cUtOgwdJNUE',
+        )
+        is not None
+    )

@@ -1,9 +1,9 @@
-from pytest import mark
+import pytest
 
 from nowplaying.external.deezer import search_tracks
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_deezer_search() -> None:
     results = await search_tracks('MK - Crescent Moon')
 
@@ -17,7 +17,7 @@ async def test_deezer_search() -> None:
     assert results[0].url == 'https://www.deezer.com/track/1265359402'
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_deezer_search_jp_title() -> None:
     results_jp = await search_tracks('Homecomings - ラプス')
     results_en = await search_tracks('Homecomings - Lapse')
@@ -27,7 +27,7 @@ async def test_deezer_search_jp_title() -> None:
     assert results_jp[0].artist == 'Homecomings'
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_deezer_search_jp_artist() -> None:
     results_jp = await search_tracks('kessoku band - あのバンド - That band')
     results_en = await search_tracks('結束バンド - あのバンド')
@@ -37,6 +37,6 @@ async def test_deezer_search_jp_artist() -> None:
     assert results_jp[0].artist == 'kessoku band'
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_deezer_search_banned_chars() -> None:
     await search_tracks('Hatsune Miku?')

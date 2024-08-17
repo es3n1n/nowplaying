@@ -26,31 +26,63 @@ cryptography = "^43.0.0"
 orjson = "^3.10.7"
 
 [tool.poetry.group.dev.dependencies]
-flake8 = "^7.1.1"
 mypy = "^1.11.1"
 isort = "^5.13.2"
-flake8-quotes = "^3.4.0"
-flake8-bugbear = "^24.4.26"
-flake8-print = "^5.0.0"
 asyncpg-stubs = "^0.29.1"
-wemake-python-styleguide = "^0.19.2"
 pytest = "^8.3.1"
 pytest-asyncio = "^0.23.8"
 types-requests = "^2.32.0.20240712"
+ruff = "^0.6.1"
 
-[tool.isort]
-profile = "black"
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-lines_after_imports = 2
-combine_as_imports = false
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    # Conflicting stuff
+    "D211", "D212", "D203", "COM812", "ISC001",
+    # We need a new line at the end of file
+    "W391",
+    # No docs
+    "D100", "D101", "D102", "D103", "D104", "D107", "D419",
+    # I will fix all the fixmes and todos one day, please don't remind me about them
+    "FIX001", "FIX002",
+    # No issue links yet
+    "TD003",
+    # We want to bind to all interfaces
+    "S104",
+]
+flake8-quotes.inline-quotes = "single"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"test_*.py" = [
+    # Allow assertions
+    "S101",
+    # __init__.py stuff
+    "INP001",
+    # Allow magic values
+    "PLR2004",
+]
+# Deezer impl was copypasted
+"nowplaying/external/deezer.py" = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "single"
+line-ending = "lf"
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+combine-as-imports = false
 
 [tool.pytest.ini_options]
 addopts = "-s -v -rf"
 testpaths = ["tests"]
+
+[[tool.mypy.overrides]]
+module = "yt_dlp.*,spotipy.*,scdl.*,soundcloud.*,pylast.*,yandex_music.*"
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core"]

@@ -6,11 +6,11 @@ from loguru import logger
 from scdl import scdl
 from uvicorn.config import LOGGING_CONFIG
 
-from ..core.config import config
+from nowplaying.core.config import config
 
 
 class LoguruHandler(logging.Handler):
-    def emit(self, record: logging.LogRecord):
+    def emit(self, record: logging.LogRecord) -> None:
         # Get corresponding Loguru level if it exists
         try:
             level = logger.level(record.levelname).name
@@ -27,7 +27,8 @@ class LoguruHandler(logging.Handler):
             depth += 1
 
         logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage(),
+            level,
+            record.getMessage(),
         )
 
 
@@ -60,7 +61,7 @@ def init_logger() -> None:
     aiogram_loggers.dispatcher.setLevel(level=level)
     logging.basicConfig(handlers=[loguru_handler])
 
-    for key in LOGGING_CONFIG['handlers'].keys():
+    for key in LOGGING_CONFIG['handlers']:
         handler_conf = LOGGING_CONFIG['handlers'][key]
 
         handler_conf['class'] = 'nowplaying.util.logger.LoguruHandler'
@@ -69,15 +70,17 @@ def init_logger() -> None:
 
     fmt = (
         '<level>{time}</level> | <level>{level: <8}</level> | '
-        + '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
-        + '<level>{message}</level>'
+        '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
+        '<level>{message}</level>'
     )
 
     logger.remove()
-    logger.configure(handlers=[
-        {'sink': sys.stderr, 'level': 'ERROR', 'format': fmt, 'filter': _filter_stderr},
-        {'sink': sys.stdout, 'format': fmt, 'filter': _filter_stdout},
-    ])
+    logger.configure(
+        handlers=[
+            {'sink': sys.stderr, 'level': 'ERROR', 'format': fmt, 'filter': _filter_stderr},
+            {'sink': sys.stdout, 'format': fmt, 'filter': _filter_stdout},
+        ]
+    )
 
 
 init_logger()

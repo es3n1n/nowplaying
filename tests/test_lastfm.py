@@ -1,14 +1,12 @@
-from pytest import mark
+import pytest
 
 from nowplaying.external.lastfm import query_last_fm_url
 from nowplaying.platforms.lastfm import query_song_link
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_lfm_song_link_via_ext() -> None:
-    link = await query_song_link(
-        'https://www.last.fm/music/SAWTOWNE/_/M@GICAL+CURE!+LOVE+SHOT!+(feat.+Hatsune+Miku)'
-    )
+    link = await query_song_link('https://www.last.fm/music/SAWTOWNE/_/M@GICAL+CURE!+LOVE+SHOT!+(feat.+Hatsune+Miku)')
 
     assert link in (
         'https://song.link/i/1734570582',
@@ -17,7 +15,7 @@ async def test_lfm_song_link_via_ext() -> None:
     )
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_lfm_song_link_via_deezer() -> None:
     link = await query_song_link(
         'https://www.last.fm/music/My+Dead+Girlfriend/夏八+-+Single/natsu+no+hachiouji',
@@ -27,7 +25,7 @@ async def test_lfm_song_link_via_deezer() -> None:
     assert link == 'https://song.link/d/2622472712'
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_lfm_external_platforms_search() -> None:
     info = await query_last_fm_url(
         'https://www.last.fm/music/SAWTOWNE/_/M@GICAL+CURE!+LOVE+SHOT!+(feat.+Hatsune+Miku)',

@@ -1,18 +1,20 @@
+from typing import cast
+
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import ExceptionTypeFilter
 from aiogram.types import ErrorEvent, InlineQueryResultArticle, InputTextMessageContent
 
-from ...core.config import config
-from ...core.database import db
-from ...enums.platform_type import SongLinkPlatformType
-from ...exceptions.platforms import (
+from nowplaying.bot.bot import bot, dp
+from nowplaying.bot.reporter import report_error
+from nowplaying.core.config import config
+from nowplaying.core.database import db
+from nowplaying.enums.platform_type import SongLinkPlatformType
+from nowplaying.exceptions.platforms import (
     PlatformInvalidAuthCodeError,
     PlatformTemporarilyUnavailableError,
     PlatformTokenInvalidateError,
 )
-from ...util.logger import logger
-from ..bot import bot, dp
-from ..reporter import report_error
+from nowplaying.util.logger import logger
 
 
 AUTH_CODE_ERROR_MSG = 'Error! Unable to authorize in {platform}, please try again.'
@@ -59,7 +61,7 @@ async def reply_to_event(event: ErrorEvent, message: str) -> None:
 
 @dp.error(ExceptionTypeFilter(PlatformInvalidAuthCodeError))
 async def on_invalid_auth_code_error(event: ErrorEvent) -> bool:
-    exc: PlatformInvalidAuthCodeError = event.exception  # type: ignore
+    exc = cast(PlatformInvalidAuthCodeError, event.exception)
 
     await reply_to_event(event, AUTH_CODE_ERROR_MSG.format(platform=exc.platform.name.capitalize()))
     return True
@@ -67,13 +69,13 @@ async def on_invalid_auth_code_error(event: ErrorEvent) -> bool:
 
 @dp.error(ExceptionTypeFilter(PlatformTokenInvalidateError))
 async def on_token_invalidation(event: ErrorEvent) -> bool:
-    exc: PlatformTokenInvalidateError = event.exception  # type: ignore
+    exc = cast(PlatformTokenInvalidateError, event.exception)
 
     footer: str = ''
     if exc.platform == SongLinkPlatformType.SPOTIFY:
         footer = (
             'This might be because spotify has not approved this application yet.\n'
-            + f'There might be some free dev user slots for the application, dm @{config.DEVELOPER_USERNAME}'
+            f'There might be some free dev user slots for the application, dm @{config.DEVELOPER_USERNAME}'
         )
 
     logger.opt(exception=exc).warning('Invalidating platform session')
@@ -81,7 +83,7 @@ async def on_token_invalidation(event: ErrorEvent) -> bool:
         event,
         (
             f'Your {exc.platform.name.capitalize()} session has expired/got invalidated, please authorize again.'
-            + f'\n{footer}'
+            f'\n{footer}'
         ).strip(),
     )
 
@@ -91,20 +93,17 @@ async def on_token_invalidation(event: ErrorEvent) -> bool:
 
 @dp.error(ExceptionTypeFilter(PlatformTemporarilyUnavailableError))
 async def on_platform_unavailable(event: ErrorEvent) -> bool:
-    exc: PlatformTemporarilyUnavailableError = event.exception  # type: ignore
-    await reply_to_event(
-        event,
-        (
-            f'Sorry, but it seems like {exc.platform.name.capitalize()} API is down'
-            + '\nTry again later'
-        ),
-    )
+    exc = cast(PlatformTemporarilyUnavailableError, event.exception)
+
+    message: str = f'Sorry, but it seems like {exc.platform.name.capitalize()} API is down\n'
+    message += 'Try again later'
+    await reply_to_event(event, message)
     return True
 
 
 @dp.error(ExceptionTypeFilter(ExceptionGroup))
 async def on_exception_group(event: ErrorEvent) -> bool:
-    exc: ExceptionGroup = event.exception  # type: ignore
+    exc = cast(ExceptionGroup, event.exception)
 
     for nested_exc in exc.exceptions:
         nested_event = ErrorEvent(
@@ -112,7 +111,7 @@ async def on_exception_group(event: ErrorEvent) -> bool:
             exception=nested_exc,
         )
 
-        # todo: feed them back to the dp
+        # TODO(es3n1n): feed them back to the dp
         if isinstance(nested_exc, PlatformInvalidAuthCodeError):
             return await on_invalid_auth_code_error(nested_event)
 
@@ -128,9 +127,8 @@ async def on_exception_group(event: ErrorEvent) -> bool:
 @dp.error()
 async def fallback_error_handler(event: ErrorEvent) -> bool:
     await reply_to_event(event, f'Something went wrong (┛ಠ_ಠ)┛彡┻━┻\nContact @{config.DEVELOPER_USERNAME}')
-    await report_error(
-        f'Something went wrong!'
-        f'Update: {event.update.model_dump_json(indent=3)}',
-        event.exception,
-    )
+
+    message: str = 'Something went wrong!\n'
+    message += f'Update: {event.update.model_dump_json(indent=3)}'
+    await report_error(message, event.exception)
     return False

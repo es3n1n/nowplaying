@@ -1,14 +1,15 @@
 # Ported from https://github.com/bulatorr/go-yaynison/
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import List
 
 import orjson
 from websockets import WebSocketClientProtocol, connect, headers
 from websockets.exceptions import WebSocketException
+from websockets.typing import Subprotocol
 
 
-def do_nothing(*args, **kwargs) -> None:  # noqa: WPS324
-    return None  # noqa: WPS324
+def do_nothing(*_: Sequence[Subprotocol]) -> None:
+    return None
 
 
 # Workaround for ticket's json subprotocol
@@ -28,7 +29,7 @@ class YanisonPlayableItem:
 
 
 class Yaynison:
-    def __init__(self, token: str):
+    def __init__(self, token: str) -> None:
         self._token = token
         self._device = 'playinnowbot'
         self._headers = [
@@ -40,60 +41,62 @@ class Yaynison:
         self._redirect_ticket: str | None = None
         self._session_id: str | None = None
 
-        self._config_message: str = orjson.dumps({
-            'update_full_state': {
-                'player_state': {
-                    'player_queue': {
-                        'current_playable_index': -1,
-                        'entity_id': '',
-                        'entity_type': 'VARIOUS',
-                        'playable_list': [],
-                        'options': {'repeat_mode': 'NONE'},
-                        'entity_context': 'BASED_ON_ENTITY_BY_DEFAULT',
-                        'version': {
-                            'device_id': self._device,
-                            'version': 9021243204784341000,
-                            'timestamp_ms': 0,
+        self._config_message: str = orjson.dumps(
+            {
+                'update_full_state': {
+                    'player_state': {
+                        'player_queue': {
+                            'current_playable_index': -1,
+                            'entity_id': '',
+                            'entity_type': 'VARIOUS',
+                            'playable_list': [],
+                            'options': {'repeat_mode': 'NONE'},
+                            'entity_context': 'BASED_ON_ENTITY_BY_DEFAULT',
+                            'version': {
+                                'device_id': self._device,
+                                'version': 9021243204784341000,
+                                'timestamp_ms': 0,
+                            },
+                            'from_optional': '',
                         },
-                        'from_optional': '',
-                    },
-                    'status': {
-                        'duration_ms': 0,
-                        'paused': True,
-                        'playback_speed': 1,
-                        'progress_ms': 0,
-                        'version': {
-                            'device_id': self._device,
-                            'version': 8321822175199937000,
-                            'timestamp_ms': 0,
+                        'status': {
+                            'duration_ms': 0,
+                            'paused': True,
+                            'playback_speed': 1,
+                            'progress_ms': 0,
+                            'version': {
+                                'device_id': self._device,
+                                'version': 8321822175199937000,
+                                'timestamp_ms': 0,
+                            },
                         },
                     },
-                },
-                'device': {
-                    'capabilities': {
-                        'can_be_player': False,
-                        'can_be_remote_controller': False,
-                        'volume_granularity': 0,
+                    'device': {
+                        'capabilities': {
+                            'can_be_player': False,
+                            'can_be_remote_controller': False,
+                            'volume_granularity': 0,
+                        },
+                        'info': {
+                            'device_id': self._device,
+                            'type': 'WEB',
+                            'title': 'playinnowbot',
+                            'app_name': 'Chrome',
+                        },
+                        'volume_info': {'volume': 0},
+                        'is_shadow': True,
                     },
-                    'info': {
-                        'device_id': self._device,
-                        'type': 'WEB',
-                        'title': 'playinnowbot',
-                        'app_name': 'Chrome',
-                    },
-                    'volume_info': {'volume': 0},
-                    'is_shadow': True,
+                    'is_currently_active': False,
                 },
-                'is_currently_active': False,
-            },
-            'rid': 'ac281c26-a047-4419-ad00-e4fbfda1cba3',
-            'player_action_timestamp_ms': 0,
-            'activity_interception_type': 'DO_NOT_INTERCEPT_BY_DEFAULT',
-        }).decode()
+                'rid': 'ac281c26-a047-4419-ad00-e4fbfda1cba3',
+                'player_action_timestamp_ms': 0,
+                'activity_interception_type': 'DO_NOT_INTERCEPT_BY_DEFAULT',
+            }
+        ).decode()
 
         self._conn: WebSocketClientProtocol | None = None
 
-    async def startup(self):
+    async def startup(self) -> None:
         await self.request_ticket()
         await self.connect()
 
@@ -102,20 +105,23 @@ class Yaynison:
             conn = await connect(
                 'wss://ynison.music.yandex.ru/redirector.YnisonRedirectService/GetRedirectToYnison',
                 extra_headers=self._headers,
-                subprotocols=self._subprotocols,  # type: ignore
+                subprotocols=self._subprotocols,  # type: ignore[arg-type]
                 compression=None,
             )
-        except WebSocketException:
-            raise YaynisonError('unable to connect to ynison redirect')
+        except WebSocketException as err:
+            msg = 'unable to connect to ynison redirect'
+            raise YaynisonError(msg) from err
 
         try:
             message = orjson.loads(await conn.recv())
-        except WebSocketException:
-            raise YaynisonError('unable to get the ticket')
+        except WebSocketException as err:
+            msg = 'unable to get the ticket'
+            raise YaynisonError(msg) from err
 
         await conn.close()
         if 'error' in message:
-            raise YaynisonError('got an error in ticket logic')
+            msg = 'got an error in ticket logic'
+            raise YaynisonError(msg)
 
         self._connection_uri = f'wss://{message["host"]}/ynison_state.YnisonStateService/PutYnisonState'
         self._redirect_ticket = message['redirect_ticket']
@@ -132,30 +138,34 @@ class Yaynison:
             await self.request_ticket()
 
             if self._connection_uri is None:
-                raise ValueError('no ticket')
+                msg = 'no ticket'
+                raise ValueError(msg)
 
         try:
             self._conn = await connect(
                 self._connection_uri,
                 extra_headers=self._headers,
-                subprotocols=self._subprotocols,  # type: ignore
+                subprotocols=self._subprotocols,  # type: ignore[arg-type]
                 compression=None,
             )
-        except WebSocketException:
-            raise YaynisonError('unable to connect to yaynison')
+        except WebSocketException as err:
+            msg = 'unable to connect to yaynison'
+            raise YaynisonError(msg) from err
 
         try:
             await self._conn.send(self._config_message)
-        except WebSocketException:
+        except WebSocketException as err:
             await self.disconnect()
-            raise YaynisonError('unable to send message to yaynison')
+            msg = 'unable to send message to yaynison'
+            raise YaynisonError(msg) from err
 
-    async def get_playable_items(self) -> List[YanisonPlayableItem]:
+    async def get_playable_items(self) -> list[YanisonPlayableItem]:
         if self._conn is None:
             await self.connect()
 
             if self._conn is None:
-                raise ValueError('conn is none')
+                msg = 'conn is none'
+                raise ValueError(msg)
 
         playable = []
 
@@ -165,20 +175,22 @@ class Yaynison:
         playable_list = player_queue.get('playable_list', [])
 
         # note: + 1 because iteration starts from 0 yk
-        for it in reversed(playable_list[:(current_index + 1)]):
+        for it in reversed(playable_list[: (current_index + 1)]):
             if it['playable_type'] != 'TRACK':
                 continue
 
-            playable.append(YanisonPlayableItem(
-                playable_id=it['playable_id'],
-                album_id=it.get('album_id_optional', None),
-                from_item=it['from'],
-                title=it['title'],
-            ))
+            playable.append(
+                YanisonPlayableItem(
+                    playable_id=it['playable_id'],
+                    album_id=it.get('album_id_optional', None),
+                    from_item=it['from'],
+                    title=it['title'],
+                )
+            )
 
         return playable
 
-    async def one_shot_playable_items(self) -> List[YanisonPlayableItem]:
+    async def one_shot_playable_items(self) -> list[YanisonPlayableItem]:
         await self.startup()
         playable_items = await self.get_playable_items()
         await self.disconnect()
@@ -200,5 +212,5 @@ class Yaynison:
         return orjson.dumps(subprotocol_data).decode()
 
     @property
-    def _subprotocols(self) -> List[str]:
+    def _subprotocols(self) -> list[str]:
         return ['Bearer', 'v2', self._ticket_subprotocol]

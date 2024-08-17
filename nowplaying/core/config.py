@@ -5,8 +5,8 @@ from typing import Annotated
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from ..enums.start_actions import StartAction
-from ..util.fs import ROOT_DIR
+from nowplaying.enums.start_actions import StartAction
+from nowplaying.util.fs import ROOT_DIR
 
 
 class Settings(BaseSettings):
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
 
     STATE_SECRET: str
 
-    WEB_HOST: str = '0.0.0.0'  # noqa: S104
+    WEB_HOST: str = '0.0.0.0'
     WEB_PORT: int = 1337
     WEB_WORKERS: int = 2
 
@@ -46,6 +46,7 @@ class Settings(BaseSettings):
 
     LASTFM_API_KEY: str
     LASTFM_SHARED_SECRET: str
+    LASTFM_SEARCH_PROXY: str | None = None
 
     APPLE_SECRET_KEY: str
     APPLE_KEY_ID: str
@@ -73,7 +74,8 @@ class Settings(BaseSettings):
 
         out_path = ROOT_DIR / path
         if not out_path.exists():
-            raise ValueError(f'{out_path} file does not exist')
+            msg = f'{out_path} file does not exist'
+            raise ValueError(msg)
 
         return str(out_path.resolve().absolute())
 
@@ -82,7 +84,7 @@ class Settings(BaseSettings):
         return f'{self.BOT_URL}?start={payload_str}'
 
     @property
-    def is_dev_env(self):
+    def is_dev_env(self) -> bool:
         return self.ENVIRONMENT.lower() in {'dev', 'development'}
 
     def redirect_url_for_ext_svc(self, svc_name: str) -> str:
@@ -93,8 +95,8 @@ class Settings(BaseSettings):
         return f'{self.BOT_URL}?start={payload_encoded}'
 
     @staticmethod
-    def decode_start_url(payload: str) -> str | None:  # noqa: WPS602
-        # fixme @es3n1n: ghetto workaround for paddings, we can't use = in start payload because telegram doesn't allow
+    def decode_start_url(payload: str) -> str | None:
+        # TODO(es3n1n): ghetto workaround for paddings, we can't use = in start payload because telegram doesn't allow
         #   them
         try:
             return b64decode(payload + ('=' * 3)).decode()
@@ -106,4 +108,4 @@ class Settings(BaseSettings):
         return self.DEEZER_ARL_COOKIE not in {'', '1'}
 
 
-config = Settings()  # type: ignore
+config = Settings()  # type: ignore[call-arg]

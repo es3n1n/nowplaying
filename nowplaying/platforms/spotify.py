@@ -1,19 +1,20 @@
+from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import AsyncIterator
+from types import MappingProxyType
 from urllib.parse import urlencode
 
 import orjson
 
-from ..core.config import config
-from ..core.database import db
-from ..enums.platform_features import PlatformFeature
-from ..exceptions.platforms import PlatformInvalidAuthCodeError, PlatformTokenInvalidateError
-from ..external.spotify import Spotify, SpotifyCacheHandlerABC, SpotifyError
-from ..models.song_link import SongLinkPlatformType
-from ..models.track import Track
-from ..util.exceptions import rethrow_platform_error
-from ..util.time import UTC_TZ
-from .abc import PlatformABC, PlatformClientABC
+from nowplaying.core.config import config
+from nowplaying.core.database import db
+from nowplaying.enums.platform_features import PlatformFeature
+from nowplaying.exceptions.platforms import PlatformInvalidAuthCodeError, PlatformTokenInvalidateError
+from nowplaying.external.spotify import Spotify, SpotifyCacheHandlerABC, SpotifyError
+from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.models.track import Track
+from nowplaying.platforms.abc import PlatformABC, PlatformClientABC
+from nowplaying.util.exceptions import rethrow_platform_error
+from nowplaying.util.time import UTC_TZ
 
 
 TYPE = SongLinkPlatformType.SPOTIFY
@@ -26,13 +27,15 @@ def _to_uri(track_id: str) -> str:
 
 
 class SpotifyClient(PlatformClientABC):
-    features = {
-        PlatformFeature.TRACK_GETTERS: True,
-        PlatformFeature.ADD_TO_QUEUE: True,
-        PlatformFeature.PLAY: True,
-    }
+    features: MappingProxyType[PlatformFeature, bool] = MappingProxyType(
+        {
+            PlatformFeature.TRACK_GETTERS: True,
+            PlatformFeature.ADD_TO_QUEUE: True,
+            PlatformFeature.PLAY: True,
+        }
+    )
 
-    def __init__(self, spotify_app: Spotify, telegram_id: int):
+    def __init__(self, spotify_app: Spotify, telegram_id: int) -> None:
         self.spotify_app = spotify_app
         self.telegram_id = telegram_id
 
@@ -42,7 +45,7 @@ class SpotifyClient(PlatformClientABC):
         if track is None or not track.get('item'):
             return None
 
-        return await Track.from_spotify_item(track['item'], datetime.utcnow(), is_playing=True)
+        return await Track.from_spotify_item(track['item'], played_at=datetime.now(tz=UTC_TZ), is_playing=True)
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
@@ -57,7 +60,7 @@ class SpotifyClient(PlatformClientABC):
 
             yield await Track.from_spotify_item(
                 history_item['track'],
-                datetime.fromisoformat(history_item['played_at']).replace(tzinfo=UTC_TZ),
+                played_at=datetime.fromisoformat(history_item['played_at']).replace(tzinfo=UTC_TZ),
             )
 
     @rethrow_platform_error(SpotifyError, TYPE)
@@ -80,7 +83,7 @@ class SpotifyClient(PlatformClientABC):
 
 
 class SpotifyCacheHandler(SpotifyCacheHandlerABC):
-    def __init__(self, telegram_id: int):
+    def __init__(self, telegram_id: int) -> None:
         self.telegram_id = telegram_id
 
     async def get_cached_token(self) -> dict | None:
@@ -100,8 +103,8 @@ class SpotifyPlatform(PlatformABC):
         client = cls._get_client(telegram_id)
         try:
             await client.get_access_token(auth_code)
-        except SpotifyError:
-            raise PlatformInvalidAuthCodeError(platform=cls.type, telegram_id=telegram_id)
+        except SpotifyError as err:
+            raise PlatformInvalidAuthCodeError(platform=cls.type, telegram_id=telegram_id) from err
 
         return SpotifyClient(client, telegram_id)
 
@@ -110,19 +113,21 @@ class SpotifyPlatform(PlatformABC):
         client = cls._get_client(telegram_id)
         try:
             await client.gather_token()
-        except SpotifyError:
-            raise PlatformTokenInvalidateError(platform=TYPE, telegram_id=telegram_id)
+        except SpotifyError as err:
+            raise PlatformTokenInvalidateError(platform=TYPE, telegram_id=telegram_id) from err
 
         return SpotifyClient(client, telegram_id)
 
     async def get_authorization_url(self, state: str) -> str:
-        query = urlencode({
-            'client_id': config.SPOTIFY_CLIENT_ID,
-            'response_type': 'code',
-            'redirect_uri': REDIRECT_URI,
-            'state': state,
-            'scope': SCOPE,
-        })
+        query = urlencode(
+            {
+                'client_id': config.SPOTIFY_CLIENT_ID,
+                'response_type': 'code',
+                'redirect_uri': REDIRECT_URI,
+                'state': state,
+                'scope': SCOPE,
+            }
+        )
         return f'https://accounts.spotify.com/authorize?{query}'
 
     @classmethod

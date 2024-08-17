@@ -1,7 +1,7 @@
-from collections import namedtuple
-from typing import AsyncIterable
+from collections.abc import AsyncIterable
+from typing import NamedTuple
 
-from pytest import mark
+import pytest
 
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import PlatformTokenInvalidateError
@@ -12,11 +12,14 @@ class PlatformTestError(Exception):
     """Platform error."""
 
 
-Context = namedtuple('Context', ['telegram_id'])
+class Context(NamedTuple):
+    telegram_id: int
+
+
 ctx_to_pass = Context(123)
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_rethrow() -> None:
     rethrown: bool = False
 
@@ -26,13 +29,13 @@ async def test_rethrow() -> None:
 
     try:
         await rethrow_me(ctx_to_pass)
-    except Exception as e:
-        rethrown = isinstance(e, PlatformTokenInvalidateError)
+    except PlatformTokenInvalidateError:
+        rethrown = True
 
     assert rethrown
 
 
-@mark.asyncio
+@pytest.mark.asyncio
 async def test_rethrow_aiter() -> None:
     rethrown: bool = False
 
@@ -44,8 +47,7 @@ async def test_rethrow_aiter() -> None:
     try:
         async for dummy_item in rethrow_me_aiter(ctx_to_pass):
             assert dummy_item is None
-    except Exception as e:
-        rethrown = isinstance(e, PlatformTokenInvalidateError)
+    except PlatformTokenInvalidateError:
+        rethrown = True
 
     assert rethrown
-

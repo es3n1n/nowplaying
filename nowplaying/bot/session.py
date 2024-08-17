@@ -1,5 +1,4 @@
-import asyncio
-from typing import Optional, cast
+from typing import cast
 
 from aiogram import Bot
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -14,7 +13,10 @@ from nowplaying.core.config import config
 
 class BotSession(AiohttpSession):
     async def make_request(
-        self, bot: Bot, method: TelegramMethod[TelegramType], timeout: Optional[int] = None,
+        self,
+        bot: Bot,
+        method: TelegramMethod[TelegramType],
+        timeout: int | None = None,  # noqa: ASYNC109
     ) -> TelegramType:
         session = await self.create_session()
 
@@ -26,15 +28,20 @@ class BotSession(AiohttpSession):
 
         try:
             async with session.post(
-                url, data=form, timeout=self.timeout if timeout is None else timeout,
+                url,
+                data=form,
+                timeout=self.timeout if timeout is None else timeout,  # type: ignore[arg-type]
             ) as resp:
                 raw_result = await resp.text()
-        except asyncio.TimeoutError:
-            raise TelegramNetworkError(method=method, message='Request timeout error')
+        except TimeoutError as err:
+            raise TelegramNetworkError(method=method, message='Request timeout error') from err
         except ClientError as exc:
-            raise TelegramNetworkError(method=method, message=f'{type(exc).__name__}: {exc}')
+            raise TelegramNetworkError(method=method, message=f'{type(exc).__name__}: {exc}') from exc
 
         response = self.check_response(
-            bot=bot, method=method, status_code=resp.status, content=raw_result,  # noqa: WPS441
+            bot=bot,
+            method=method,
+            status_code=resp.status,
+            content=raw_result,
         )
         return cast(TelegramType, response.result)

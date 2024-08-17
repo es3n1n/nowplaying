@@ -5,9 +5,10 @@ from aiohttp import ClientSession, ClientTimeout
 from async_lru import alru_cache
 from loguru import logger
 
-from ..models.song_link import SongLinkInfo, SongLinkPlatform, SongLinkPlatformType
-from ..util.http import STATUS_OK
-from ..util.url import ParseResult, urlparse
+from nowplaying.models.song_link import SongLinkInfo, SongLinkPlatform, SongLinkPlatformType
+from nowplaying.util.http import STATUS_OK
+from nowplaying.util.url import ParseResult, urlparse
+
 from .song_link_parsers import fallback_to_odesli, get_song_link_parser
 
 
@@ -17,10 +18,10 @@ _client: ClientSession | None = None
 
 
 async def _get_client() -> ClientSession:
-    global _client  # noqa: WPS420
+    global _client  # noqa: PLW0603
 
     if not _client:
-        _client = ClientSession(  # noqa: WPS442, WPS122
+        _client = ClientSession(
             headers={
                 'Accept': '*/*',
                 'Accept-Encoding': 'gzip, deflate, br, zstd',
@@ -40,11 +41,11 @@ async def _get_client() -> ClientSession:
             timeout=ClientTimeout(total=60.0),
         )
 
-    return _client  # noqa: WPS121
+    return _client
 
 
 @alru_cache()
-async def get_song_link(track_url: str, allow_fallback: bool = True) -> str | None:
+async def get_song_link(track_url: str, *, allow_fallback: bool = True) -> str | None:
     url: ParseResult = urlparse(track_url)
 
     parser = get_song_link_parser(url.netloc)

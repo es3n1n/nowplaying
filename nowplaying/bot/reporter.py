@@ -2,7 +2,8 @@ from aiogram.exceptions import AiogramError
 from aiogram.types import BufferedInputFile
 from loguru import logger
 
-from ..core.config import config
+from nowplaying.core.config import config
+
 from .bot import bot
 
 
@@ -32,4 +33,7 @@ async def report_to_dev(message: str) -> None:
 
 async def report_error(message: str, exception: Exception | None = None) -> None:
     logger.opt(exception=exception).error(message)
-    await report_to_dev(message + f'\nException: {exception}')
+    try:
+        await report_to_dev(message + f'\nException: {exception}')
+    except AiogramError as exc:
+        logger.opt(exception=exc).error('Unable to report to dev')

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from ..enums.platform_type import SongLinkPlatformType
+from nowplaying.enums.platform_type import SongLinkPlatformType
 
 
 class CachedLocalTrack(BaseModel):

@@ -1,5 +1,5 @@
-from datetime import datetime
+import datetime
 
 
-UTC_TZ = datetime.utcnow().tzinfo
-TS_NULL = datetime.fromtimestamp(0)
+UTC_TZ = datetime.UTC
+TS_NULL = datetime.datetime.fromtimestamp(0, tz=UTC_TZ)

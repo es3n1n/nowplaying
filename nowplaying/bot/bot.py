@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher
 
-from ..core.config import config
+from nowplaying.core.config import config
+
 from .session import BotSession
 
 
