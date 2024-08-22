@@ -98,9 +98,9 @@ pytest .
 
 This project uses a few linters
 
-1. Flake8
+1. Ruff
    ```bash
-   flake8 .
+   ruff format && ruff check --fix
    ```
 2. Mypy
    ```bash
