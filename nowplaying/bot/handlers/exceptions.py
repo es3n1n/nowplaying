@@ -8,7 +8,6 @@ from nowplaying.bot.bot import bot, dp
 from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
 from nowplaying.core.database import db
-from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import (
     PlatformInvalidAuthCodeError,
     PlatformTemporarilyUnavailableError,
@@ -71,20 +70,10 @@ async def on_invalid_auth_code_error(event: ErrorEvent) -> bool:
 async def on_token_invalidation(event: ErrorEvent) -> bool:
     exc = cast(PlatformTokenInvalidateError, event.exception)
 
-    footer: str = ''
-    if exc.platform == SongLinkPlatformType.SPOTIFY:
-        footer = (
-            'This might be because spotify has not approved this application yet.\n'
-            f'There might be some free dev user slots for the application, dm @{config.DEVELOPER_USERNAME}'
-        )
-
     logger.opt(exception=exc).warning('Invalidating platform session')
     await reply_to_event(
         event,
-        (
-            f'Your {exc.platform.name.capitalize()} session has expired/got invalidated, please authorize again.'
-            f'\n{footer}'
-        ).strip(),
+        f'Your {exc.platform.name.capitalize()} session has expired/got invalidated, please authorize again.'.strip(),
     )
 
     await db.delete_user_token(exc.telegram_id, exc.platform)

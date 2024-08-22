@@ -39,7 +39,6 @@ class Settings(BaseSettings):
     WEB_WORKERS: int = 2
 
     YOUTUBE_COOKIES_PATH: str | None = None
-    COBALT_API_BASE_URL: str = 'https://api.cobalt.tools/'
 
     SPOTIFY_CLIENT_ID: str
     SPOTIFY_SECRET: str
@@ -58,7 +57,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
 
-    @field_validator('WEB_SERVER_PUBLIC_ENDPOINT', 'EMPTY_MP3_FILE_URL', 'BOT_URL', 'COBALT_API_BASE_URL')
+    @field_validator('WEB_SERVER_PUBLIC_ENDPOINT', 'EMPTY_MP3_FILE_URL', 'BOT_URL')
     @classmethod
     def validate_url(cls, val_to_validate: str) -> str:
         return val_to_validate.rstrip('/')

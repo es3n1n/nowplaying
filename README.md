@@ -23,7 +23,7 @@ A Telegram bot for sharing and discovering music across various platforms.
 
 ### Supported platforms:
 
-* Spotify\*
+* Spotify
 * Yandex.Music
 * Last.fm
 * Apple Music
@@ -98,9 +98,9 @@ pytest .
 
 This project uses a few linters
 
-1. Flake8
+1. Ruff
    ```bash
-   flake8 .
+   ruff format && ruff check --fix
    ```
 2. Mypy
    ```bash
@@ -120,9 +120,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the Apache 2 License - see the [LICENSE](LICENSE) file for details.
-
----
-
-\* Some features may be limited for Spotify due to the application not being approved *(yet)*.
-
-![spotify being spotify](https://i.imgur.com/xfPfiP1.png)
