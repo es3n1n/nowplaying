@@ -1,4 +1,3 @@
-from io import BytesIO
 from typing import cast
 
 from aiogram import html, types
@@ -17,6 +16,7 @@ from nowplaying.util.retries import retry
 # This number also doesn't include the currently playing song
 NUM_OF_ITEMS_TO_QUERY: int = 2
 UNAVAILABLE_MSG: str = 'Error: this track is not available :('
+UNAVAILABLE_MSG_DETAILED: str = 'Unavailable: {error}'
 
 
 def track_to_caption(
@@ -83,8 +83,8 @@ async def _update_inline_message_audio(
 async def cache_audio_and_edit(
     *,
     track: Track,
-    mp3: BytesIO,
-    thumbnail: str,
+    mp3: bytes,
+    thumbnail: str | None,
     inline_result: types.ChosenInlineResult,
     caption: str,
 ) -> None:

@@ -54,11 +54,6 @@ jobs:
       - name: Format check
         run: ruff format --check
 
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -yq --no-install-recommends ffmpeg
-
       - name: Run tests
         run: |
           cp .env.example .env

@@ -3,7 +3,6 @@ import sys
 
 from aiogram import loggers as aiogram_loggers
 from loguru import logger
-from scdl import scdl
 from uvicorn.config import LOGGING_CONFIG
 
 from nowplaying.core.config import config
@@ -52,10 +51,6 @@ def init_logger() -> None:
     level = logging.DEBUG if config.is_dev_env else logging.INFO
 
     loguru_handler = LoguruHandler()
-
-    # No need to output scdl logs in production
-    scdl.logger.setLevel(level=logging.DEBUG if config.is_dev_env else logging.ERROR)
-    scdl.logger.handlers.clear()
 
     aiogram_loggers.event.setLevel(level=level)
     aiogram_loggers.dispatcher.setLevel(level=level)

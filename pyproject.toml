@@ -8,22 +8,19 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 aiogram = "^3.12.0"
-httpx = {extras = ["http2"], version = "^0.27.0"}
 fastapi = "^0.112.0"
 uvicorn = "^0.30.6"
 loguru = "^0.7.2"
 pydantic-settings = "^2.4.0"
 filelock = "^3.15.4"
 async-lru = "^2.0.4"
-scdl = "^2.12.0"
 pycryptodome = "^3.20.0"
 pyjwt = "^2.9.0"
 yandex-music = "^2.2.0"
-websockets = "^12.0"
-yt-dlp = "^2024.8.6"
 asyncpg = "^0.29.0"
 cryptography = "^43.0.0"
 orjson = "^3.10.7"
+httpx = "^0.27.0"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.11.1"
@@ -31,7 +28,6 @@ isort = "^5.13.2"
 asyncpg-stubs = "^0.29.1"
 pytest = "^8.3.1"
 pytest-asyncio = "^0.23.8"
-types-requests = "^2.32.0.20240712"
 ruff = "^0.6.1"
 
 [tool.ruff]
@@ -65,8 +61,8 @@ flake8-quotes.inline-quotes = "single"
     # Allow magic values
     "PLR2004",
 ]
-# Deezer impl was copypasted
-"nowplaying/external/deezer.py" = ["ALL"]
+# User agents are long yeah
+"nowplaying/util/user_agents.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "single"

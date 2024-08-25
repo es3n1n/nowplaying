@@ -1,7 +1,9 @@
 import pytest
+from aiohttp import ClientSession
 
-from nowplaying.external.song_link import _get_client, get_song_link
+from nowplaying.external.song_link import get_song_link
 from nowplaying.external.song_link_parsers import fallback_to_odesli
+from nowplaying.util.http import get_headers
 
 
 async def get(link: str) -> str | None:
@@ -56,7 +58,8 @@ async def test_yandex_music() -> None:
 
 @pytest.mark.asyncio
 async def test_fallback() -> None:
-    assert (
-        await fallback_to_odesli(await _get_client(), 'https://music.yandex.ru/track/79714180', ignore_reporting=True)
-        == 'https://song.link/ya/79714180'
-    )
+    async with ClientSession(headers=get_headers(legitimate_headers=True)) as session:
+        assert (
+            await fallback_to_odesli(session, 'https://music.yandex.ru/track/79714180', ignore_reporting=True)
+            == 'https://song.link/ya/79714180'
+        )
