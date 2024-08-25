@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from aiogram.exceptions import AiogramError, TelegramAPIError
 from aiogram.types import BufferedInputFile, URLInputFile, User
 
@@ -24,8 +22,8 @@ async def get_cached_file_id(uri: str) -> str | None:
 
 async def cache_file(
     track: Track,
-    file_data: BytesIO,
-    thumbnail_url: str,
+    file_data: bytes,
+    thumbnail_url: str | None,
     user: User,
 ) -> str:
     # Special handling for UUIDs
@@ -41,7 +39,7 @@ async def cache_file(
 
     sent = await bot.send_audio(
         config.BOT_CACHE_CHAT_ID,
-        BufferedInputFile(file=file_data.read(), filename=f'{track.artist} - {track.name}.mp3'),
+        BufferedInputFile(file=file_data, filename=f'{track.artist} - {track.name}.mp3'),
         caption=caption,
         performer=track.artist,
         title=track.name,

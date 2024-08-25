@@ -25,10 +25,6 @@ FROM python:3.11-slim as runtime
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -yq --no-install-recommends ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
@@ -39,6 +35,5 @@ COPY frontend/apple/ ./frontend/apple/
 COPY nowplaying/ ./nowplaying/
 COPY main.py .
 COPY init.sql .
-COPY .youtube-cookies.tx[t] .
 
 ENTRYPOINT ["python", "main.py"]

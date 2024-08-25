@@ -28,11 +28,14 @@ A Telegram bot for sharing and discovering music across various platforms.
 * Last.fm
 * Apple Music
 
-### Downloading tracks from:
+### Tracks downloading:
 
-* Deezer
-* Soundcloud (via [scdl](https://github.com/scdl-org/scdl))
-* Youtube (via [cobalt](https://github.com/imputnet/cobalt) and [yt-dlp](https://github.com/yt-dlp/yt-dlp))
+For track downloading, this bot uses a custom tool called µdownloader, 
+which downloads tracks **exclusively from YouTube** using song.link. 
+
+Due to legal reasons, I do not plan to open-source µdownloader anytime soon. 
+Therefore, if you want to host your own version of this bot, 
+you will need to implement your own track downloading algorithm.
 
 ## Installation
 
