@@ -56,6 +56,8 @@ async def cache_file(
 
             raise
 
+        break
+
     if not sent or not sent.audio:
         msg = 'Audio is none'
         raise ValueError(msg)
