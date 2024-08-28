@@ -1,6 +1,6 @@
 from typing import cast
 
-from aiogram.exceptions import TelegramAPIError
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.filters import ExceptionTypeFilter
 from aiogram.types import ErrorEvent, InlineQueryResultArticle, InputTextMessageContent
 
@@ -115,6 +115,14 @@ async def on_exception_group(event: ErrorEvent) -> bool:
 
 @dp.error()
 async def fallback_error_handler(event: ErrorEvent) -> bool:
+    if (
+        isinstance(event.exception, TelegramBadRequest)
+        and 'query is too old and response timeout' in event.exception.message
+    ):
+        # There is nothing we can do about this,
+        # since most likely this error occurs because of the long responses from platforms
+        return False
+
     await reply_to_event(event, f'Something went wrong (┛ಠ_ಠ)┛彡┻━┻\nContact @{config.DEVELOPER_USERNAME}')
 
     message: str = 'Something went wrong!\n'
