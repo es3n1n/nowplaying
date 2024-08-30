@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: uv sync --dev
+        run: uv sync --dev --frozen --no-install-project
 
       - name: Type check
         run: uv run mypy nowplaying
