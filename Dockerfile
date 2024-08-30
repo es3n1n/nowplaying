@@ -1,39 +1,63 @@
-FROM python:3.11-buster as builder
-
-RUN pip install poetry==1.8.3
-
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+FROM ubuntu:noble as builder
 
 WORKDIR /app
-COPY pyproject.toml poetry.lock ./
-RUN poetry install --without dev && rm -rf $POETRY_CACHE_DIR
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+ENV PATH=/app/.venv/bin:$PATH \
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=python3.12
+
+RUN set -ex \
+    && apt-get update -yq \
+    && apt-get install -yq --no-install-recommends \
+        python3.12-dev
+
+RUN --mount=type=cache,target=/root/.cache \
+    set -ex \
+    && uv venv /app/.venv
+
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache \
+    set -ex \
+    && uv sync --frozen --no-install-project
+
+COPY . /src
+RUN --mount=type=cache,target=/root/.cache \
+    set -ex \
+    && uv pip install --python=/app/.venv --no-deps /src
 
 FROM node:22.3-alpine as frontend-builder
 
 COPY frontend/ym/ /frontend/ym/
 WORKDIR /frontend/ym/web-app/
-RUN npm i
 
 ENV NODE_ENV=production \
     NODE_OPTIONS=--openssl-legacy-provider
-RUN npm run build
+RUN set -ex \
+    && npm i \
+    && npm run build
 
-FROM python:3.11-slim as runtime
+FROM ubuntu:noble
 
 WORKDIR /app
 
-ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
+ENV PATH=/app/.venv/bin:$PATH \
+    ROOT_DIR=/app
 
-COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+RUN set -ex \
+    && apt-get update -yq  \
+    && apt-get install -yq --no-install-recommends \
+        ca-certificates \
+        python3.12 \
+        libpython3.12 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app /app
 COPY --from=frontend-builder /frontend/ym/web-app/build/ ./frontend/ym/web-app/build/
 COPY frontend/apple/ ./frontend/apple/
 
-COPY nowplaying/ ./nowplaying/
-COPY main.py .
-COPY init.sql .
-
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["python", "-m", "nowplaying"]
+STOPSIGNAL SIGINT

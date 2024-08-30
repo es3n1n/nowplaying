@@ -3,12 +3,9 @@ from asyncpg import Pool, create_pool
 from nowplaying.core.config import config
 from nowplaying.models.cached_local_track import CachedLocalTrack
 from nowplaying.models.song_link import SongLinkPlatformType
-from nowplaying.util.fs import ROOT_DIR
+from nowplaying.core.database_init import DATABASE_INIT_SQL
 from nowplaying.util.logger import logger
 from nowplaying.util.worker import worker
-
-
-init_sql = (ROOT_DIR / 'init.sql').read_text()
 
 
 class Database:
@@ -39,7 +36,7 @@ class Database:
 
             logger.info('Initializing the database')
             async with self._pool.acquire() as conn, conn.transaction():
-                await conn.execute(init_sql)
+                await conn.execute(DATABASE_INIT_SQL)
 
         return self._pool
 

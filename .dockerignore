@@ -2,3 +2,8 @@
 *.pyc
 **/node_modules/**
 **/.git/**
+.venv/
+db_data/
+.github/
+compose.yml
+compose.dev.yml
