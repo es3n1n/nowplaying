@@ -14,19 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/0.4.0/install.sh | sh
 
       - name: Load cached venv
         id: cached-poetry-dependencies
@@ -37,24 +33,18 @@ jobs:
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
-
-      - name: Activate virtual environment
-        run: echo "${{ github.workspace }}/.venv/bin" >> $GITHUB_PATH
+        run: uv sync --dev
 
       - name: Type check
-        run: mypy nowplaying
+        run: uv run mypy nowplaying
 
       - name: Lint
-        run: ruff check --output-format=github
+        run: uv run ruff check --output-format=github
 
       - name: Format check
-        run: ruff format --check
+        run: uv run ruff format --check
 
       - name: Run tests
         run: |
           cp .env.example .env
-          pytest . --exitfirst
+          uv run pytest . --exitfirst
