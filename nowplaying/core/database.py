@@ -1,9 +1,9 @@
 from asyncpg import Pool, create_pool
 
 from nowplaying.core.config import config
+from nowplaying.core.database_init import DATABASE_INIT_SQL
 from nowplaying.models.cached_local_track import CachedLocalTrack
 from nowplaying.models.song_link import SongLinkPlatformType
-from nowplaying.core.database_init import DATABASE_INIT_SQL
 from nowplaying.util.logger import logger
 from nowplaying.util.worker import worker
 
