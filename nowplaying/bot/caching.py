@@ -35,8 +35,8 @@ async def cache_file(
         thumbnail = URLInputFile(url=thumbnail_url)
 
     caption: str = f'#{uri_safe}\n'
-    caption += f'#uid_{user.id} #u_{user.username!s} {user.full_name}\n'
-    caption += f'{track.artist} - {track.name}'
+    caption += f'#uid_{user.id} #u_{user.username!s} {user.full_name}'
+    caption = caption[:100]
 
     sent: Message | None = None
 
