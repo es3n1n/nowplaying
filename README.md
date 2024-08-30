@@ -37,24 +37,6 @@ Due to legal reasons, I do not plan to open-source µdownloader anytime soon.
 Therefore, if you want to host your own version of this bot, 
 you will need to implement your own track downloading algorithm.
 
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/es3n1n/nowplaying.git --recursive
-   cd nowplaying
-   ```
-
-2. Install Poetry:
-   ```bash
-   python3 -m pip install poetry==1.8.3
-   ```
-
-3. Install dependencies:
-   ```bash
-   poetry install
-   ```
-
 ## Configuration
 
 Copy the example environment file and edit it with your settings:
@@ -73,21 +55,28 @@ To deploy using Docker:
 docker compose up -d --build
 ```
 
+## Local installation
+
+1. Install uv:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+   Windows:
+   ```powershell
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
+
+2. Install dependencies:
+   ```bash
+   uv sync
+   ```
+
 ## Local Development
 
-1. Activate the virtual environment:
-   ```bash
-   poetry shell
-   ```
-
-2. Run the bot:
-   ```bash
-   python3 main.py
-   ```
-   or
-   ```bash
-   python3 -m nowplaying
-   ```
+To run the bot use the following command:
+```bash
+uv run python3 -m nowplaybot
+```
 
 ## Testing
 
@@ -103,12 +92,25 @@ This project uses a few linters
 
 1. Ruff
    ```bash
-   ruff format && ruff check --fix
+   ruff format; ruff check --fix
    ```
+
 2. Mypy
    ```bash
-   mypy .
+   mypy nowplaying
    ```
+
+## Stored data about your account
+
+This bot stores minimal information about you and your authorized platforms. It only retains data necessary for its proper functionality.
+
+When you authorize on a platform, the bot creates a database entry with your Telegram ID and an authorization token, which is later used for communications with that platform (mainly for requesting recently played tracks). This data is never used for downloading or other purposes.
+
+If an unexpected error occurs, the bot may send serialized data about the event to the developer, which could include your Telegram account information (ID, name, etc.).
+
+When you request a track that isn't cached, the bot will attempt to download it from YouTube (if possible) and "cache" it by sending it to a specific private Telegram channel. The caption for this track will include your Telegram ID, name, and username.
+
+If you wish to remove all information about your account, feel free to contact me, and I will delete the logs. For cached tracks, I will edit the captions, but the cached tracks will remain available. If you want to remove your stored platform token, please use the `/logout` command instead.
 
 ## Contributing
 

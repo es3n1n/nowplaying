@@ -1,3 +1,5 @@
+# TODO(es3n1n): this is rather a temporary measure. not sure where to put this yet, sorry
+DATABASE_INIT_SQL: str = """
 CREATE TABLE IF NOT EXISTS tokens
 (
     id SERIAL PRIMARY KEY,
@@ -57,3 +59,4 @@ BEGIN
     RETURN NEXT;
 END;
 $$ LANGUAGE plpgsql;
+"""

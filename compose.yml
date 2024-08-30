@@ -27,7 +27,7 @@ services:
       - "31337:1337"
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
     env_file:
       - .env
     networks:
