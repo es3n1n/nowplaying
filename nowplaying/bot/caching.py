@@ -51,7 +51,8 @@ async def cache_file(
                 thumbnail=thumbnail,
             )
         except TelegramBadRequest as exc:
-            if 'internal Server Error during file upload' in exc.message:
+            # Telegram bot API goes brr
+            if any(x in exc.message for x in ('internal Server Error during file upload', 'timeout error')):
                 continue
 
             raise

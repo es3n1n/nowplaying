@@ -5,7 +5,7 @@ from nowplaying.external.deezer import search_tracks
 
 @pytest.mark.asyncio
 async def test_deezer_search() -> None:
-    results = await search_tracks('MK - Crescent Moon')
+    results = await search_tracks('MK (JPN) - Crescent Moon')
 
     assert len(results) == 1
     assert results[0].id == '1265359402'

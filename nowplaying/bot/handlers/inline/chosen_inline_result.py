@@ -25,7 +25,7 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
 
     caption = track_to_caption(client, track, is_getter_available=True)
     logger.info(
-        f'Downloading {track.artist} - {track.name} from {track.platform.name}',
+        f'Downloading {track.artist} - {track.name} ({track.platform.name})',
     )
 
     downloaded = await download_mp3(track.song_link)
