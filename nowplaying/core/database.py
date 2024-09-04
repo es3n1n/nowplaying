@@ -4,6 +4,7 @@ from nowplaying.core.config import config
 from nowplaying.core.database_init import DATABASE_INIT_SQL
 from nowplaying.models.cached_local_track import CachedLocalTrack
 from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.util.dns import select_hostname
 from nowplaying.util.logger import logger
 from nowplaying.util.worker import worker
 
@@ -20,7 +21,7 @@ class Database:
             logger.info('Connecting to the database')
 
             self._pool = await create_pool(
-                host=config.POSTGRES_ADDRESS,
+                host=select_hostname(config.POSTGRES_DOCKER_ADDRESS, config.POSTGRES_ADDRESS, config.POSTGRES_PORT),
                 port=config.POSTGRES_PORT,
                 user=config.POSTGRES_USER,
                 password=config.POSTGRES_PASSWORD,
