@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import cache
 from time import time
 
 import orjson
@@ -6,6 +7,7 @@ from aiohttp import ClientError, ClientSession
 from loguru import logger
 
 from nowplaying.core.config import config
+from nowplaying.util.dns import select_url
 from nowplaying.util.http import STATUS_OK, get_headers
 
 
@@ -19,13 +21,18 @@ class DownloadedMp3:
 UNKNOWN_ERROR = f'Unknown error, contact @{config.DEVELOPER_USERNAME}'
 
 
+@cache
+def get_udownloader_base() -> str:
+    return select_url(config.UDOWNLOADER_DOCKER_BASE_URL, config.UDOWNLOADER_BASE_URL)
+
+
 # For now, only downloading from youtube via song.link is supported
 async def download_mp3(song_link_url: str) -> DownloadedMp3:
     start_time = time()
     async with ClientSession(headers=get_headers()) as session:
         try:
             async with session.post(
-                f'{config.UDOWNLOADER_BASE_URL}/v1/mp3/by_songlink',
+                f'{get_udownloader_base()}/v1/mp3/by_songlink',
                 json={'url': song_link_url},
             ) as response:
                 if response.status != STATUS_OK:

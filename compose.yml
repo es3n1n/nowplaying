@@ -18,6 +18,18 @@ services:
       start_period: 5s
     networks:
       - internal_network
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    restart: unless-stopped
+    container_name: nowplaying-bot-api
+    env_file:
+      - .env
+    volumes:
+      - /etc/timezone:/etc/timezone
+      - tg_data:/var/lib/telegram-bot-api  # Not a directory to avoid errors due to : in filenames on windows
+    networks:
+      - default_network
+      - internal_network
   nowplaying:
     image: nowplaying-bot:latest
     restart: unless-stopped
@@ -28,6 +40,8 @@ services:
     depends_on:
       postgres:
         condition: service_started
+      telegram-bot-api:
+        condition: service_started
     env_file:
       - .env
     networks:
@@ -35,11 +49,14 @@ services:
       - udownloader_network
     tmpfs:
       - /tmp
-
 networks:
+  default_network:
   internal_network:
     driver: bridge
     internal: true
   udownloader_network:
     name: udownloader
     external: true
+volumes:
+  tg_data:
+    name: "nowplaying_tg_data"

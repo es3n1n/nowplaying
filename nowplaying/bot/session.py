@@ -1,17 +1,46 @@
-from typing import cast
+from typing import Any, cast
 
 from aiogram import Bot
-from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.client.session.aiohttp import AiohttpSession, _ProxyType
+from aiogram.client.telegram import PRODUCTION, TelegramAPIServer
 from aiogram.exceptions import TelegramNetworkError
 from aiogram.methods import TelegramMethod
 from aiogram.methods.base import TelegramType
-from aiohttp import ClientError
+from aiohttp import ClientError, ClientSession
 from loguru import logger
 
 from nowplaying.core.config import config
+from nowplaying.util.dns import try_resolve_url
+
+
+def get_self_hosted_api() -> TelegramAPIServer:
+    if not try_resolve_url(config.LOCAL_TELEGRAM_API_BASE_URL):
+        logger.warning('Unable to resolve self-hosted telegram api instance, falling back to the default one')
+        return PRODUCTION
+
+    logger.info('Successfully resolved the self-hosted telegram api instance')
+    return TelegramAPIServer(
+        base=config.LOCAL_TELEGRAM_API_BASE_URL + '/bot{token}/{method}',
+        file=config.LOCAL_TELEGRAM_API_BASE_URL + '/file/bot{token}/{path}',
+    )
 
 
 class BotSession(AiohttpSession):
+    def __init__(self, proxy: _ProxyType | None = None, limit: int = 100, **kwargs: Any) -> None:  # noqa: ANN401
+        self._initialized_api = False
+
+        super().__init__(proxy, limit, **kwargs)
+
+    async def create_session(self) -> ClientSession:
+        # We want to initialize this only when we need the bot.
+        # By initializing this only once needed,
+        # we avoid overhead from the unneeded dns resolves in multi-processed stuff
+        if not self._initialized_api:
+            self.api = get_self_hosted_api()
+            self._initialized_api = True
+
+        return await super().create_session()
+
     async def make_request(
         self,
         bot: Bot,

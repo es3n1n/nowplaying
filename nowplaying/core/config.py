@@ -19,9 +19,12 @@ class Settings(BaseSettings):
 
     DEVELOPER_USERNAME: str = 'invlpg'
 
-    WEB_SERVER_PUBLIC_ENDPOINT: Annotated[str, Field(validate_default=True)] = 'https://now.es3n1n.eu'
+    WEB_SERVER_PUBLIC_ENDPOINT: str = 'https://now.es3n1n.eu'
 
     EMPTY_MP3_FILE_URL: Annotated[str, Field(validate_default=True)] = 'https://es3n1n.eu/empty.mp3'
+
+    # see compose.yml
+    LOCAL_TELEGRAM_API_BASE_URL: str = 'http://telegram-bot-api:8081'
 
     BOT_DEV_CHAT_ID: int = 1490827215
     BOT_TOKEN: str
@@ -32,7 +35,9 @@ class Settings(BaseSettings):
 
     STATE_SECRET: str
 
-    UDOWNLOADER_BASE_URL: str = 'http://udownloader:1337/'
+    # Docker address is preferred by default
+    UDOWNLOADER_DOCKER_BASE_URL: str = 'http://udownloader:1337/'
+    UDOWNLOADER_BASE_URL: str = 'http://127.0.0.1:41337/'
 
     WEB_HOST: str = '0.0.0.0'
     WEB_PORT: int = 1337
@@ -49,13 +54,22 @@ class Settings(BaseSettings):
     APPLE_KEY_ID: str
     APPLE_TEAM_ID: str
 
-    POSTGRES_ADDRESS: str
+    # Docker address is preferred by default
+    POSTGRES_DOCKER_ADDRESS: str = 'postgres'
+    POSTGRES_ADDRESS: str = '127.0.0.1'
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
 
-    @field_validator('WEB_SERVER_PUBLIC_ENDPOINT', 'EMPTY_MP3_FILE_URL', 'BOT_URL', 'UDOWNLOADER_BASE_URL')
+    @field_validator(
+        'WEB_SERVER_PUBLIC_ENDPOINT',
+        'EMPTY_MP3_FILE_URL',
+        'BOT_URL',
+        'UDOWNLOADER_BASE_URL',
+        'UDOWNLOADER_DOCKER_BASE_URL',
+        'LOCAL_TELEGRAM_API_BASE_URL',
+    )
     @classmethod
     def validate_url(cls, val_to_validate: str) -> str:
         return val_to_validate.rstrip('/')

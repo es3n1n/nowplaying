@@ -3,16 +3,18 @@ from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException
 from starlette.responses import RedirectResponse
+from uvicorn import run
 
-from .bot.handlers.exceptions import send_auth_code_error_msg
-from .core.config import config
-from .core.database import db
-from .core.sign import SIGN_EXPIRED_EXCEPTION
-from .enums.start_actions import StartAction
-from .exceptions.platforms import PlatformInvalidAuthCodeError
-from .routes.ext import router as ext_router
-from .util.fs import ROOT_DIR
-from .util.http import STATUS_TEMPORARY_REDIRECT, is_clientside_error
+from nowplaying.bot.handlers.exceptions import send_auth_code_error_msg
+from nowplaying.core.config import config
+from nowplaying.core.database import db
+from nowplaying.core.sign import SIGN_EXPIRED_EXCEPTION
+from nowplaying.enums.start_actions import StartAction
+from nowplaying.exceptions.platforms import PlatformInvalidAuthCodeError
+from nowplaying.routes.ext import router as ext_router
+from nowplaying.util.fs import ROOT_DIR
+from nowplaying.util.http import STATUS_TEMPORARY_REDIRECT, is_clientside_error
+from nowplaying.util.logger import logger
 
 
 app = FastAPI(
@@ -71,3 +73,18 @@ async def http_exception_handler(_: Request, exc: HTTPException) -> ORJSONRespon
 @app.on_event('startup')
 async def startup() -> None:
     await db.init()
+
+
+def start_web() -> None:
+    kw = {}
+    if not config.is_dev_env:
+        kw['workers'] = config.WEB_WORKERS
+
+    # Start the web server
+    logger.info('Starting web-server...')
+    run(
+        'nowplaying.startup.web:app',
+        host=config.WEB_HOST,
+        port=config.WEB_PORT,
+        **kw,  # type: ignore[arg-type]
+    )
