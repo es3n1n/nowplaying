@@ -26,6 +26,10 @@ def _to_uri(track_id: str) -> str:
     return f'spotify:track:{track_id}'
 
 
+def _is_local_track(track: dict) -> bool:
+    return 'spotify' not in track.get('external_urls', {})
+
+
 class SpotifyClient(PlatformClientABC):
     features: MappingProxyType[PlatformFeature, bool] = MappingProxyType(
         {
@@ -42,10 +46,14 @@ class SpotifyClient(PlatformClientABC):
     @rethrow_platform_error(SpotifyError, TYPE)
     async def get_current_playing_track(self) -> Track | None:
         track = await self.spotify_app.get_current_user_playing_track()
-        if track is None or not track.get('item'):
+        if track is None:
             return None
 
-        return await Track.from_spotify_item(track['item'], played_at=datetime.now(tz=UTC_TZ), is_playing=True)
+        item = track.get('item')
+        if not item or _is_local_track(item):
+            return None
+
+        return await Track.from_spotify_item(item, played_at=datetime.now(tz=UTC_TZ), is_playing=True)
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
@@ -55,11 +63,12 @@ class SpotifyClient(PlatformClientABC):
 
         history = await self.spotify_app.get_current_user_recently_played(limit=limit)
         for history_item in history['items']:
-            if not history_item.get('track'):
+            track = history_item.get('track')
+            if not track or _is_local_track(track):
                 continue
 
             yield await Track.from_spotify_item(
-                history_item['track'],
+                track,
                 played_at=datetime.fromisoformat(history_item['played_at']).replace(tzinfo=UTC_TZ),
             )
 
