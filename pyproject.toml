@@ -17,7 +17,7 @@ dependencies = [
     "fastapi==0.112.0",
     "uvicorn==0.30.6",
     "loguru==0.7.2",
-    "pydantic-settings==2.4.0",
+    "pydantic-settings==2.5.2",
     "filelock==3.15.4",
     "async-lru==2.0.4",
     "pycryptodome==3.20.0",
