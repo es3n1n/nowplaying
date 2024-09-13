@@ -84,5 +84,5 @@ lines-after-imports = 2
 combine-as-imports = false
 
 [[tool.mypy.overrides]]
-module = "spotipy.*,soundcloud.*,yandex_music.*"
+module = "yandex_music.*"
 ignore_missing_imports = true
