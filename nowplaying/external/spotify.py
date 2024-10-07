@@ -8,7 +8,14 @@ from httpx import AsyncClient, Response
 
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
-from nowplaying.util.http import STATUS_BAD_REQUEST, STATUS_NO_CONTENT, STATUS_NOT_FOUND, STATUS_OK, is_serverside_error
+from nowplaying.util.http import (
+    STATUS_BAD_REQUEST,
+    STATUS_FORBIDDEN,
+    STATUS_NO_CONTENT,
+    STATUS_NOT_FOUND,
+    STATUS_OK,
+    is_serverside_error,
+)
 
 
 class SpotifyError(Exception):
@@ -21,6 +28,10 @@ class SpotifyNoTokenError(SpotifyError):
 
 class SpotifyInvalidStatusCodeError(SpotifyError):
     """Would be raised if you try to access an endpoint that requires a token without token."""
+
+
+class SpotifyPremiumRequiredError(SpotifyError):
+    """Would be raised if you try to access an endpoint that requires a premium license."""
 
 
 class SpotifyCacheHandlerABC(ABC):
@@ -51,8 +62,13 @@ def _is_token_expired(token_info: SpotifyToken) -> bool:
 def _raise_for_status(response: Response) -> None:
     if is_serverside_error(response.status_code):
         raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.SPOTIFY)
+
+    if response.status_code == STATUS_FORBIDDEN and 'PREMIUM_REQUIRED' in response.text:
+        msg = f'{response.status_code}: {response.text}'
+        raise SpotifyPremiumRequiredError(msg)
+
     if response.status_code not in {STATUS_OK, STATUS_NO_CONTENT}:
-        msg = f'status {response.status_code} {response.text}'
+        msg = f'{response.status_code}: {response.text}'
         raise SpotifyInvalidStatusCodeError(msg)
 
 

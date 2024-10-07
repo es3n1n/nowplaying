@@ -7,6 +7,14 @@ from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
 
 
+# Will be thrown to signalize that something is wrong on the client side:
+#   for example if a premium license of platform is needed to enqueue track.
+#
+# Can be thrown only within play and add_to_queue functions.
+class PlatformClientSideError(Exception):
+    pass
+
+
 class PlatformClientABC(ABC):
     features: MappingProxyType[PlatformFeature, bool] = MappingProxyType(
         {
@@ -29,11 +37,11 @@ class PlatformClientABC(ABC):
         """ """
 
     @abstractmethod
-    async def add_to_queue(self, track_id: str) -> bool:
+    async def add_to_queue(self, track_id: str) -> None:
         """ """
 
     @abstractmethod
-    async def play(self, track_id: str) -> bool:
+    async def play(self, track_id: str) -> None:
         """ """
 
     @property
