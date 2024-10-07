@@ -57,7 +57,7 @@ jobs:
     - name: Run tests
       run: |
         cp .env.example .env
-        uv run pytest nowplaying --exitfirst
+        uv run pytest . --exitfirst
 
     - name: Prune uv cache
       run: uv cache prune
