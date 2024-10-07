@@ -94,11 +94,11 @@ class LastfmClient(PlatformClientABC):
             )
         )
 
-    async def add_to_queue(self, _: str) -> bool:
-        return False
+    async def add_to_queue(self, _: str) -> None:
+        raise NotImplementedError
 
-    async def play(self, _: str) -> bool:
-        return False
+    async def play(self, _: str) -> None:
+        raise NotImplementedError
 
     @classmethod
     async def _parse_track(

@@ -38,8 +38,7 @@ class YandexClient(PlatformClientABC):
 
     @rethrow_platform_error(YandexMusicError, TYPE)
     async def get_current_playing_track(self) -> Track | None:
-        err_msg = 'not implemented'
-        raise ValueError(err_msg)
+        raise NotImplementedError
 
     @rethrow_platform_error(YandexMusicError, TYPE)
     @rethrow_platform_error(YaynisonError, TYPE)
@@ -75,11 +74,11 @@ class YandexClient(PlatformClientABC):
 
         return await Track.from_yandex_item(tracks[0])
 
-    async def add_to_queue(self, _: str) -> bool:
-        return True
+    async def add_to_queue(self, _: str) -> None:
+        raise NotImplementedError
 
-    async def play(self, _: str) -> bool:
-        return True
+    async def play(self, _: str) -> None:
+        raise NotImplementedError
 
 
 class YandexPlatform(PlatformABC):

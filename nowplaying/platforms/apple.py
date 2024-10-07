@@ -54,11 +54,11 @@ class AppleClient(PlatformClientABC):
 
         return await Track.from_apple_item(track_info)
 
-    async def add_to_queue(self, _: str) -> bool:
-        return True
+    async def add_to_queue(self, _: str) -> None:
+        raise NotImplementedError
 
-    async def play(self, _: str) -> bool:
-        return True
+    async def play(self, _: str) -> None:
+        raise NotImplementedError
 
     async def is_alive(self) -> bool:
         try:

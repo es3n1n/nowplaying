@@ -9,10 +9,10 @@ from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.exceptions.platforms import PlatformInvalidAuthCodeError, PlatformTokenInvalidateError
-from nowplaying.external.spotify import Spotify, SpotifyCacheHandlerABC, SpotifyError
+from nowplaying.external.spotify import Spotify, SpotifyCacheHandlerABC, SpotifyError, SpotifyPremiumRequiredError
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
-from nowplaying.platforms.abc import PlatformABC, PlatformClientABC
+from nowplaying.platforms.abc import PlatformABC, PlatformClientABC, PlatformClientSideError
 from nowplaying.util.exceptions import rethrow_platform_error
 from nowplaying.util.time import UTC_TZ
 
@@ -20,6 +20,7 @@ from nowplaying.util.time import UTC_TZ
 TYPE = SongLinkPlatformType.SPOTIFY
 SCOPE = 'user-read-currently-playing,user-read-recently-played,streaming'
 REDIRECT_URI = config.redirect_url_for_ext_svc('spotify')
+SPOTIFY_PREMIUM_REQUIRED_ERR: str = 'Spotify premium required'
 
 
 def _to_uri(track_id: str) -> str:
@@ -82,12 +83,20 @@ class SpotifyClient(PlatformClientABC):
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def add_to_queue(self, track_id: str) -> bool:
-        await self.spotify_app.add_to_queue(_to_uri(track_id))
+        try:
+            await self.spotify_app.add_to_queue(_to_uri(track_id))
+        except SpotifyPremiumRequiredError as err:
+            raise PlatformClientSideError(SPOTIFY_PREMIUM_REQUIRED_ERR) from err
+
         return True
 
     @rethrow_platform_error(SpotifyError, TYPE)
     async def play(self, track_id: str) -> bool:
-        await self.spotify_app.start_playback(uris=[_to_uri(track_id)])
+        try:
+            await self.spotify_app.start_playback(uris=[_to_uri(track_id)])
+        except SpotifyPremiumRequiredError as err:
+            raise PlatformClientSideError(SPOTIFY_PREMIUM_REQUIRED_ERR) from err
+
         return True
 
 
