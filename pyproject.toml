@@ -77,7 +77,7 @@ flake8-quotes.inline-quotes = "single"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "test_*.py" = ["S101", "INP001", "PLR2004"]
-"scripts/*" = ["INP001"]
+"scripts/*" = ["INP001", "I001"]
 "nowplaying/util/user_agents.py" = ["E501"]
 "nowplaying/external/ynison/pyproto/*" = ["ALL"]
 
