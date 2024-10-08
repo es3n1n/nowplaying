@@ -65,6 +65,8 @@ class Ynison:
         self._header: list[tuple[str, str]] = [
             ('authorization', f'OAuth {token}'),
             ('ynison-device-id', self._device_id),
+            # note: This header is required, otherwise some of the ynison instances may close connections
+            ('accept-encoding', 'identity'),
         ]
         self._host: str | None = None
 
