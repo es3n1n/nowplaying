@@ -9,10 +9,10 @@ from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.exceptions.platforms import PlatformInvalidAuthCodeError
-from nowplaying.external.yaynison import Yaynison, YaynisonError
+from nowplaying.external.ynison.ynison_grpc import Ynison, YnisonClientSideError
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
-from nowplaying.platforms.abc import PlatformABC, PlatformClientABC
+from nowplaying.platforms.abc import PlatformABC, PlatformClientABC, PlatformClientSideError
 from nowplaying.util.exceptions import rethrow_platform_error
 from nowplaying.util.time import UTC_TZ
 
@@ -24,14 +24,18 @@ class YandexClient(PlatformClientABC):
     features: MappingProxyType[PlatformFeature, bool] = MappingProxyType(
         {
             PlatformFeature.TRACK_GETTERS: True,
-            PlatformFeature.ADD_TO_QUEUE: False,
-            PlatformFeature.PLAY: False,
+            PlatformFeature.ADD_TO_QUEUE: True,
+            PlatformFeature.PLAY: True,
         }
+    )
+    media_notice = (
+        'Please note that buttons below might not work properly with desktop app,'
+        ' and slightly lag with web app (you may need to refresh page to reload the queue)'
     )
 
     def __init__(self, app: ClientAsync, telegram_id: int) -> None:
         self._app = app
-        self._yaynison = Yaynison(app.token)
+        self._ynison = Ynison(app.token)
 
         self.telegram_id = telegram_id
         self._initialized_app: bool = False
@@ -41,9 +45,8 @@ class YandexClient(PlatformClientABC):
         raise NotImplementedError
 
     @rethrow_platform_error(YandexMusicError, TYPE)
-    @rethrow_platform_error(YaynisonError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
-        playable_items = await self._yaynison.one_shot_playable_items()
+        playable_items = await self._ynison.get_playable_items(from_current_to_prev=True)
         if not playable_items:
             return
 
@@ -74,11 +77,17 @@ class YandexClient(PlatformClientABC):
 
         return await Track.from_yandex_item(tracks[0])
 
-    async def add_to_queue(self, _: str) -> None:
-        raise NotImplementedError
+    async def add_to_queue(self, track_id: str) -> None:
+        try:
+            await self._ynison.add_to_queue(track_id)
+        except YnisonClientSideError as err:
+            raise PlatformClientSideError(str(err)) from err
 
-    async def play(self, _: str) -> None:
-        raise NotImplementedError
+    async def play(self, track_id: str) -> None:
+        try:
+            await self._ynison.play_track(track_id, keep_queue=True)
+        except YnisonClientSideError as err:
+            raise PlatformClientSideError(str(err)) from err
 
 
 class YandexPlatform(PlatformABC):

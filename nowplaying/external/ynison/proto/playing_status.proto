@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package ynison_state;
+
+import "update_version.proto";
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/main/proto/ynisonstate";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+
+// Статус воспроизведения.
+message PlayingStatus {
+  // Прогресс проигрываемой сущности. Значение в интервале [0; длина] в миллисекундах.
+  // Для infinite-очередей равен 0.
+  int64 progress_ms = 1; 
+
+  // Длительность проигрываемой сущности в миллисекундах.
+  // Для infinite-очередей равна 0.
+  int64 duration_ms = 2;
+
+  // Был ли трек поставлен на паузу.
+  bool paused = 3;
+
+  // Скорость воспроизведения.
+  double playback_speed = 4;
+
+  // Версия последнего изменения статуса воспроизведения.
+  UpdateVersion version = 5;
+}

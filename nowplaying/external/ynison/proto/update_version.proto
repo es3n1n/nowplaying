@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ynison_state;
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/main/proto/ynisonstate";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+
+// Версия изменений.
+message UpdateVersion {
+  // Идентификатор устройства, которое инициировало изменение.
+  string device_id = 1;
+
+  // Версия последнего изменения.
+  // random(int64)
+  int64 version = 2;
+
+  // Время последнего изменения.
+  // Диагностическое значение, не используется в бизнес-логике на клиентах.
+  int64 timestamp_ms = 3;
+}

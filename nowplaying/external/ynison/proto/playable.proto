@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package ynison_state;
+
+import "google/protobuf/wrappers.proto";
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/hub/proto/ynisonstate";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+
+// Проигрываемая сущность.
+// Может быть треком, видео и т.п.
+message Playable {
+  // Идентификатор сущности.
+  string playable_id = 1;
+
+  // Опциональный идентификатор альбома.
+  // Используется для составного идентификатора playable при playable_type == .TRACK.
+  //
+  // TODO: Нужен рефакторинг с переходом на oneof для типов playable и идентификаторов,
+  // относящихся к этим типам.
+  google.protobuf.StringValue album_id_optional = 2;
+
+  enum PlayableType {
+    UNSPECIFIED = 0;
+    TRACK = 1;
+    // Локальный файл.
+    LOCAL_TRACK = 2;
+    // "Бесконечный" трек. Например, для генеративки или fm-радио.
+    INFINITE = 3;
+    // Видео клип
+    VIDEO_CLIP = 4;
+  }
+  // Тип сущности.
+  PlayableType playable_type = 3;
+
+  // Фром для play-audio.
+  string from = 4;
+
+  // Заголовок.
+  string title = 5;
+
+  // Опциональная ссылка на обложку.
+  // Может содержать плейсхолдер для размера в аватарнице.
+  google.protobuf.StringValue cover_url_optional = 6;
+
+  // Дополнительные параметры плейабла, зависит от типа плейабла
+  oneof additional_info_optional {
+    VideoClipInfo video_clip_info = 7;
+    TrackInfo track_info = 8;
+  }
+}
+
+message VideoClipInfo {
+  // Это поле содержит информацию для аналитики, обозначает способ попадания видео клипа в очередь
+  RecommendationType recommendation_type = 1;
+
+  enum RecommendationType {
+    UNSPECIFIED = 0;
+    // видео клип пришёл от рекоментадельного бэкенда
+    RECOMMENDED = 1;
+    // видео клип явно выбран пользователем
+    ON_DEMAND = 2;
+  }
+}
+
+// Дополнительная информация о треке
+message TrackInfo {
+  // Ключ источника из [WaveQueue.EntityOptions.track_sources] (queue.proto)
+  // См. `WaveQueue.EntityOptions.TrackSourceWithKey`
+  uint32 track_source_key = 1;
+
+  // Относится поле к трекам, полученным из рекомендаций, т.е. трекам в волновой очереди.
+  // Любой полученный из рекомендаций трек относится к определенному `batchId`.
+  // Потеря batchId крайне нежелательна. Рекомендациям этот id очень важен.
+  // В волновой очереди также можно ставить треки следующими через "Играть следующим".
+  // Этим трекам необходим `batchId`, который генерируется на клиенте, и который
+  // нужно переносить.
+  //
+  // `batchId` *прослушанных* в рамках rotor-сессии треков можно не переносить.
+  google.protobuf.StringValue batch_id_optional = 2;
+}

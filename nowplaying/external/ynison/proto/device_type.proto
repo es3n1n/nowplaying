@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package ynison_state;
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/main/proto/ynisonstate";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+enum DeviceType {
+  UNSPECIFIED = 0;
+
+  // Браузер.
+  WEB = 1;
+
+  // Android-телефон/планшет.
+  ANDROID = 2;
+
+  // iOS-телефон/планшет.
+  IOS = 3;
+
+  // Умная колонка.
+  SMART_SPEAKER = 4;
+
+  // Web-телевизор.
+  WEB_TV = 5;
+
+  // Android-телевизор.
+  ANDROID_TV = 6;
+
+  // Apple-телевизор.
+  APPLE_TV = 7;
+}

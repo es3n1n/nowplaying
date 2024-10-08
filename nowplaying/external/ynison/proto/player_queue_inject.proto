@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package ynison_state;
+
+import "update_version.proto";
+import "playing_status.proto";
+
+import "google/protobuf/wrappers.proto";
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/main/proto/ynisonstate";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+
+// Состояние проигрывания ижектируемой в очередь сущности.
+// Инжектироваться может шот, преролл и проч.
+message PlayerQueueInject {
+  message Playable {
+    // Идентификатор сущности.
+    string playable_id = 1;
+
+    enum PlayableType {
+      UNSPECIFIED = 0;
+      ALICE_SHOT = 1;
+      AD = 2;
+      PREROLL = 3;
+    }
+    // Тип сущности.
+    PlayableType playable_type = 2;
+
+    // Заголовок.
+    string title = 3;
+
+    // Опциональная ссылка на обложку.
+    // Может содержать плейсхолдер для размера в аватарнице.
+    google.protobuf.StringValue cover_url = 4;
+  }
+  
+  // Статус воспроизведения.
+  PlayingStatus playing_status = 1;
+
+  // Доп. проигрываемая сущность.
+  Playable playable = 2;
+
+  // Версия последнего изменения состояния.
+  UpdateVersion version = 3;
+}
