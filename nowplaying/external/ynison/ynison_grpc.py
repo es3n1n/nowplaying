@@ -3,6 +3,7 @@ from enum import IntEnum, auto, unique
 from pathlib import Path
 from secrets import randbits
 from time import time
+from typing import cast
 
 import certifi
 from grpc import ssl_channel_credentials
@@ -89,13 +90,13 @@ class Ynison:
             return received
 
         if ensure_returned:
-            msg = 'We should not be here'
-            raise ValueError(msg)
+            err_msg = 'We should not be here'
+            raise ValueError(err_msg)
 
         return None
 
     async def _negotiate(self, svc: YnisonStateServiceStub) -> PutYnisonStateResponse:
-        return await self._exchange(
+        result = await self._exchange(
             svc,
             PutYnisonStateRequest(
                 update_full_state=UpdateFullState(
@@ -123,6 +124,7 @@ class Ynison:
                 )
             ),
         )
+        return cast(PutYnisonStateResponse, result)
 
     @staticmethod
     def _get_playable_items(msg: PutYnisonStateResponse, *, from_current_to_prev: bool) -> list[YnisonPlayableItem]:

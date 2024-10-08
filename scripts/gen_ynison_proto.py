@@ -19,7 +19,7 @@ if out_dir.is_dir():
 
 out_dir.mkdir()
 
-file_name = (resources.files('grpc_tools') / '_proto').resolve()
+file_name = (resources.files('grpc_tools') / '_proto').resolve()  # type: ignore[attr-defined]
 googleapis_dir = Path(annotations_pb2.__file__).parents[2]
 
 for proto in protos_dir.glob('*.proto'):
@@ -31,9 +31,9 @@ for proto in protos_dir.glob('*.proto'):
     ]
 
     def invoke(*args: str, includes: list[str] = base_includes) -> None:
-        args = [*includes, *args]
-        print('+ python -m grpc_tools.protoc ' + ' '.join(args))  # noqa: T201
-        protoc.main(args)
+        args_list = [*includes, *args]
+        print('+ python -m grpc_tools.protoc ' + ' '.join(args_list))  # noqa: T201
+        protoc.main(args_list)
 
     invoke(
         # Generate grpc

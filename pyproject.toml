@@ -90,5 +90,5 @@ lines-after-imports = 2
 combine-as-imports = false
 
 [[tool.mypy.overrides]]
-module = "yandex_music.*"
+module = "yandex_music.*,grpc_tools.*,google.*,grpc.*"
 ignore_missing_imports = true
