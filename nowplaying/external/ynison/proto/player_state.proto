@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ynison_state;
+
+import "queue.proto";
+import "player_queue_inject.proto";
+import "playing_status.proto";
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/main/proto/ynisonstate";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+
+// Состояние плеера.
+message PlayerState {
+  // Статус воспроизведения.
+  // TODO: перенести внутрь `PlayerQueue`.
+  PlayingStatus status = 1;
+
+  // Текущая очередь.
+  PlayerQueue player_queue = 2;
+
+  // Состояние проигрывания ижектируемой в очередь сущности.
+  PlayerQueueInject player_queue_inject_optional = 3;
+}

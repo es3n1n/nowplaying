@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package ynison_redirect;
+
+import "google/api/annotations.proto";
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/redirector/proto/redirector";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+service YnisonRedirectService {
+  rpc GetRedirectToYnison(RedirectRequest) returns (RedirectResponse) {
+    option(google.api.http) = {
+      post: "/redirector.YnisonRedirectService/GetRedirectToYnison"
+    };
+  };
+}
+
+message RedirectRequest {
+}
+
+message RedirectResponse {
+  //Целевой хост для подключения к Ynison
+  string host = 1;
+  //Билет, его надо будет отнести в Ynison в хэдере. Чуть позже добавим описание хэдера.
+  //Цель этого билета, защитить от ДДОС атаки на отдельный хост. Билет будет проверяться до аутентификации в BB.
+  string redirect_ticket = 2;
+  // Уникальный идентификатор сессии. Используется для логирования и отладки.
+  // Для удобства отладки стоит с ним же прийти в Ynison в последствии.
+  int64 session_id = 3;
+  // Настройки keep alive при подключении к Ynison
+  KeepAliveParams keep_alive_params = 4;
+}
+
+message KeepAliveParams {
+  int32 keep_alive_time_seconds = 1;
+  int32 keep_alive_timeout_seconds = 2;
+}

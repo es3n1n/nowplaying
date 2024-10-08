@@ -6,3 +6,5 @@
 db_data/**
 worker.lock
 .venv/
+scripts/protoc/**
+scripts/googleapis/**

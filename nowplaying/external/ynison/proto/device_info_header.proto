@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package ynison_header;
+
+import "device_type.proto";
+
+option go_package = "a.yandex-team.ru/music/backend/music-ynison/main/proto/ynisonheader";
+
+option java_package = "com.yandex.media.ynison.service";
+option java_multiple_files = true;
+
+// Хэдер Ynison-Device-Info, в котором устройство представляется о себе в начале сеанса.
+// Его передача условно опциональна, но крайне желательна как для походов в ynison-hub, так и в ynison-redirector
+// Информация должна совпадать с полями из DeviceInfo, передаваемыми в этом же сеансе в UpdateFullState.
+//
+// Хэдер представляет собой сериализованное proto-сообщение, упакованное в
+// в base64 со стандартным алфавитом (не url-safe), без паддинга и без переносов строк.
+// Пример в java: Base64.getEncoder().withoutPadding().encodeToString(proto.toByteArray())
+//
+// Эта информация будет использоваться для улучшения аналитики по возникающим проблемам.
+message YnisonDeviceInfoHeader {
+  // Тип устройства. Оригинальное поле DeviceInfo#type
+  ynison_state.DeviceType type = 1;
+
+  // Информация о клиентском приложении подключенного устройства. Оригинальное поле DeviceInfo#app_name
+  string app_name = 2;
+
+  // Информация о версии клиентского приложения подключенного устройства. Оригинальное поле DeviceInfo#app_version
+  string app_version = 3;
+}

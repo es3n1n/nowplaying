@@ -26,6 +26,9 @@ dependencies = [
     "asyncpg==0.29.0",
     "cryptography==43.0.0",
     "orjson==3.10.7",
+    "googleapis-common-protos>=1.65.0",
+    "grpcio>=1.66.2",
+    "protobuf==5.27.2",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -39,6 +42,7 @@ dev-dependencies = [
     "types-requests",
     "pytest",
     "pytest-asyncio",
+    "grpcio-tools>=1.66.2",
 ]
 
 [project.urls]
@@ -73,7 +77,9 @@ flake8-quotes.inline-quotes = "single"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "test_*.py" = ["S101", "INP001", "PLR2004"]
+"scripts/*" = ["INP001", "I001"]
 "nowplaying/util/user_agents.py" = ["E501"]
+"nowplaying/external/ynison/pyproto/*" = ["ALL"]
 
 [tool.ruff.format]
 quote-style = "single"
@@ -84,5 +90,5 @@ lines-after-imports = 2
 combine-as-imports = false
 
 [[tool.mypy.overrides]]
-module = "yandex_music.*"
+module = "yandex_music.*,grpc_tools.*,google.*,grpc.*"
 ignore_missing_imports = true

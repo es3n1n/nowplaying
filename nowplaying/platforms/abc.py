@@ -23,6 +23,7 @@ class PlatformClientABC(ABC):
             PlatformFeature.PLAY: False,
         }
     )
+    media_notice: str | None = None
 
     @abstractmethod
     async def get_current_playing_track(self) -> Track | None:

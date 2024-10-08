@@ -54,8 +54,11 @@ async def _handle_controls(uri: str, message: Message) -> bool:
     if not buttons:
         return False
 
-    text: str = f'{track.artist} - {track.name}'[:256]
+    text: str = f'{track.artist} - {track.name}'[:128]
     text += '\n\nUse the buttons bellow to control your playback.'
+
+    if client.media_notice:
+        text += f'\n{client.media_notice}'
 
     await message.reply(
         text,
