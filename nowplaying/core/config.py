@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     APPLE_KEY_ID: str
     APPLE_TEAM_ID: str
 
+    YANDEX_GRPC_PROXY_DOCKER_HOST: str = 'nowplaying-grpc'
+    YANDEX_GRPC_PROXY_HOST: str = '127.0.0.1'
+    YANDEX_GRPC_PROXY_PORT: int = 50051
+
     # Docker address is preferred by default
     POSTGRES_DOCKER_ADDRESS: str = 'postgres'
     POSTGRES_ADDRESS: str = '127.0.0.1'

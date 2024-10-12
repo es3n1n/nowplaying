@@ -7,7 +7,10 @@ from typing import cast
 
 import certifi
 from grpc import ssl_channel_credentials
-from grpc.aio import Channel, secure_channel
+from grpc.aio import Channel, insecure_channel, secure_channel
+
+from nowplaying.core.config import config
+from nowplaying.util.dns import select_hostname
 
 from .pyproto.device_pb2 import DeviceCapabilities, DeviceInfo
 from .pyproto.device_type_pb2 import DeviceType
@@ -29,6 +32,7 @@ from .pyproto.ynison_state_pb2_grpc import YnisonStateServiceStub
 
 
 ssl_credentials = ssl_channel_credentials(Path(certifi.where()).read_bytes())
+grpc_proxy_endpoint = select_hostname(config.YANDEX_GRPC_PROXY_DOCKER_HOST, config.YANDEX_GRPC_PROXY_HOST)
 
 
 class YnisonError(Exception):
@@ -65,8 +69,6 @@ class Ynison:
         self._header: list[tuple[str, str]] = [
             ('authorization', f'OAuth {token}'),
             ('ynison-device-id', self._device_id),
-            # note: This header is required, otherwise some of the ynison instances may close connections
-            ('accept-encoding', 'identity'),
         ]
         self._host: str | None = None
 
@@ -78,17 +80,19 @@ class Ynison:
             svc = YnisonRedirectServiceStub(channel)
             result: RedirectResponse = await svc.GetRedirectToYnison(RedirectRequest(), metadata=self._header)
 
-            self._header.append(('ynison-redirect-ticket', result.redirect_ticket))
             self._host = result.host
+            self._header.append(('ynison-redirect-ticket', result.redirect_ticket))
+            self._header.append(('ynison-session-id', str(result.session_id)))
+            self._header.append(('x-proxy-host', self._host))
 
     @property
     def _channel(self) -> Channel:
-        return secure_channel(f'{self._host}:443', ssl_credentials)
+        return insecure_channel(f'{grpc_proxy_endpoint}:{config.YANDEX_GRPC_PROXY_PORT}')
 
     async def _exchange(
         self, svc: YnisonStateServiceStub, msg: PutYnisonStateRequest, *, ensure_returned: bool = True
     ) -> PutYnisonStateResponse | None:
-        async for received in svc.PutYnisonState(iter((msg,)), metadata=self._header):
+        async for received in svc.PutYnisonState(iter((msg,)), metadata=self._header, timeout=30):
             return received
 
         if ensure_returned:
