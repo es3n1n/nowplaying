@@ -92,7 +92,9 @@ class Ynison:
     async def _exchange(
         self, svc: YnisonStateServiceStub, msg: PutYnisonStateRequest, *, ensure_returned: bool = True
     ) -> PutYnisonStateResponse | None:
-        async for received in svc.PutYnisonState(iter((msg,)), metadata=self._header, timeout=30):
+        header = self._header.copy()
+        header.append(('x-proxy-timeout', str(30 if ensure_returned else 2)))
+        async for received in svc.PutYnisonState(iter((msg,)), metadata=header, timeout=30):
             return received
 
         if ensure_returned:

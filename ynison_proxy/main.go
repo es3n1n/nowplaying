@@ -114,7 +114,7 @@ func (s *proxyServer) PutYnisonState(stream ynisonstate.YnisonStateService_PutYn
 	ctx := context.Background()
 	isTimedOut := false
 
-	timeout := 30 //
+	timeout := 30
 	if proxyTimeout := md.Get("x-proxy-timeout"); len(proxyTimeout) > 0 {
 		n, err := strconv.Atoi(proxyTimeout[0])
 
