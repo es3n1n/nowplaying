@@ -7,3 +7,4 @@ db_data/
 .github/
 compose.yml
 compose.dev.yml
+README.md
