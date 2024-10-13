@@ -49,6 +49,14 @@ services:
       - udownloader_network
     tmpfs:
       - /tmp
+  nowplaying-grpc:
+    image: nowplaying-grpc:latest
+    restart: unless-stopped
+    container_name: nowplaying-grpc
+    build: ynison_proxy
+    networks:
+      - internal_network
+      - default_network
 networks:
   default_network:
   internal_network:
