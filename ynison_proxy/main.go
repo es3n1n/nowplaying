@@ -1,22 +1,22 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	ynisonGrpc "github.com/bulatorr/go-yaynison/ynison_grpc"
 	ynisonstate "github.com/bulatorr/go-yaynison/ynisonstate"
+	"golang.org/x/sync/semaphore"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -43,17 +43,6 @@ func logWithSessionID(sessionID, message string) {
 	consoleLogger.Println(prefix + message)
 }
 
-func generateTLSCreds() (credentials.TransportCredentials, error) {
-	rootCAs, err := x509.SystemCertPool()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get system cert pool: %v", err)
-	}
-
-	return credentials.NewTLS(&tls.Config{
-		RootCAs: rootCAs,
-	}), nil
-}
-
 func getSessionIdFromMd(md metadata.MD) string {
 	sessionID := "UNKNOWN"
 	if sessionIDs := md.Get("ynison-session-id"); len(sessionIDs) > 0 {
@@ -63,6 +52,8 @@ func getSessionIdFromMd(md metadata.MD) string {
 }
 
 func (s *proxyServer) PutYnisonState(stream ynisonstate.YnisonStateService_PutYnisonStateServer) error {
+	const danglingMessagesCount = 10
+
 	md, ok := metadata.FromIncomingContext(stream.Context())
 	if !ok {
 		logWithSessionID("UNKNOWN", "Error: Missing metadata")
@@ -92,33 +83,27 @@ func (s *proxyServer) PutYnisonState(stream ynisonstate.YnisonStateService_PutYn
 		}
 	}
 
-	in, err := stream.Recv()
-	if err != nil {
-		logWithSessionID(sessionID, fmt.Sprintf("Error receiving initial message: %v", err))
-		return status.Errorf(codes.InvalidArgument, "invalid entry message")
-	}
-
-	var wg_out sync.WaitGroup
-	wg_out.Add(1)
+	wg_out := semaphore.NewWeighted(danglingMessagesCount)
 	conn := new(ynisonGrpc.Conn)
 
-	conn.OnMessage(func(response *ynisonstate.PutYnisonStateResponse) {
-		if err := stream.Send(response); err != nil {
-			logWithSessionID(sessionID, fmt.Sprintf("Error sending response to client: %v", err))
-		}
-		wg_out.Done()
-	})
+	conn.OnMessage(
+		func(response *ynisonstate.PutYnisonStateResponse) {
+			if err := stream.Send(response); err != nil {
+				logWithSessionID(sessionID, fmt.Sprintf("Error sending response to client: %v", err))
+			}
+			wg_out.Release(1)
+		},
+	)
 
-	conn.OnConnect(func() {
-		logWithSessionID(sessionID, fmt.Sprintf("Connected to proxy host: %s", proxyHost[0]))
-		err = conn.Send(in)
-		if err != nil {
-			logWithSessionID(sessionID, fmt.Sprintf("Error sending initial message within onConnect: %v", err))
-		}
-	})
+	connectSignaler := make(chan struct{})
+	conn.OnConnect(
+		func() {
+			connectSignaler <- struct{}{}
+			close(connectSignaler)
+		},
+	)
 
-	err = conn.Connect(proxyHost[0], headers)
-	if err != nil {
+	if err := conn.Connect(proxyHost[0], headers); err != nil {
 		logWithSessionID(sessionID, fmt.Sprintf("Error connecting to destination: %v", err))
 		return status.Errorf(codes.InvalidArgument, "unable to connect to dst")
 	}
@@ -126,9 +111,32 @@ func (s *proxyServer) PutYnisonState(stream ynisonstate.YnisonStateService_PutYn
 
 	var wg_in sync.WaitGroup
 	wg_in.Add(1)
+	ctx := context.Background()
+	isTimedOut := false
+
+	timeout := 30 //
+	if proxyTimeout := md.Get("x-proxy-timeout"); len(proxyTimeout) > 0 {
+		n, err := strconv.Atoi(proxyTimeout[0])
+
+		if err != nil {
+			return fmt.Errorf("invalid timeout value: %w", err)
+		}
+
+		timeout = n
+	}
 
 	go func() {
 		defer wg_in.Done()
+
+		timer := time.NewTimer(time.Duration(timeout) * time.Second)
+
+		select {
+		case <-timer.C:
+			return
+		case <-connectSignaler:
+			logWithSessionID(sessionID, "Connected to the yunison server")
+		}
+
 		for {
 			in, err := stream.Recv()
 			if err == io.EOF {
@@ -140,7 +148,16 @@ func (s *proxyServer) PutYnisonState(stream ynisonstate.YnisonStateService_PutYn
 				return
 			}
 			logWithSessionID(sessionID, fmt.Sprintf("Received message from client: %v", in))
-			wg_out.Add(1)
+
+			timedCtx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+			if err := wg_out.Acquire(timedCtx, 1); err != nil {
+				isTimedOut = true
+				cancel()
+				logWithSessionID(sessionID, fmt.Sprintf("error acquiring semaphore: %v", err))
+				return
+			}
+			cancel()
+
 			if err := conn.Send(in); err != nil {
 				logWithSessionID(sessionID, fmt.Sprintf("Error sending to proxy: %v", err))
 				return
@@ -149,7 +166,13 @@ func (s *proxyServer) PutYnisonState(stream ynisonstate.YnisonStateService_PutYn
 	}()
 
 	wg_in.Wait()
-	wg_out.Wait()
+
+	if !isTimedOut {
+		timedCtx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+		defer cancel()
+		_ = wg_out.Acquire(timedCtx, danglingMessagesCount)
+	}
+
 	return nil
 }
 
