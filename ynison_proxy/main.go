@@ -134,7 +134,7 @@ func (s *proxyServer) PutYnisonState(stream ynisonstate.YnisonStateService_PutYn
 		case <-timer.C:
 			return
 		case <-connectSignaler:
-			logWithSessionID(sessionID, "Connected to the yunison server")
+			logWithSessionID(sessionID, "Connected to the ynison server")
 		}
 
 		for {
