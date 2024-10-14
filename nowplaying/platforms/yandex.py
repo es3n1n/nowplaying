@@ -64,6 +64,10 @@ class YandexClient(PlatformClientABC):
             if not track:
                 continue
 
+            # Skip local tracks, UGC probably stands for "User Generated Content"
+            if track.track_source == 'UGC':
+                continue
+
             yield await Track.from_yandex_item(
                 track,
                 played_at=cur_time - timedelta(minutes=index),  # used for sorting

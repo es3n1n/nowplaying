@@ -16,3 +16,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+  nowplaying-grpc:
+    image: nowplaying-grpc:latest
+    restart: unless-stopped
+    container_name: nowplaying-grpc
+    build: ynison_proxy
+    ports:
+      - "50051:50051"

@@ -41,6 +41,9 @@ class AppleClient(PlatformClientABC):
         # Add 1 to the limit because the currently playing track is not counted,
         # but Apple Music includes it in the recently played tracks.
         for index, track in enumerate(await self.app.recently_played(limit=limit + 1)):
+            if track.is_local:
+                continue
+
             yield await Track.from_apple_item(
                 track,
                 played_at=cur_time - timedelta(minutes=index),

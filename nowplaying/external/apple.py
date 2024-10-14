@@ -29,6 +29,7 @@ class AppleMusicTrack:
     url: str
     artist: str
     name: str
+    is_local: bool
 
     @classmethod
     def load(cls, track: dict) -> 'AppleMusicTrack':
@@ -37,6 +38,7 @@ class AppleMusicTrack:
             url=track['attributes']['url'],
             artist=track['attributes']['artistName'],
             name=track['attributes']['name'],
+            is_local='url' not in track['attributes'],
         )
 
 
@@ -74,15 +76,7 @@ class AppleMusicWrapperClient:
             msg = 'got a weird json'
             raise AppleMusicError(msg)
 
-        out_tracks = []
-        for track in response_json['data']:
-            # Skip custom uploaded tracks
-            if 'url' not in track['attributes']:
-                continue
-
-            out_tracks.append(AppleMusicTrack.load(track))
-
-        return out_tracks
+        return [AppleMusicTrack.load(track) for track in response_json['data']]
 
     async def get_track(self, track_id: str) -> AppleMusicTrack | None:
         # TODO(es3n1n): instead of using US we should store the appropriate store id
