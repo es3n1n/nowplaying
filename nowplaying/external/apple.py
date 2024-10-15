@@ -35,9 +35,9 @@ class AppleMusicTrack:
     def load(cls, track: dict) -> 'AppleMusicTrack':
         return cls(
             id=track['id'],
-            url=track['attributes']['url'],
-            artist=track['attributes']['artistName'],
-            name=track['attributes']['name'],
+            url=track['attributes'].get('url', ''),
+            artist=track['attributes'].get('artistName', 'unknown'),
+            name=track['attributes'].get('name', 'unknown'),
             is_local='url' not in track['attributes'],
         )
 
