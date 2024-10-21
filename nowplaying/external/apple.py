@@ -5,6 +5,7 @@ import jwt
 import orjson
 from httpx import AsyncClient, Response
 
+from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
@@ -12,6 +13,7 @@ from nowplaying.util.http import STATUS_NOT_FOUND, STATUS_OK, is_serverside_erro
 from nowplaying.util.time import UTC_TZ
 
 
+DEFAULT_STORE_FRONT: str = 'us'
 SESSION_LIVE_TIME: timedelta = timedelta(hours=6)
 
 
@@ -78,10 +80,26 @@ class AppleMusicWrapperClient:
 
         return [AppleMusicTrack.load(track) for track in response_json['data']]
 
-    async def get_track(self, track_id: str) -> AppleMusicTrack | None:
-        # TODO(es3n1n): instead of using US we should store the appropriate store id
+    async def get_storefront(self) -> str:
         response = await self.app.client.get(
-            f'https://api.music.apple.com/v1/catalog/us/songs/{track_id}',
+            'https://api.music.apple.com/v1/me/storefront',
+            headers=self.headers(with_media_token=True),
+        )
+
+        _validate_response_code(response)
+        response_json = orjson.loads(response.content)
+
+        data = response_json.get('data', [])
+        if not data:
+            await report_error('Unable to get storefront, unfortunately no more info could be provided')
+            return DEFAULT_STORE_FRONT
+
+        return data[0].get('id', DEFAULT_STORE_FRONT)
+
+    async def get_track(self, track_id: str) -> AppleMusicTrack | None:
+        store_front = await self.get_storefront()
+        response = await self.app.client.get(
+            f'https://api.music.apple.com/v1/catalog/{store_front}/songs/{track_id}',
             headers=self.headers(),
         )
 
