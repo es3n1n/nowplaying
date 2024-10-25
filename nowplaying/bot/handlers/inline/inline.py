@@ -146,9 +146,15 @@ def create_audio_result(
     if multiple_clients:
         name += f' ({track.platform.name.capitalize()})'
 
+    uri_for_placeholder = track.uri
+    # Swap the uri for unavailable tracks (their id will be None)
+    if not is_track_available:
+        # We still want it to cache on the telegram side, so instead of using random stuff let's use the url
+        uri_for_placeholder = track.url
+
     return types.InlineQueryResultAudio(
         id=track.uri if can_proceed else str(index),
-        audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(track.uri)}',
+        audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(uri_for_placeholder)}',
         performer=track.artist,
         title=name,
         caption=track_to_caption(

@@ -36,7 +36,6 @@ class Track(BaseModel):
 
     @property
     def is_available(self) -> bool:
-        # TODO(es3n1n): implement the "unavailable" logic :sadge:
         return self.id is not None
 
     @classmethod
