@@ -30,25 +30,6 @@
             font-size: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        h2 {
-            font-size: 1rem;
-            font-weight: normal;
-            margin-bottom: 1rem;
-            line-height: 1.4;
-        }
-        .loading {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 1rem;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
         @media (max-width: 480px) {
             body {
                 padding: 10px;
@@ -60,13 +41,15 @@
             h1 {
                 font-size: 1.3rem;
             }
-            h2 {
-                font-size: 0.9rem;
-            }
-            .loading {
-                width: 30px;
-                height: 30px;
-            }
+        }
+        #auth {
+          color: rgb(251, 251, 254);
+          padding: 10px 20px;
+          border: 2px solid rgb(251, 251, 254);
+          border-radius: 10px;
+          background: transparent;
+          font-size: 1rem;
+          cursor: pointer;
         }
     </style>
 </head>
@@ -74,13 +57,8 @@
 <body>
     <div class="container">
         <h1>playinnowbot - Apple Music</h1>
-        <div class="loading"></div>
-        <h2>Please wait for the Apple Music authorization popup</h2>
-        <h2>Make sure you've allowed this page to create popups</h2>
-        <h2>If nothing happens, please refresh this page</h2>
+        <button id="auth">Authorize</button>
     </div>
-
-    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
 
     <script>
         /* im so sorry for this shitcode, but as long as it works - it works */
@@ -89,31 +67,36 @@
             window.location = '/';
         }
 
-        (async () => {
-            const token_response = await fetch(`/ext/apple/token${window.location.search}`);
-            const token_json = await token_response.json();
-            if (token_response.status === 403) {
-                window.location = token_json.redirect_to;
-            }
+        document.addEventListener('musickitloaded', async () => {
+          const token_response = await fetch(`/ext/apple/token${window.location.search}`);
+          const token_json = await token_response.json();
+          if (token_response.status === 403) {
+              window.location = token_json.redirect_to;
+          }
 
-            try {
-                await MusicKit.configure({
-                    developerToken: token_json.token,
-                    app: {
-                        name: 'playinnow',
-                        build: '2024.6.22',
-                    },
-                });
-            } catch (err) {
-                console.error(err);
-                return;
-            }
+          try {
+              await MusicKit.configure({
+                  developerToken: token_json.token,
+                  app: {
+                      name: 'playinnow',
+                      build: '2024.6.22',
+                  },
+              });
+          } catch (err) {
+              console.error(err);
+              return;
+          }
 
-            const music = MusicKit.getInstance();
+          const music = MusicKit.getInstance();
+
+          document.getElementById('auth').addEventListener('click', async () => {
             const user_token = await music.authorize();
-
             window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
-        })();
+          });
+        });
     </script>
+
+    <!-- placed at the bottom + using defer to make sure it loads after our script -->
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" defer></script>
 </body>
 </html>
