@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -5,10 +6,17 @@
     <title>playinnowbot - Apple Music</title>
 
     <style>
+        :root {
+            --primary-bg: rgb(28, 27, 34);
+            --text-color: rgb(251, 251, 254);
+            --error-color: rgb(255, 107, 107);
+            --container-bg: rgba(255, 255, 255, 0.1);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background: rgb(28, 27, 34);
-            color: rgb(251, 251, 254);
+            background: var(--primary-bg);
+            color: var(--text-color);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,38 +25,49 @@
             padding: 20px;
             box-sizing: border-box;
         }
+
         .container {
             text-align: center;
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--container-bg);
             padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             max-width: 90%;
             width: 400px;
         }
+
         h1 {
             font-size: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        h2 {
+
+        #auth {
+            color: var(--text-color);
+            padding: 10px 20px;
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            background: transparent;
             font-size: 1rem;
-            font-weight: normal;
-            margin-bottom: 1rem;
-            line-height: 1.4;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .loading {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 1rem;
+
+        #auth:hover {
+            background: var(--text-color);
+            color: var(--primary-bg);
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        #auth:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(251, 251, 254, 0.3);
         }
+
+        #error-message {
+            color: var(--error-color);
+            margin-top: 1rem;
+            display: none;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 10px;
@@ -60,13 +79,11 @@
             h1 {
                 font-size: 1.3rem;
             }
-            h2 {
-                font-size: 0.9rem;
-            }
-            .loading {
-                width: 30px;
-                height: 30px;
-            }
+        }
+
+        .loading {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -74,46 +91,97 @@
 <body>
     <div class="container">
         <h1>playinnowbot - Apple Music</h1>
-        <div class="loading"></div>
-        <h2>Please wait for the Apple Music authorization popup</h2>
-        <h2>Make sure you've allowed this page to create popups</h2>
-        <h2>If nothing happens, please refresh this page</h2>
+        <button id="auth" disabled>Loading</button>
+        <p id="error-message"></p>
     </div>
 
-    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js"></script>
-
     <script>
-        /* im so sorry for this shitcode, but as long as it works - it works */
-        if (window.location.search.indexOf('state=') === -1) {
-            alert('no state found, please try again');
-            window.location = '/';
-        }
+        const validateState = () => {
+            if (window.location.search.indexOf('state=') === -1) {
+                alert('no state found, please try again');
+                window.location = '/';
+                return false;
+            }
+            return true;
+        };
 
-        (async () => {
-            const token_response = await fetch(`/ext/apple/token${window.location.search}`);
-            const token_json = await token_response.json();
-            if (token_response.status === 403) {
-                window.location = token_json.redirect_to;
+        const fetchMusicToken = async () => {
+            const tokenResponse = await fetch(`/ext/apple/token${window.location.search}`);
+            const tokenJson = await tokenResponse.json();
+
+            if (tokenResponse.status === 403) {
+                window.location = tokenJson.redirect_to;
+                return null;
             }
 
+            return tokenJson.token;
+        };
+
+        const configureMusicKit = async (developerToken) => {
             try {
                 await MusicKit.configure({
-                    developerToken: token_json.token,
+                    developerToken,
                     app: {
                         name: 'playinnow',
                         build: '2024.6.22',
                     },
                 });
+                return true;
             } catch (err) {
-                console.error(err);
+                console.error('MusicKit configuration error:', err);
+                return false;
+            }
+        };
+
+        const updateUIState = (button, loading = false, errorText = '') => {
+            const errorElement = document.getElementById('error-message');
+
+            button.disabled = loading;
+            button.classList.toggle('loading', loading);
+
+            if (errorText) {
+                errorElement.style.display = 'block';
+                errorElement.textContent = errorText;
                 return;
             }
 
-            const music = MusicKit.getInstance();
-            const user_token = await music.authorize();
+            errorElement.style.display = 'none';
+            errorElement.textContent = '';
+        };
 
-            window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(user_token)}`;
-        })();
+        const handleAuthorization = async (button) => {
+            updateUIState(button, true);
+
+            try {
+                const music = MusicKit.getInstance();
+                const userToken = await music.authorize();
+                window.location = `/ext/apple/callback${window.location.search}&token=${encodeURIComponent(userToken)}`;
+            } catch (error) {
+                updateUIState(button, false, error.toString());
+            }
+        };
+
+        const initializeAuthButton = () => {
+            const button = document.getElementById('auth');
+            button.textContent = 'Authorize';
+            button.disabled = false;
+
+            button.addEventListener('click', () => handleAuthorization(button));
+        };
+
+        validateState();
+        document.addEventListener('musickitloaded', async () => {
+            const token = await fetchMusicToken();
+            if (!token) return;
+
+            const configured = await configureMusicKit(token);
+            if (configured) {
+                initializeAuthButton();
+            }
+        });
     </script>
+
+    <!-- placed at the bottom + using defer to make sure it loads after our script -->
+    <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" defer></script>
 </body>
 </html>
