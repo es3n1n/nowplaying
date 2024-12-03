@@ -1,4 +1,4 @@
-from aiogram.exceptions import AiogramError, TelegramAPIError, TelegramBadRequest
+from aiogram.exceptions import AiogramError, TelegramAPIError
 from aiogram.types import BufferedInputFile, Message, URLInputFile, User
 
 from nowplaying.bot.bot import bot
@@ -50,9 +50,9 @@ async def cache_file(
                 title=track.name,
                 thumbnail=thumbnail,
             )
-        except TelegramBadRequest as exc:
+        except TelegramAPIError as exc:
             # Telegram bot API goes brr
-            if any(x in exc.message for x in ('internal Server Error during file upload', 'timeout error')):
+            if any(x in exc.message.lower() for x in ('internal server error', 'timeout error')):
                 continue
 
             raise
