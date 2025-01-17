@@ -2,13 +2,13 @@ from collections.abc import AsyncIterator
 from datetime import datetime, timedelta
 from types import MappingProxyType
 
-from yandex_music import ClientAsync
 from yandex_music.exceptions import TimedOutError, YandexMusicError
 
 from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.exceptions.platforms import PlatformInvalidAuthCodeError
+from nowplaying.external.yandex import ClientAsync
 from nowplaying.external.ynison.ynison_grpc import Ynison, YnisonClientSideError
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
