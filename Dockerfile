@@ -13,7 +13,9 @@ ENV PATH=/app/.venv/bin:$PATH \
 RUN set -ex \
     && apt-get update -yq \
     && apt-get install -yq --no-install-recommends \
-        python3.12-dev
+        python3.12-dev \
+        git \
+        ca-certificates
 
 RUN --mount=type=cache,target=/root/.cache \
     set -ex \
