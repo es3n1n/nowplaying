@@ -22,7 +22,7 @@ dependencies = [
     "async-lru==2.0.4",
     "pycryptodome==3.20.0",
     "pyjwt==2.9.0",
-    "yandex-music==2.2.0",
+    "yandex-music @ git+https://github.com/es3n1n/yandex-music-api.git@596ca6074f88807b2acc003e2989d78001403641",
     "asyncpg==0.29.0",
     "cryptography==43.0.0",
     "orjson==3.10.7",
@@ -31,6 +31,9 @@ dependencies = [
     "grpcio>=1.67.0rc1",
     "aiohttp-socks>=0.10.1",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["nowplaying/"]

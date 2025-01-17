@@ -587,7 +587,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = "==2.4.0" },
     { name = "pyjwt", specifier = "==2.9.0" },
     { name = "uvicorn", specifier = "==0.30.6" },
-    { name = "yandex-music", specifier = "==2.2.0" },
+    { name = "yandex-music", git = "https://github.com/es3n1n/yandex-music-api.git?rev=596ca6074f88807b2acc003e2989d78001403641#596ca6074f88807b2acc003e2989d78001403641" },
 ]
 
 [package.metadata.requires-dev]
@@ -941,13 +941,13 @@ wheels = [
 [[package]]
 name = "yandex-music"
 version = "2.2.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/es3n1n/yandex-music-api.git?rev=596ca6074f88807b2acc003e2989d78001403641#596ca6074f88807b2acc003e2989d78001403641" }
 dependencies = [
     { name = "aiofiles" },
     { name = "aiohttp" },
     { name = "requests", extra = ["socks"] },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/85/9f1d9e1327b558d74ee43e3d3f84b7b7e536c79a372cf83fcbf392ab2d3c/yandex-music-2.2.0.tar.gz", hash = "sha256:46beaacf8206de212323264c89e0bd4f4e2e626483dfa58f95e78cacd1a102cf", size = 168538 }
 
 [[package]]
 name = "yarl"
