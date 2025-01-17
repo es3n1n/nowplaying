@@ -5,12 +5,16 @@ on:
     paths:
       - 'nowplaying/**'
       - '.github/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
   push:
     branches:
       - master
     paths:
       - 'nowplaying/**'
       - '.github/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
 
 jobs:
   lint_test:
