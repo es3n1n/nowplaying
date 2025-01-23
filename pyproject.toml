@@ -22,7 +22,7 @@ dependencies = [
     "async-lru==2.0.4",
     "pycryptodome==3.20.0",
     "pyjwt==2.9.0",
-    "yandex-music @ git+https://github.com/es3n1n/yandex-music-api.git@596ca6074f88807b2acc003e2989d78001403641",
+    "yandex-music @ git+https://github.com/MarshalX/yandex-music-api.git@15fc42bdda0e00d6eb637cfe7e41016c57d61f47",
     "asyncpg==0.29.0",
     "cryptography==43.0.0",
     "orjson==3.10.7",
