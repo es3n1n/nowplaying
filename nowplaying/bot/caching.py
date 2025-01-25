@@ -2,6 +2,7 @@ from aiogram.exceptions import AiogramError, TelegramAPIError
 from aiogram.types import BufferedInputFile, Message, URLInputFile, User
 
 from nowplaying.bot.bot import bot
+from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.models.track import Track
@@ -51,6 +52,9 @@ async def cache_file(
                 thumbnail=thumbnail,
             )
         except TelegramAPIError as exc:
+            # Report the telegram api error
+            await report_error(f'Unable to cache file for {track.uri}\n{caption!r}', exc)
+
             # Telegram bot API goes brr
             if any(x in exc.message.lower() for x in ('internal server error', 'timeout error')):
                 continue
