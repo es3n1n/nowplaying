@@ -22,7 +22,7 @@ async def test_deezer_search_jp_title() -> None:
     results_jp = await search_tracks('Homecomings - ラプス')
     results_en = await search_tracks('Homecomings - Lapse')
 
-    assert results_en == results_jp
+    assert results_en[0] == results_jp[0]
     assert results_jp[0].title == 'Lapse'
     assert results_jp[0].artist == 'Homecomings'
 

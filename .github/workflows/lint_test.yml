@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'nowplaying/**'
+      - 'tests/**'
       - '.github/**'
       - 'pyproject.toml'
       - 'uv.lock'
@@ -12,6 +13,7 @@ on:
       - master
     paths:
       - 'nowplaying/**'
+      - 'tests/**'
       - '.github/**'
       - 'pyproject.toml'
       - 'uv.lock'
