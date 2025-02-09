@@ -1,4 +1,5 @@
 from base64 import b64decode, b64encode
+from datetime import timedelta
 from typing import Annotated
 
 from pydantic import Field, field_validator
@@ -32,6 +33,7 @@ class Settings(BaseSettings):
     BOT_URL: Annotated[str, Field(validate_default=True)] = 'https://t.me/playinnowbot'
     BOT_LOG_REQUESTS: bool = False
     BOT_TELEGRAM_ERROR_REPORTING: bool = True
+    BOT_UPLOAD_FILE_TIMEOUT: int = int(timedelta(minutes=5).total_seconds())
 
     STATE_SECRET: str
 

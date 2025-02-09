@@ -1,4 +1,4 @@
-from aiogram.exceptions import AiogramError, TelegramAPIError
+from aiogram.exceptions import AiogramError, TelegramAPIError, TelegramEntityTooLarge
 from aiogram.types import BufferedInputFile, Message, URLInputFile, User
 
 from nowplaying.bot.bot import bot
@@ -7,6 +7,10 @@ from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.models.track import Track
 from nowplaying.util.retries import retry
+
+
+class CachingFileTooLargeError(Exception):
+    """File is too large to cache."""
 
 
 async def get_cached_file_id(uri: str) -> str | None:
@@ -50,7 +54,10 @@ async def cache_file(
                 performer=track.artist,
                 title=track.name,
                 thumbnail=thumbnail,
+                request_timeout=config.BOT_UPLOAD_FILE_TIMEOUT,
             )
+        except TelegramEntityTooLarge as exc:
+            raise CachingFileTooLargeError from exc
         except TelegramAPIError as exc:
             # Report the error and try again
             await report_error(f'Unable to cache file for {track.uri}\n{caption!r}', exc)
