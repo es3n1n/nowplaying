@@ -25,11 +25,21 @@ services:
     env_file:
       - .env
     volumes:
-      - /etc/timezone:/etc/timezone
-      - tg_data:/var/lib/telegram-bot-api  # Not a directory to avoid errors due to : in filenames on windows
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - tg_data:/var/lib/telegram-bot-api
     networks:
       - default_network
       - internal_network
+  bot-api-janitor:
+    image: bot-api-janitor:latest
+    restart: unless-stopped
+    container_name: nowplaying-bot-api-janitor
+    build: botapi_janitor
+    volumes:
+      - tg_data:/var/lib/telegram-bot-api
+    environment:
+      - TZ=$(cat /etc/timezone)
   nowplaying:
     image: nowplaying-bot:latest
     restart: unless-stopped
@@ -66,5 +76,6 @@ networks:
     name: udownloader
     external: true
 volumes:
+  # Not a directory to avoid errors due to : in filenames on windows
   tg_data:
     name: "nowplaying_tg_data"
