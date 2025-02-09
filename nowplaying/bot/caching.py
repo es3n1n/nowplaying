@@ -52,14 +52,9 @@ async def cache_file(
                 thumbnail=thumbnail,
             )
         except TelegramAPIError as exc:
-            # Report the telegram api error
+            # Report the error and try again
             await report_error(f'Unable to cache file for {track.uri}\n{caption!r}', exc)
-
-            # Telegram bot API goes brr
-            if any(x in exc.message.lower() for x in ('internal server error', 'timeout error')):
-                continue
-
-            raise
+            continue
 
         break
 
