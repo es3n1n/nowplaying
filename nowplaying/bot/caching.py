@@ -21,8 +21,9 @@ async def get_cached_file_id(uri: str) -> str | None:
     # Verifying that file id isn't expired
     try:
         await bot.get_file(file_id)
-    except (AiogramError, TelegramAPIError):
-        return None
+    except (AiogramError, TelegramAPIError) as err:
+        if not any(x in str(err).lower() for x in ('file is too big',)):
+            return None
     return file_id
 
 
