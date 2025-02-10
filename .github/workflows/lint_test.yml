@@ -8,6 +8,7 @@ on:
       - '.github/**'
       - 'pyproject.toml'
       - 'uv.lock'
+      - '.env.example'
   push:
     branches:
       - master
@@ -17,6 +18,7 @@ on:
       - '.github/**'
       - 'pyproject.toml'
       - 'uv.lock'
+      - '.env.example'
 
 jobs:
   lint_test:
