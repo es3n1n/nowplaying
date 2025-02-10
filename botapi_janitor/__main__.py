@@ -50,7 +50,7 @@ class FileJanitor:
 
             try:
                 file.unlink()
-                err(f'Removed outdated file {file.name}')
+                info(f'Removed outdated file {file.name}')
             except OSError as e:
                 err(f'Failed to remove file {file.name}: {e}')
 
