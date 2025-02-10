@@ -48,7 +48,10 @@ async def main() -> None:
 
     # Forward all the messages
     logger.info(f'Forwarding {len(to_forward)} messages')
-    await client.forward_messages(config.BOT_URL.split('/')[-1], to_forward, from_peer=config.BOT_CACHE_CHAT_ID)
+    for i in range(0, len(to_forward), 100):
+        await client.forward_messages(
+            config.BOT_URL.split('/')[-1], to_forward[i : i + 100], from_peer=config.BOT_CACHE_CHAT_ID
+        )
 
 
 if __name__ == '__main__':
