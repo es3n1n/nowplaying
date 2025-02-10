@@ -70,6 +70,10 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
 
+    # Custom telegram bot api instance configuration
+    TELEGRAM_API_ID: int | None = None
+    TELEGRAM_API_HASH: str | None = None
+
     # Data used only when running tests, might be empty
     TEST_ARGS: dict[str, str] = {}
 

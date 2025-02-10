@@ -47,6 +47,7 @@ dev-dependencies = [
     "pytest",
     "pytest-asyncio",
     "grpcio-tools>=1.66.2",
+    "telethon>=1.38.1",
 ]
 
 [project.urls]
@@ -97,5 +98,5 @@ lines-after-imports = 2
 combine-as-imports = false
 
 [[tool.mypy.overrides]]
-module = "yandex_music.*,grpc_tools.*,google.*,grpc.*"
+module = "yandex_music.*,grpc_tools.*,google.*,grpc.*,telethon.*"
 ignore_missing_imports = true

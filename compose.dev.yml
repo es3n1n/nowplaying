@@ -23,3 +23,28 @@ services:
     build: ynison_proxy
     ports:
       - "50051:50051"
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    restart: unless-stopped
+    container_name: nowplaying-bot-api
+    env_file:
+      - .env
+    ports:
+      - "8081:8081"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - tg_data:/var/lib/telegram-bot-api
+  bot-api-janitor:
+    image: bot-api-janitor:latest
+    restart: unless-stopped
+    container_name: nowplaying-bot-api-janitor
+    build: botapi_janitor
+    volumes:
+      - tg_data:/var/lib/telegram-bot-api
+    environment:
+      - TZ=$(cat /etc/timezone)
+volumes:
+  # Not a directory to avoid errors due to : in filenames on windows
+  tg_data:
+    name: "nowplaying_tg_data"
