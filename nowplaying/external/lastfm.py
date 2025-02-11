@@ -73,6 +73,23 @@ class LastFMTrackFromURL:
     external_urls: list[str]
 
 
+def _reorder_external_links(links: list[str]) -> list[str]:
+    def _sort_key(link: str) -> int:
+        # 1. Spotify
+        if 'spotify.com' in link:
+            return 0
+        # 2. Apple Music
+        if 'apple.com' in link:
+            return 1
+        # 4. YouTube with the lowest priority
+        if 'youtube.com' in link:
+            return 4
+        # 3. Everything else
+        return 3
+
+    return sorted(links, key=_sort_key)
+
+
 @alru_cache()
 async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
     response: Response | None = None
@@ -112,7 +129,7 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
         return track
 
     external_urls = set(findall(HREF_URL_REGEX, container.group(1)))
-    track.external_urls = list(map(unescape, external_urls))
+    track.external_urls = _reorder_external_links(list(map(unescape, external_urls)))
     return track
 
 
