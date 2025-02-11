@@ -7,7 +7,7 @@ from re import compile as re_compile
 
 import orjson
 from async_lru import alru_cache
-from httpx import AsyncClient, AsyncHTTPTransport, HTTPError, Response
+from httpx import AsyncClient, AsyncHTTPTransport, HTTPError, Response, Timeout
 
 from nowplaying.core.config import config
 from nowplaying.enums.platform_type import SongLinkPlatformType
@@ -38,6 +38,7 @@ def get_client() -> AsyncClient:
         transport=AsyncHTTPTransport(local_address='0.0.0.0'),
         proxy=config.LASTFM_SEARCH_PROXY,
         verify=not config.LASTFM_SEARCH_PROXY,
+        timeout=Timeout(5.0, read=None),
     )
 
 
