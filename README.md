@@ -112,6 +112,11 @@ When you request a track that isn't cached, the bot will attempt to download it 
 
 If you wish to remove all information about your account, feel free to contact me, and I will delete the logs. For cached tracks, I will edit the captions, but the cached tracks will remain available. If you want to remove your stored platform token, please use the `/logout` command instead.
 
+## Related repositories
+
+- [es3n1n/nowplaying-frontend](https://github.com/es3n1n/nowplaying-frontend) - Frontend part of the authorization process
+- [es3n1n/nowplaying-extension](https://github.com/es3n1n/nowplaying-extension) - Browser extension for the authorization process
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
