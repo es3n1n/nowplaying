@@ -27,6 +27,7 @@ A Telegram bot for sharing and discovering music across various platforms.
 * Yandex.Music
 * Last.fm
 * Apple Music
+* Soundcloud
 
 ### Tracks downloading:
 
