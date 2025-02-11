@@ -187,7 +187,7 @@ class Spotify:
         _raise_for_status(response)
         return orjson.loads(response.content)
 
-    async def add_to_queue(self, track_uri: str) -> None:
+    async def add_to_queue(self, track_uri: str) -> bool:
         if self._token is None:
             raise SpotifyNoTokenError
 
@@ -197,18 +197,20 @@ class Spotify:
             headers=self._auth_headers,
         )
         if _is_clientside_error(response):
-            return
+            return False
 
         _raise_for_status(response)
+        return True
 
-    async def start_playback(self, uris: list[str]) -> None:
-        if self._token is None:
-            msg = 'token is none'
-            raise SpotifyError(msg)
+    async def start_playback(self, uri: str) -> None:
+        # Enqueue and skip to it.
+        # If we use the /me/player/play endpoint,
+        #   it will clear the queue and start playing the track
+        if not await self.add_to_queue(uri):
+            return
 
-        response = await self._client.put(
-            f'{self._api_base}/me/player/play',
-            json={'uris': uris},
+        response = await self._client.post(
+            f'{self._api_base}/me/player/next',
             headers=self._auth_headers,
         )
         if _is_clientside_error(response):

@@ -93,7 +93,7 @@ class SpotifyClient(PlatformClientABC):
     @rethrow_platform_error(SpotifyError, TYPE)
     async def play(self, track_id: str) -> bool:
         try:
-            await self.spotify_app.start_playback(uris=[_to_uri(track_id)])
+            await self.spotify_app.start_playback(uri=_to_uri(track_id))
         except SpotifyPremiumRequiredError as err:
             raise PlatformClientSideError(SPOTIFY_PREMIUM_REQUIRED_ERR) from err
 
