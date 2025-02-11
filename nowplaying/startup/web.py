@@ -31,14 +31,16 @@ def mount_static(web_path: str, *path: str) -> None:
         result_path /= arg
 
     if not result_path.exists():
-        raise FileNotFoundError(web_path)
+        msg = f'{web_path}: {result_path.absolute()}'
+        raise FileNotFoundError(msg)
 
+    # TODO(es3n1n): move to a router once it would be possible (not implemented in fastapi atm)
     app.mount(web_path, StaticFiles(directory=result_path, html=True))
 
 
-# TODO(es3n1n): move to a router once it would be possible (not implemented in fastapi atm)
-mount_static('/ym', 'ym', 'web-app', 'build')
+mount_static('/ym', 'ym', 'build')
 mount_static('/apple', 'apple')
+mount_static('/sc', 'sc')
 
 
 @app.exception_handler(PlatformInvalidAuthCodeError)
