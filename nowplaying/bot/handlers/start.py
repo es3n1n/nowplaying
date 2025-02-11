@@ -10,11 +10,18 @@ from nowplaying.enums.callback_buttons import CallbackButton
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.enums.start_actions import StartAction
 from nowplaying.models.song_link import SongLinkPlatformType
-from nowplaying.platforms import get_platform_from_telegram_id, yandex
+from nowplaying.platforms import get_platform_from_telegram_id, soundcloud, yandex
 from nowplaying.routes.ext import send_auth_msg
 from nowplaying.util.string import QUERY_SEPARATOR, encode_query, extract_from_query
 
 from .link import get_auth_keyboard
+
+
+# Special platforms where we're hijacking the token
+SPECIAL_PLATFORMS = {
+    'ym_': yandex,
+    'sc_': soundcloud,
+}
 
 
 async def _handle_controls(uri: str, message: Message) -> bool:
@@ -91,9 +98,13 @@ async def _try_start_cmds(message: Message, *, authorized: bool) -> bool:
 
     payload = message.text.split(' ', maxsplit=1)[1]
 
-    if payload.startswith('ym_'):
-        await yandex.from_auth_callback(message.from_user.id, payload[3:])
-        await send_auth_msg(message.from_user.id, 'yandex')
+    # Try the special platforms where we're hijacking the token
+    for key, platform in SPECIAL_PLATFORMS.items():
+        if not payload.startswith(key):
+            continue
+
+        await platform.from_auth_callback(message.from_user.id, payload[len(key) :])
+        await send_auth_msg(message.from_user.id, platform.type.name.lower())
         return True
 
     if payload == StartAction.SIGN_EXPIRED.value:

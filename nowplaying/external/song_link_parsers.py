@@ -73,7 +73,8 @@ def get_youtube_link(url: ParseResult) -> str:
 
 
 async def fallback_to_odesli(client: ClientSession, track_url: str, *, ignore_reporting: bool = False) -> str | None:
-    if not ignore_reporting:
+    # Soundcloud would always be resolved by Odesli API
+    if not ignore_reporting and 'soundcloud' not in track_url:
         await report_error(f'Falling back to Odesli API for the URL: {track_url}')
     response = await client.get('https://api.odesli.co/resolve', params={'url': track_url})
 
