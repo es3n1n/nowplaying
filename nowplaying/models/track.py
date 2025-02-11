@@ -6,6 +6,7 @@ from yandex_music import Track as YandexTrack
 from nowplaying.external.apple import AppleMusicTrack
 from nowplaying.external.lastfm import LastFMTrack
 from nowplaying.external.song_link import get_song_link
+from nowplaying.external.soundcloud import SoundCloudTrack
 from nowplaying.util.time import TS_NULL
 
 from .song_link import SongLinkPlatformType
@@ -114,6 +115,25 @@ class Track(BaseModel):
             id=track.id,
             url=track.url,
             song_link=await get_song_link(track.url),
+            currently_playing=currently_playing,
+            played_at=played_at,
+        )
+
+    @classmethod
+    async def from_soundcloud_item(
+        cls,
+        track: SoundCloudTrack,
+        *,
+        currently_playing: bool = False,
+        played_at: datetime = TS_NULL,
+    ) -> 'Track':
+        return cls(
+            platform=SongLinkPlatformType.SOUNDCLOUD,
+            artist=track.author_username,
+            name=track.title,
+            id=str(track.id),
+            url=track.permalink_url,
+            song_link=await get_song_link(track.permalink_url),
             currently_playing=currently_playing,
             played_at=played_at,
         )
