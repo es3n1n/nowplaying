@@ -4,6 +4,7 @@ from hashlib import md5
 from html import unescape
 from re import DOTALL, findall, search
 from re import compile as re_compile
+from typing import NoReturn
 
 import orjson
 from async_lru import alru_cache
@@ -115,9 +116,13 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
     return track
 
 
+def _unavailable() -> NoReturn:
+    raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.LASTFM)
+
+
 def _ensure_response(response: Response) -> None:
     if is_serverside_error(response.status_code):
-        raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.LASTFM)
+        _unavailable()
     if response.status_code != STATUS_OK:
         msg = f'status {response.status_code} != 200 {response.text}'
         raise LastFMError(msg)
@@ -140,13 +145,16 @@ class LastFMClient:
         if self.token is None:
             raise LastFMError
 
-        response = await self.client.get(
-            self.base_url,
-            params=self._build_query(
-                'auth.getSession',
-                token=self.token,
-            ),
-        )
+        try:
+            response = await self.client.get(
+                self.base_url,
+                params=self._build_query(
+                    'auth.getSession',
+                    token=self.token,
+                ),
+            )
+        except HTTPError:
+            _unavailable()
         _ensure_response(response)
 
         session_data = orjson.loads(response.content)
@@ -159,7 +167,12 @@ class LastFMClient:
     async def get_username(self) -> str:
         if self.session_key is None:
             raise LastFMError
-        response = await self.client.get(self.base_url, params=self._build_query('user.getInfo'))
+
+        try:
+            response = await self.client.get(self.base_url, params=self._build_query('user.getInfo'))
+        except HTTPError:
+            _unavailable()
+
         _ensure_response(response)
         user_data = orjson.loads(response.content)
         return user_data['user']['name']
@@ -167,14 +180,19 @@ class LastFMClient:
     async def get_recent_tracks(self, limit: int) -> list[LastFMPlayedTrack]:
         if self.session_key is None:
             raise LastFMError
-        response = await self.client.get(
-            self.base_url,
-            params=self._build_query(
-                'user.getRecentTracks',
-                user=await self.get_username(),
-                limit=str(limit),
-            ),
-        )
+
+        try:
+            response = await self.client.get(
+                self.base_url,
+                params=self._build_query(
+                    'user.getRecentTracks',
+                    user=await self.get_username(),
+                    limit=str(limit),
+                ),
+            )
+        except HTTPError:
+            _unavailable()
+
         _ensure_response(response)
         response_data = orjson.loads(response.content)
 
