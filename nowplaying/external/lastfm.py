@@ -14,6 +14,7 @@ from nowplaying.core.config import config
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
 from nowplaying.util.http import STATUS_OK, is_serverside_error
+from nowplaying.util.logger import logger
 from nowplaying.util.time import UTC_TZ
 
 
@@ -81,13 +82,17 @@ def _reorder_external_links(links: list[str]) -> list[str]:
         # 2. Apple Music
         if 'apple.com' in link:
             return 1
-        # 4. YouTube with the lowest priority
+        # 3. YouTube (with the lowest priority)
         if 'youtube.com' in link:
             return 4
-        # 3. Everything else
+        # 2. Everything else
         return 3
 
     return sorted(links, key=_sort_key)
+
+
+def _unavailable() -> NoReturn:
+    raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.LASTFM)
 
 
 @alru_cache()
@@ -99,18 +104,18 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
         async with get_client() as client:
             try:
                 response = await client.get(track_url)
-            except HTTPError:
+            except (HTTPError, TimeoutError):
                 # Retry on errors
                 continue
             break
 
     if not response:
-        msg = '(last.fm) All queries got timed out'
-        raise ValueError(msg)
+        logger.error('(last.fm) All queries got timed out')
+        _unavailable()
 
     if response.status_code != STATUS_OK:
-        msg = f'(last.fm) Got status code {response.status_code}: {response.text}'
-        raise ValueError(msg)
+        logger.error(f'(last.fm) Got status code {response.status_code}: {response.text}')
+        _unavailable()
 
     name_match = search(PAGE_RESOURCE_NAME_REGEX, response.text)
     artist_match = search(PAGE_RESOURCE_ARTIST_NAME_REGEX, response.text)
@@ -131,10 +136,6 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
     external_urls = set(findall(HREF_URL_REGEX, container.group(1)))
     track.external_urls = _reorder_external_links(list(map(unescape, external_urls)))
     return track
-
-
-def _unavailable() -> NoReturn:
-    raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.LASTFM)
 
 
 def _ensure_response(response: Response) -> None:
