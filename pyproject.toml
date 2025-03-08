@@ -24,7 +24,7 @@ dependencies = [
     "pyjwt==2.9.0",
     "yandex-music @ git+https://github.com/MarshalX/yandex-music-api.git@15fc42bdda0e00d6eb637cfe7e41016c57d61f47",
     "asyncpg==0.29.0",
-    "cryptography==43.0.0",
+    "cryptography==44.0.1",
     "orjson==3.10.7",
     "googleapis-common-protos>=1.65.0",
     "protobuf==5.27.2",
