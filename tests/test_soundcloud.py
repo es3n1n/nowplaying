@@ -1,7 +1,11 @@
+from datetime import datetime
+
 import pytest
 
 from nowplaying.core.config import config
 from nowplaying.external.soundcloud import SoundCloudWrapper
+from nowplaying.models.track import Track
+from nowplaying.util.time import UTC_TZ
 
 
 SC_TOKEN: str | None = config.TEST_ARGS.get('SOUNDCLOUD_TOKEN')
@@ -30,3 +34,18 @@ async def test_sc_get_track(sc_client: SoundCloudWrapper) -> None:
     assert track.author_username == '...'
     assert track.title == 'everything i want for u ♦○♪'
     assert track.permalink_url == 'https://soundcloud.com/nkycat/everything-i-want-for-u'
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not SC_TOKEN, reason='no sc token')
+async def test_sc_song_link_query(sc_client: SoundCloudWrapper) -> None:
+    history = await sc_client.get_play_history()
+    assert history
+
+    track = await Track.from_soundcloud_item(
+        track=history[0].track,
+        currently_playing=False,
+        played_at=datetime.fromtimestamp(0, tz=UTC_TZ),
+    )
+    assert track.song_link
+    assert track.song_link.startswith('https://song.link/sc/')
