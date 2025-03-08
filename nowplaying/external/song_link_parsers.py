@@ -31,6 +31,9 @@ ODESLI_SHORT_NAMES: MappingProxyType[ResolvedPlatformType, str] = MappingProxyTy
     }
 )
 
+# Our own uri where we provide the track's id, for example: sc://track:1337
+SOUND_CLOUD_URI: str = 'sc://track:'
+
 
 def get_stub_from_path(platform: ResolvedPlatformType) -> Callable[[ParseResult], str]:
     platform_short_name: str | None = ODESLI_SHORT_NAMES.get(platform, None)
@@ -72,10 +75,19 @@ def get_youtube_link(url: ParseResult) -> str:
     return f'https://song.link/y/{video_id}'
 
 
+# NOTE(es3n1n): Special treatment for our uri, this one won't be registered in `SONG_LINK_PARSERS`
+def get_sc_from_uri_link(url: str) -> str:
+    if len(url) < len(SOUND_CLOUD_URI):
+        msg = f'Invalid sc uri: {url}'
+        raise ValueError(msg)
+
+    return f'https://song.link/sc/{url[len(SOUND_CLOUD_URI):]}'
+
+
 async def fallback_to_odesli(client: ClientSession, track_url: str, *, ignore_reporting: bool = False) -> str | None:
-    # Soundcloud would always be resolved by Odesli API
-    if not ignore_reporting and 'soundcloud' not in track_url:
+    if not ignore_reporting:
         await report_error(f'Falling back to Odesli API for the URL: {track_url}')
+
     response = await client.get('https://api.odesli.co/resolve', params={'url': track_url})
 
     if response.status != STATUS_OK:

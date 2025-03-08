@@ -22,6 +22,8 @@ async def test_deezer_search_jp_title() -> None:
     results_jp = await search_tracks('Homecomings - ラプス')
     results_en = await search_tracks('Homecomings - Lapse')
 
+    assert results_jp
+    assert results_en
     assert results_en[0] == results_jp[0]
     assert results_jp[0].title == 'Lapse'
     assert results_jp[0].artist == 'Homecomings'
@@ -32,6 +34,8 @@ async def test_deezer_search_jp_artist() -> None:
     results_jp = await search_tracks('kessoku band - あのバンド - That band')
     results_en = await search_tracks('結束バンド - あのバンド')
 
+    assert results_jp
+    assert results_en
     assert results_en[0] == results_jp[0]
     assert results_jp[0].title == 'That band'
     assert results_jp[0].artist == 'kessoku band'
