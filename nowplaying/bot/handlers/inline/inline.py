@@ -1,7 +1,7 @@
 from asyncio import TaskGroup
 from urllib.parse import quote
 
-from aiogram import html, types
+from aiogram import types
 from aiogram.enums import ParseMode
 
 from nowplaying.bot.bot import bot, dp
@@ -58,17 +58,12 @@ async def fetch_feed_and_clients(
     if not authorized_platforms:
         await bot.answer_inline_query(
             inline_query_id=query_id,
-            results=[
-                types.InlineQueryResultArticle(
-                    id='0',
-                    title='Please authorize',
-                    url=config.BOT_URL,
-                    input_message_content=types.InputTextMessageContent(
-                        message_text=f'Please {html.link("authorize", config.BOT_URL)} first (╯°□°)╯︵ ┻━┻',
-                        parse_mode=ParseMode.HTML,
-                    ),
-                ),
-            ],
+            button=types.InlineQueryResultsButton(
+                text='Authorize',
+                # We don't really care about start parameter, but it can't be an empty string
+                start_parameter='hello',
+            ),
+            results=[],
             cache_time=1,
         )
         return None, None
@@ -149,7 +144,7 @@ def create_audio_result(
     uri_for_placeholder = track.uri
     # Swap the uri for unavailable tracks (their id will be None)
     if not is_track_available:
-        # We still want it to cache on the telegram side, so instead of using random stuff let's use the url
+        # We still want it to cache on the telegram side, so instead of using random stuff, let's use the url
         uri_for_placeholder = track.url
 
     return types.InlineQueryResultAudio(
