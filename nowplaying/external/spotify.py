@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from base64 import b64encode
 from time import time
-from typing import cast
+from typing import NoReturn, cast
 
 import orjson
-from httpx import AsyncClient, Response
+from httpx import AsyncClient, HTTPError, Response
 
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
@@ -59,9 +59,13 @@ def _is_token_expired(token_info: SpotifyToken) -> bool:
     return expires_at - now < 60  # noqa: PLR2004
 
 
+def _unavailable() -> NoReturn:
+    raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.SPOTIFY)
+
+
 def _raise_for_status(response: Response) -> None:
     if is_serverside_error(response.status_code):
-        raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.SPOTIFY)
+        _unavailable()
 
     if response.status_code == STATUS_FORBIDDEN and 'PREMIUM_REQUIRED' in response.text:
         msg = f'{response.status_code}: {response.text}'
@@ -110,16 +114,19 @@ class Spotify:
         )
 
     async def get_access_token(self, auth_code: str) -> dict:
-        response = await self._client.post(
-            self._oauth_token_url,
-            data={
-                'redirect_uri': self._redirect_uri,
-                'code': auth_code,
-                'grant_type': 'authorization_code',
-                'scope': self._scope,
-            },
-            headers=self._auth_headers,
-        )
+        try:
+            response = await self._client.post(
+                self._oauth_token_url,
+                data={
+                    'redirect_uri': self._redirect_uri,
+                    'code': auth_code,
+                    'grant_type': 'authorization_code',
+                    'scope': self._scope,
+                },
+                headers=self._auth_headers,
+            )
+        except HTTPError:
+            _unavailable()
         _raise_for_status(response)
 
         token = orjson.loads(response.content)
@@ -128,14 +135,17 @@ class Spotify:
         return token
 
     async def refresh_access_token(self, refresh_token: str) -> dict:
-        response = await self._client.post(
-            self._oauth_token_url,
-            data={
-                'refresh_token': refresh_token,
-                'grant_type': 'refresh_token',
-            },
-            headers=self._auth_headers,
-        )
+        try:
+            response = await self._client.post(
+                self._oauth_token_url,
+                data={
+                    'refresh_token': refresh_token,
+                    'grant_type': 'refresh_token',
+                },
+                headers=self._auth_headers,
+            )
+        except HTTPError:
+            _unavailable()
         _raise_for_status(response)
 
         token = orjson.loads(response.content)
@@ -149,10 +159,13 @@ class Spotify:
         if self._token is None:
             raise SpotifyNoTokenError
 
-        response = await self._client.get(
-            f'{self._api_base}/me/player/currently-playing',
-            headers=self._auth_headers,
-        )
+        try:
+            response = await self._client.get(
+                f'{self._api_base}/me/player/currently-playing',
+                headers=self._auth_headers,
+            )
+        except HTTPError:
+            _unavailable()
         _raise_for_status(response)
 
         if response.status_code == STATUS_NO_CONTENT:
@@ -164,11 +177,14 @@ class Spotify:
         if self._token is None:
             raise SpotifyNoTokenError
 
-        response = await self._client.get(
-            f'{self._api_base}/me/player/recently-played',
-            headers=self._auth_headers,
-            params={'limit': str(limit)},
-        )
+        try:
+            response = await self._client.get(
+                f'{self._api_base}/me/player/recently-played',
+                headers=self._auth_headers,
+                params={'limit': str(limit)},
+            )
+        except HTTPError:
+            _unavailable()
         _raise_for_status(response)
 
         return orjson.loads(response.content)
@@ -177,10 +193,13 @@ class Spotify:
         if self._token is None:
             raise SpotifyNoTokenError
 
-        response = await self._client.get(
-            f'{self._api_base}/tracks/{track_id}',
-            headers=self._auth_headers,
-        )
+        try:
+            response = await self._client.get(
+                f'{self._api_base}/tracks/{track_id}',
+                headers=self._auth_headers,
+            )
+        except HTTPError:
+            _unavailable()
         if _is_clientside_error(response):
             return None
 
@@ -191,11 +210,14 @@ class Spotify:
         if self._token is None:
             raise SpotifyNoTokenError
 
-        response = await self._client.post(
-            f'{self._api_base}/me/player/queue',
-            params={'uri': track_uri},
-            headers=self._auth_headers,
-        )
+        try:
+            response = await self._client.post(
+                f'{self._api_base}/me/player/queue',
+                params={'uri': track_uri},
+                headers=self._auth_headers,
+            )
+        except HTTPError:
+            _unavailable()
         if _is_clientside_error(response):
             return False
 
@@ -209,10 +231,13 @@ class Spotify:
         if not await self.add_to_queue(uri):
             return
 
-        response = await self._client.post(
-            f'{self._api_base}/me/player/next',
-            headers=self._auth_headers,
-        )
+        try:
+            response = await self._client.post(
+                f'{self._api_base}/me/player/next',
+                headers=self._auth_headers,
+            )
+        except HTTPError:
+            _unavailable()
         if _is_clientside_error(response):
             return
 
