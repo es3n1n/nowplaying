@@ -7,7 +7,7 @@ from typing import cast
 
 import certifi
 from grpc import ssl_channel_credentials
-from grpc.aio import Channel, insecure_channel, secure_channel
+from grpc.aio import AioRpcError, Channel, insecure_channel, secure_channel
 
 from nowplaying.core.config import config
 from nowplaying.util.dns import select_hostname
@@ -37,6 +37,10 @@ grpc_proxy_endpoint = select_hostname(config.YANDEX_GRPC_PROXY_DOCKER_HOST, conf
 
 class YnisonError(Exception):
     """Ynison base error class."""
+
+
+class YnisonUnauthorizedError(YnisonError):
+    """Token expired."""
 
 
 class YnisonClientSideError(YnisonError):
@@ -78,7 +82,13 @@ class Ynison:
 
         async with secure_channel('ynison.music.yandex.net:443', ssl_credentials) as channel:
             svc = YnisonRedirectServiceStub(channel)
-            result: RedirectResponse = await svc.GetRedirectToYnison(RedirectRequest(), metadata=self._header)
+            try:
+                result: RedirectResponse = await svc.GetRedirectToYnison(RedirectRequest(), metadata=self._header)
+            except AioRpcError as err:
+                if 'Cannot authenticate client by token' in err.debug_error_string():
+                    raise YnisonUnauthorizedError from err
+
+                raise
 
             self._host = result.host
             self._header.append(('ynison-redirect-ticket', result.redirect_ticket))
