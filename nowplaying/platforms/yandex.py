@@ -9,7 +9,7 @@ from nowplaying.core.database import db
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.exceptions.platforms import PlatformInvalidAuthCodeError
 from nowplaying.external.yandex import ClientAsync
-from nowplaying.external.ynison.ynison_grpc import Ynison, YnisonClientSideError
+from nowplaying.external.ynison.ynison_grpc import Ynison, YnisonClientSideError, YnisonError
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
 from nowplaying.platforms.abc import PlatformABC, PlatformClientABC, PlatformClientSideError
@@ -45,6 +45,7 @@ class YandexClient(PlatformClientABC):
         raise NotImplementedError
 
     @rethrow_platform_error(YandexMusicError, TYPE)
+    @rethrow_platform_error(YnisonError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
         playable_items = await self._ynison.get_playable_items(from_current_to_prev=True)
         if not playable_items:
@@ -81,12 +82,14 @@ class YandexClient(PlatformClientABC):
 
         return await Track.from_yandex_item(tracks[0])
 
+    @rethrow_platform_error(YnisonError, TYPE)
     async def add_to_queue(self, track_id: str) -> None:
         try:
             await self._ynison.add_to_queue(track_id)
         except YnisonClientSideError as err:
             raise PlatformClientSideError(str(err)) from err
 
+    @rethrow_platform_error(YnisonError, TYPE)
     async def play(self, track_id: str) -> None:
         try:
             await self._ynison.play_track(track_id, keep_queue=True)
