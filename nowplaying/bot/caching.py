@@ -32,6 +32,7 @@ async def cache_file(
     file_data: bytes,
     thumbnail_url: str | None,
     user: User,
+    duration_seconds: int,
 ) -> str:
     # Special handling for UUIDs
     uri_safe: str = track.uri.replace('-', '_')
@@ -55,6 +56,7 @@ async def cache_file(
                 performer=track.artist,
                 title=track.name,
                 thumbnail=thumbnail,
+                duration=duration_seconds or None,  # in case for some reason, api returned 0
                 request_timeout=config.BOT_UPLOAD_FILE_TIMEOUT,
             )
         except TelegramEntityTooLarge as exc:
