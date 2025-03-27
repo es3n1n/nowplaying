@@ -9,7 +9,10 @@ import certifi
 from grpc import ssl_channel_credentials
 from grpc.aio import AioRpcError, Channel, insecure_channel, secure_channel
 
+from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
+from nowplaying.enums.platform_type import SongLinkPlatformType
+from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
 from nowplaying.util.dns import select_hostname
 
 from .pyproto.device_pb2 import DeviceCapabilities, DeviceInfo
@@ -87,6 +90,10 @@ class Ynison:
             except AioRpcError as err:
                 if 'Cannot authenticate client by token' in err.debug_error_string():
                     raise YnisonUnauthorizedError from err
+
+                if 'Failed to connect to remote host' in err.details():
+                    await report_error(f'Failed to connect to ynison: {err.debug_error_string()} and {err.details()}')
+                    raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.YANDEX) from err
 
                 raise
 
