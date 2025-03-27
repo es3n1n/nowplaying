@@ -32,6 +32,11 @@ async def report_to_dev(message: str) -> None:
 
 
 async def report_error(message: str, exception: Exception | None = None) -> None:
+    if isinstance(exception, ExceptionGroup):
+        for exc in exception.exceptions:
+            await report_error(message, exc)
+        return
+
     logger.opt(exception=exception).error(message)
     try:
         await report_to_dev(message + f'\nException: {exception}')
