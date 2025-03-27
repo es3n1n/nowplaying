@@ -39,7 +39,7 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
     )
 
     downloaded = await download_mp3(track.song_link)
-    if downloaded.error or not downloaded.mp3_data:
+    if downloaded.error or not downloaded.mp3_data or downloaded.duration_sec is None:
         await _unavailable(caption, downloaded.error or 'Unknown error', inline_result.inline_message_id)
         await report_error(f'Unable to download {track.model_dump_json()}\nError = {downloaded.error}')
         return
@@ -51,6 +51,7 @@ async def chosen_inline_result_handler(inline_result: ChosenInlineResult) -> Non
             thumbnail=downloaded.thumbnail_url,
             inline_result=inline_result,
             caption=caption,
+            duration_seconds=downloaded.duration_sec,
         )
     except CachingFileTooLargeError:
         # TODO(es3n1n): we should remember that this file is too large and not try to cache it again

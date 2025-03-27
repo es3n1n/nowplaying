@@ -93,6 +93,9 @@ flake8-quotes.inline-quotes = "single"
 quote-style = "single"
 line-ending = "lf"
 
+[tool.ruff.lint.pylint]
+max-args = 6
+
 [tool.ruff.lint.isort]
 lines-after-imports = 2
 combine-as-imports = false

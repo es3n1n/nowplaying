@@ -14,6 +14,7 @@ from nowplaying.util.http import STATUS_OK, get_headers
 @dataclass(frozen=True)
 class DownloadedMp3:
     thumbnail_url: str | None = None
+    duration_sec: int | None = None
     mp3_data: bytes | None = None
     error: str | None = None
 
@@ -46,6 +47,7 @@ async def download_mp3(song_link_url: str) -> DownloadedMp3:
 
                 serve_time = response.headers.get('x-serve-time', 'unknown')
                 thumbnail = response.headers.get('x-thumbnail-url')
+                duration_sec = int(response.headers['x-duration-seconds'])
                 mp3_data = await response.read()
         except ClientError:
             return DownloadedMp3(error='udownloader is unavailable')
@@ -57,4 +59,5 @@ async def download_mp3(song_link_url: str) -> DownloadedMp3:
     return DownloadedMp3(
         thumbnail_url=thumbnail,
         mp3_data=mp3_data,
+        duration_sec=duration_sec,
     )

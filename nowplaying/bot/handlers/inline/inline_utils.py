@@ -87,12 +87,14 @@ async def cache_audio_and_edit(
     thumbnail: str | None,
     inline_result: types.ChosenInlineResult,
     caption: str,
+    duration_seconds: int,
 ) -> None:
     file_id = await cache_file(
         track=track,
         file_data=mp3,
         thumbnail_url=thumbnail,
         user=inline_result.from_user,
+        duration_seconds=duration_seconds,
     )
 
     await _update_inline_message_audio(
