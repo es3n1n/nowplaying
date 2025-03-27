@@ -117,6 +117,11 @@ class Database:
             cached_file = await conn.fetchrow('SELECT (file_id) FROM cached_files WHERE uri = $1 LIMIT 1', uri)
             return None if cached_file is None else cached_file['file_id']
 
+    async def delete_cached_files(self, uris: list[str]) -> None:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute('DELETE FROM cached_files WHERE uri = ANY($1)', uris)
+
     async def cache_local_track(self, platform: SongLinkPlatformType, url: str, artist: str, name: str) -> str:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
