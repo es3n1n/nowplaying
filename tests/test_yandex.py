@@ -2,6 +2,7 @@ import pytest
 
 from nowplaying.core.config import config
 from nowplaying.external.yandex import ClientAsync
+from nowplaying.external.ynison.ynison_grpc import Ynison
 from nowplaying.platforms.yandex import YandexClient
 
 
@@ -20,3 +21,10 @@ async def test_getter(ym_client: YandexClient) -> None:
     assert track
     assert track.artist == 'Lil Skies'
     assert track.name == 'Real Ties'
+
+
+@pytest.mark.skipif(not YM_TOKEN, reason='no yandex token')
+async def test_ynison_ticket() -> None:
+    assert YM_TOKEN
+    cl = Ynison(YM_TOKEN)
+    await cl._get_ticket()  # noqa: SLF001
