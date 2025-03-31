@@ -79,11 +79,20 @@ class Ynison:
         ]
         self._host: str | None = None
 
+    @property
+    def _grpc_options(self) -> list[tuple[str, str]]:
+        result = []
+        if config.YANDEX_HTTP_PROXY:
+            result.append(('grpc.http_proxy', config.YANDEX_HTTP_PROXY))
+        return result
+
     async def _get_ticket(self) -> None:
         if self._host:
             return
 
-        async with secure_channel('ynison.music.yandex.net:443', ssl_credentials) as channel:
+        async with secure_channel(
+            'ynison.music.yandex.net:443', ssl_credentials, options=self._grpc_options
+        ) as channel:
             svc = YnisonRedirectServiceStub(channel)
             try:
                 result: RedirectResponse = await svc.GetRedirectToYnison(RedirectRequest(), metadata=self._header)

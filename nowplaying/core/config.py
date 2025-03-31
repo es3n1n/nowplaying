@@ -56,8 +56,11 @@ class Settings(BaseSettings):
     APPLE_KEY_ID: str
     APPLE_TEAM_ID: str
 
-    # Russian(preferred) proxy for yandex, optional but will resolve some availability issues
+    # Russian(preferred) proxy for yandex, optional but will resolve some availability issues.
+    # `YANDEX_PROXY` is used for all platform interactions
+    # `YANDEX_HTTP_PROXY` is used for Ynison grpc requests, without it server sometimes drop connections :shrug:
     YANDEX_PROXY: str | None = None
+    YANDEX_HTTP_PROXY: str | None = None
     YANDEX_GRPC_PROXY_DOCKER_HOST: str = 'nowplaying-grpc'
     YANDEX_GRPC_PROXY_HOST: str = '127.0.0.1'
     YANDEX_GRPC_PROXY_PORT: int = 50051
