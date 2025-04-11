@@ -51,7 +51,6 @@ async def reply_to_event(event: ErrorEvent, message: str) -> None:
                         ),
                     ),
                 ],
-                cache_time=1,
             )
         except TelegramAPIError:
             return

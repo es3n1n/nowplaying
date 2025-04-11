@@ -64,7 +64,6 @@ async def fetch_feed_and_clients(
                 start_parameter='hello',
             ),
             results=[],
-            cache_time=1,
         )
         return None, None
 
@@ -189,4 +188,4 @@ async def inline_query_handler(query: types.InlineQuery) -> None:
             )
         )
 
-    await bot.answer_inline_query(query.id, results=result_items, cache_time=1)  # type: ignore[arg-type]
+    await bot.answer_inline_query(query.id, results=result_items)  # type: ignore[arg-type]
