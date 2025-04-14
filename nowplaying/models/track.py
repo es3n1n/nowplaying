@@ -42,6 +42,15 @@ class Track(BaseModel):
     def is_available(self) -> bool:
         return self.id is not None
 
+    @property
+    def _should_cache_song_link(self) -> bool:
+        # We are only caching song links that are not trivial to obtain.
+        # Most of the platforms do not require any special handling,
+        #   and usually it's a matter of a few urls parsing methods.
+        # But when we are dealing with LastFM, we need to do a lot of networking,
+        #   and we don't want to do it every time.
+        return self.platform == SongLinkPlatformType.LASTFM
+
     async def _query_song_link(self) -> str | None:
         if self.platform == SongLinkPlatformType.LASTFM:
             return await query_last_fm_song_link(self.url)
@@ -52,15 +61,16 @@ class Track(BaseModel):
         if not self._song_link and self.song_link_raw_value:
             self._song_link = self.song_link_raw_value
 
-        # Query from DB
-        if not self._song_link:
+        # Query from DB, if possible.
+        # Do not do DB queries if we aren't storing links for this platform though.
+        if not self._song_link and self._should_cache_song_link:
             self._song_link = await db.get_song_link(self.url)
 
         # Generate new
         if not self._song_link:
             self._song_link = await self._query_song_link()
 
-            if self._song_link:
+            if self._song_link and self._should_cache_song_link:
                 await db.store_song_link(self.url, self._song_link)
 
         return self._song_link
