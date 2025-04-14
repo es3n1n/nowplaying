@@ -129,7 +129,7 @@ async def create_result_item(
                 [
                     types.InlineKeyboardButton(
                         text='🎲 Downloading.. (click in channels)',
-                        callback_data=encode_query(CallbackButton.LOADING, str(from_user_id), track.uri),
+                        callback_data=encode_query(CallbackButton.LOADING, track.uri),
                     ),
                 ]
             ],

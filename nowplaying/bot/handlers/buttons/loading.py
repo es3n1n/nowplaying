@@ -11,10 +11,7 @@ async def handle_loading_button(query: CallbackQuery) -> None:
         msg = 'Query data is None'
         raise ValueError(msg)
 
-    _, user_id, track_uri = extract_from_query(query.data, arguments_count=3)
-    if not user_id.lstrip('-').isdigit() or int(user_id) != query.from_user.id:
-        await bot.answer_callback_query(query.id, text='Only the sender can use this button.')
-        return
+    _, track_uri = extract_from_query(query.data, arguments_count=2)
 
     if DOWNLOADING_LOCKS.is_locked(track_uri):
         await bot.answer_callback_query(query.id, text='Already downloading the audio, please wait.')
