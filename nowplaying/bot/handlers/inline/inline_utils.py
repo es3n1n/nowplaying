@@ -65,12 +65,22 @@ async def update_inline_message_audio(
                 inline_message_id=inline_message_id,
             )
         except TelegramBadRequest as exc:
-            # We just won the race
+            # We just lost the race
             if exc.message == 'Bad Request: MEDIA_EMPTY':
                 continue
 
             # The message was deleted, no need to edit anything
             if exc.message == 'Bad Request: MESSAGE_ID_INVALID':
+                break
+
+            # A race between two uploading handlers.
+            # Even though there are mutexes to synchronize, because of the nature of how telegram bot api is working,
+            # there still is a chance that this might happen.
+            # Worry not, though; it would not upload the same file twice, this only happens for an edit.
+            if exc.message.startswith(
+                'Bad Request: message is not modified: specified new '
+                'message content and reply markup are exactly the same'
+            ):
                 break
 
             raise
