@@ -5,33 +5,27 @@ from aiogram import types
 from aiogram.enums import ParseMode
 
 from nowplaying.bot.bot import bot, dp
-from nowplaying.bot.caching import get_cached_file_id
 from nowplaying.core.config import config
 from nowplaying.core.database import db
+from nowplaying.enums.callback_buttons import CallbackButton
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
 from nowplaying.platforms import PlatformClientABC, get_platform_from_telegram_id, get_platform_track
-from nowplaying.util.string import extract_from_query
+from nowplaying.util.string import encode_query, extract_from_query
 
 from .inline_utils import NUM_OF_ITEMS_TO_QUERY, track_to_caption
 
 
-async def parse_inline_result_query(
-    inline_result: types.ChosenInlineResult,
-) -> tuple[PlatformClientABC | None, Track | None]:
-    uri = inline_result.result_id
+async def parse_track_from_uri(user_id: int, uri: str) -> tuple[PlatformClientABC | None, Track | None]:
     platform_name, track_id = extract_from_query(uri, arguments_count=2)
     platform_type = SongLinkPlatformType(platform_name)
 
-    if not await db.is_user_authorized(inline_result.from_user.id, platform_type):
-        await bot.edit_message_caption(
-            inline_message_id=inline_result.inline_message_id,
-            caption='Please authorize first',
-        )
-        return None, None
+    if not await db.is_user_authorized(user_id, platform_type):
+        msg = f'User is not authorized {user_id=}'
+        raise ValueError(msg)
 
-    return await get_platform_track(track_id, inline_result.from_user.id, platform_type)
+    return await get_platform_track(track_id, user_id, platform_type)
 
 
 async def _fetch_feed(
@@ -75,14 +69,15 @@ async def fetch_feed_and_clients(
 
 
 async def feed_to_inline_results(
+    from_user_id: int,
     feed: list[Track],
     clients: dict[SongLinkPlatformType, PlatformClientABC],
-) -> list[types.InlineQueryResultArticle | types.InlineQueryResultAudio | types.InlineQueryResultCachedAudio]:
+) -> list[types.InlineQueryResultArticle | types.InlineQueryResultAudio]:
     seen_uris: set[str] = set()
     sorted_feed = sort_feed(feed)
 
     return [
-        await create_result_item(track, clients, seen_uris, index)
+        await create_result_item(from_user_id, track, clients, seen_uris, index)
         for index, track in enumerate(sorted_feed)
         if track.uri not in seen_uris
     ]
@@ -97,47 +92,21 @@ def sort_feed(feed: list[Track]) -> list[Track]:
 
 
 async def create_result_item(
+    from_user_id: int,
     track: Track,
     clients: dict[SongLinkPlatformType, PlatformClientABC],
     seen_uris: set,
     index: int,
-) -> types.InlineQueryResultAudio | types.InlineQueryResultCachedAudio:
+) -> types.InlineQueryResultAudio:
     seen_uris.add(track.uri)
     client = clients[track.platform]
 
-    cached_file_id = await get_cached_file_id(track.uri)
-    if cached_file_id:
-        return create_cached_audio_result(track, cached_file_id, client)
-
-    return create_audio_result(track, client, index=index, multiple_clients=len(clients) > 1)
-
-
-def create_cached_audio_result(
-    track: Track,
-    cached_file_id: str,
-    client: PlatformClientABC,
-) -> types.InlineQueryResultCachedAudio:
-    return types.InlineQueryResultCachedAudio(
-        id=track.uri,
-        audio_file_id=cached_file_id,
-        caption=track_to_caption(client, track),
-        parse_mode=ParseMode.HTML,
-    )
-
-
-def create_audio_result(
-    track: Track,
-    client: PlatformClientABC,
-    *,
-    index: int,
-    multiple_clients: bool,
-) -> types.InlineQueryResultAudio:
     is_getter_available = client.features.get(PlatformFeature.TRACK_GETTERS, True)
     is_track_available = track.is_available
     can_proceed = is_getter_available and is_track_available
 
     name = track.name
-    if multiple_clients:
+    if len(clients) > 0:
         name += f' ({track.platform.name.capitalize()})'
 
     uri_for_placeholder = track.uri
@@ -151,7 +120,7 @@ def create_audio_result(
         audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(uri_for_placeholder)}',
         performer=track.artist,
         title=name,
-        caption=track_to_caption(
+        caption=await track_to_caption(
             client, track, is_getter_available=is_getter_available, is_track_available=is_track_available
         ),
         parse_mode=ParseMode.HTML,
@@ -159,8 +128,8 @@ def create_audio_result(
             inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text='Downloading the audio',
-                        callback_data='loading',
+                        text='🎲 Downloading.. (click in channels)',
+                        callback_data=encode_query(CallbackButton.LOADING, str(from_user_id), track.uri),
                     ),
                 ]
             ],
@@ -176,7 +145,7 @@ async def inline_query_handler(query: types.InlineQuery) -> None:
     if feed is None or clients is None:
         return
 
-    result_items = await feed_to_inline_results(feed, clients)
+    result_items = await feed_to_inline_results(query.from_user.id, feed, clients)
     if not result_items:
         result_items.append(
             types.InlineQueryResultArticle(

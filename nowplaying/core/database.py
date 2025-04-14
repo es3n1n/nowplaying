@@ -122,6 +122,24 @@ class Database:
         async with pool.acquire() as conn, conn.transaction():
             await conn.execute('DELETE FROM cached_files WHERE uri = ANY($1)', uris)
 
+    async def store_song_link(self, song_url: str, song_link: str) -> None:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                'INSERT INTO cached_song_link_urls (song_url, song_link) VALUES ($1, $2) '
+                'ON CONFLICT (song_url) DO UPDATE SET song_link = $2',
+                song_url,
+                song_link,
+            )
+
+    async def get_song_link(self, song_url: str) -> str | None:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn:
+            song_link = await conn.fetchrow(
+                'SELECT (song_link) FROM cached_song_link_urls WHERE song_url = $1 LIMIT 1', song_url
+            )
+            return None if song_link is None else song_link['song_link']
+
     async def cache_local_track(self, platform: SongLinkPlatformType, url: str, artist: str, name: str) -> str:
         pool = await self.get_pool()
         async with pool.acquire() as conn:

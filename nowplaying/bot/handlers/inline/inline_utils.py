@@ -1,11 +1,8 @@
-from typing import cast
-
 from aiogram import html, types
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 
 from nowplaying.bot.bot import bot
-from nowplaying.bot.caching import cache_file
 from nowplaying.core.config import config
 from nowplaying.models.track import Track
 from nowplaying.platforms import PlatformClientABC
@@ -19,7 +16,7 @@ UNAVAILABLE_MSG: str = 'Error: this track is not available :('
 UNAVAILABLE_MSG_DETAILED: str = 'Unavailable: {error}'
 
 
-def track_to_caption(
+async def track_to_caption(
     client: PlatformClientABC,
     track: Track,
     *,
@@ -38,15 +35,16 @@ def track_to_caption(
     message_text += f'{html.link(track.platform.name.capitalize(), track.url)}'
 
     if client.can_control_playback:
-        message_text += f' ({html.link("▶️", play_url)})'
+        message_text += f' {html.link("(▶️)", play_url)}'
 
-    if track.song_link is not None:
-        message_text += f' | {html.link("Other", track.song_link)}'
+    song_link = await track.song_link()
+    if song_link is not None:
+        message_text += f' | {html.link("Other", song_link)}'
 
     return message_text
 
 
-async def _update_inline_message_audio(
+async def update_inline_message_audio(
     *,
     track: Track,
     file_id: str,
@@ -78,28 +76,3 @@ async def _update_inline_message_audio(
             raise
 
         break  # Edited successfully
-
-
-async def cache_audio_and_edit(
-    *,
-    track: Track,
-    mp3: bytes,
-    thumbnail: str | None,
-    inline_result: types.ChosenInlineResult,
-    caption: str,
-    duration_seconds: int,
-) -> None:
-    file_id = await cache_file(
-        track=track,
-        file_data=mp3,
-        thumbnail_url=thumbnail,
-        user=inline_result.from_user,
-        duration_seconds=duration_seconds,
-    )
-
-    await _update_inline_message_audio(
-        track=track,
-        file_id=file_id,
-        caption=caption,
-        inline_message_id=cast(str, inline_result.inline_message_id),
-    )
