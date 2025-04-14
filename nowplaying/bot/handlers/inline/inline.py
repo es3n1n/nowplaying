@@ -69,7 +69,6 @@ async def fetch_feed_and_clients(
 
 
 async def feed_to_inline_results(
-    from_user_id: int,
     feed: list[Track],
     clients: dict[SongLinkPlatformType, PlatformClientABC],
 ) -> list[types.InlineQueryResultArticle | types.InlineQueryResultAudio]:
@@ -77,7 +76,7 @@ async def feed_to_inline_results(
     sorted_feed = sort_feed(feed)
 
     return [
-        await create_result_item(from_user_id, track, clients, seen_uris, index)
+        await create_result_item(track, clients, seen_uris, index)
         for index, track in enumerate(sorted_feed)
         if track.uri not in seen_uris
     ]
@@ -92,7 +91,6 @@ def sort_feed(feed: list[Track]) -> list[Track]:
 
 
 async def create_result_item(
-    from_user_id: int,
     track: Track,
     clients: dict[SongLinkPlatformType, PlatformClientABC],
     seen_uris: set,
@@ -129,7 +127,7 @@ async def create_result_item(
                 [
                     types.InlineKeyboardButton(
                         text='🎲 Downloading.. (click in channels)',
-                        callback_data=encode_query(CallbackButton.LOADING, str(from_user_id), track.uri),
+                        callback_data=encode_query(CallbackButton.LOADING, track.uri),
                     ),
                 ]
             ],
@@ -145,7 +143,7 @@ async def inline_query_handler(query: types.InlineQuery) -> None:
     if feed is None or clients is None:
         return
 
-    result_items = await feed_to_inline_results(query.from_user.id, feed, clients)
+    result_items = await feed_to_inline_results(feed, clients)
     if not result_items:
         result_items.append(
             types.InlineQueryResultArticle(
