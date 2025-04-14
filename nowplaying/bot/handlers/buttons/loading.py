@@ -20,6 +20,5 @@ async def handle_loading_button(query: CallbackQuery) -> None:
         await bot.answer_callback_query(query.id, text='Already downloading the audio, please wait.')
         return
 
-    async with DOWNLOADING_LOCKS.lock(track_uri):
-        await bot.answer_callback_query(query.id, text='Downloading started.')
-        await update_placeholder_message_audio(query.from_user, track_uri, query.inline_message_id)
+    await bot.answer_callback_query(query.id, text='Downloading started.')
+    await update_placeholder_message_audio(query.from_user, track_uri, query.inline_message_id)
