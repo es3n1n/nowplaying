@@ -3,8 +3,9 @@ from datetime import datetime
 from pydantic import BaseModel
 from yandex_music import Track as YandexTrack
 
+from nowplaying.core.database import db
 from nowplaying.external.apple import AppleMusicTrack
-from nowplaying.external.lastfm import LastFMTrack
+from nowplaying.external.lastfm import LastFMTrack, query_last_fm_song_link
 from nowplaying.external.song_link import get_song_link
 from nowplaying.external.song_link_parsers import get_sc_link_from_id
 from nowplaying.external.soundcloud import SoundCloudTrack
@@ -22,7 +23,8 @@ class Track(BaseModel):
     id: str | None
     url: str
 
-    song_link: str | None
+    song_link_raw_value: str | None = None
+    _song_link: str | None = None
 
     currently_playing: bool = False
     played_at: datetime = TS_NULL
@@ -40,6 +42,29 @@ class Track(BaseModel):
     def is_available(self) -> bool:
         return self.id is not None
 
+    async def _query_song_link(self) -> str | None:
+        if self.platform == SongLinkPlatformType.LASTFM:
+            return await query_last_fm_song_link(self.url)
+        return await get_song_link(self.url)
+
+    async def song_link(self) -> str | None:
+        # Predefined
+        if not self._song_link and self.song_link_raw_value:
+            self._song_link = self.song_link_raw_value
+
+        # Query from DB
+        if not self._song_link:
+            self._song_link = await db.get_song_link(self.url)
+
+        # Generate new
+        if not self._song_link:
+            self._song_link = await self._query_song_link()
+
+            if self._song_link:
+                await db.store_song_link(self.url, self._song_link)
+
+        return self._song_link
+
     @classmethod
     async def from_spotify_item(
         cls,
@@ -55,7 +80,6 @@ class Track(BaseModel):
             name=track_item['name'],
             id=track_item['id'],
             url=url,
-            song_link=await get_song_link(url),
             currently_playing=is_playing,
             played_at=played_at,
         )
@@ -66,7 +90,6 @@ class Track(BaseModel):
         track: LastFMTrack,
         *,
         track_id: str | None,
-        song_link_url: str | None,
         played_at: datetime = TS_NULL,
         is_playing: bool = False,
     ) -> 'Track':
@@ -76,7 +99,6 @@ class Track(BaseModel):
             name=track.name,
             id=track_id,
             url=track.url,
-            song_link=song_link_url,
             currently_playing=is_playing,
             played_at=played_at,
         )
@@ -96,7 +118,6 @@ class Track(BaseModel):
             name=track.title,
             id=track.id,
             url=url,
-            song_link=await get_song_link(url),
             currently_playing=is_playing,
             played_at=played_at,
         )
@@ -115,7 +136,6 @@ class Track(BaseModel):
             name=track.name,
             id=track.id,
             url=track.url,
-            song_link=await get_song_link(track.url),
             currently_playing=currently_playing,
             played_at=played_at,
         )
@@ -134,7 +154,7 @@ class Track(BaseModel):
             name=track.title,
             id=str(track.id),
             url=track.permalink_url,
-            song_link=get_sc_link_from_id(track.id),
+            song_link_raw_value=get_sc_link_from_id(track.id),
             currently_playing=currently_playing,
             played_at=played_at,
         )

@@ -30,6 +30,12 @@ CREATE TABLE IF NOT EXISTS local_tracks
 );
 CREATE INDEX IF NOT EXISTS local_track_idx ON local_tracks (platform_name, url);
 
+CREATE TABLE IF NOT EXISTS cached_song_link_urls
+(
+    song_url VARCHAR(512) PRIMARY KEY,
+    song_link TEXT NOT NULL
+);
+
 CREATE OR REPLACE FUNCTION cache_local_track_id(
     p_platform_name VARCHAR,
     p_url VARCHAR,

@@ -47,5 +47,6 @@ async def test_sc_song_link_query(sc_client: SoundCloudWrapper) -> None:
         currently_playing=False,
         played_at=datetime.fromtimestamp(0, tz=UTC_TZ),
     )
-    assert track.song_link
-    assert track.song_link.startswith('https://song.link/sc/')
+    song_link = await track.song_link()
+    assert song_link
+    assert song_link.startswith('https://song.link/sc/')

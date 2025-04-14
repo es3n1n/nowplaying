@@ -6,7 +6,12 @@ from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.models.track import Track
+from nowplaying.util.asyncio import LockManager
 from nowplaying.util.retries import retry
+
+
+# key is uri
+DOWNLOADING_LOCKS = LockManager()
 
 
 class CachingFileTooLargeError(Exception):
@@ -30,6 +35,7 @@ async def get_cached_file_id(uri: str) -> str | None:
 async def cache_file(
     track: Track,
     file_data: bytes,
+    file_extension: str,
     thumbnail_url: str | None,
     user: User,
     duration_seconds: int,
@@ -51,7 +57,7 @@ async def cache_file(
         try:
             sent = await bot.send_audio(
                 config.BOT_CACHE_CHAT_ID,
-                BufferedInputFile(file=file_data, filename=f'{track.artist} - {track.name}.mp3'),
+                BufferedInputFile(file=file_data, filename=f'{track.artist} - {track.name}.{file_extension}'),
                 caption=caption,
                 performer=track.artist,
                 title=track.name,

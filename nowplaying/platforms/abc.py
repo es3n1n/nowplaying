@@ -31,7 +31,7 @@ class PlatformClientABC(ABC):
 
     @abstractmethod
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
-        yield Track(artist='', name='', id='', url='', song_link=None)
+        yield Track(artist='', name='', id='', url='')
 
     @abstractmethod
     async def get_track(self, track_id: str) -> Track | None:

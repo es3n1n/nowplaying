@@ -13,6 +13,8 @@ from httpx import AsyncClient, AsyncHTTPTransport, HTTPError, Response, Timeout
 from nowplaying.core.config import config
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
+from nowplaying.external.deezer import search_tracks
+from nowplaying.external.song_link import get_song_link
 from nowplaying.util.http import STATUS_OK, is_serverside_error
 from nowplaying.util.logger import logger
 from nowplaying.util.time import UTC_TZ
@@ -136,6 +138,31 @@ async def query_last_fm_url(track_url: str) -> LastFMTrackFromURL:
     external_urls = set(findall(HREF_URL_REGEX, container.group(1)))
     track.external_urls = _reorder_external_links(list(map(unescape, external_urls)))
     return track
+
+
+@alru_cache()
+async def query_last_fm_song_link(url: str, *, force_searching: bool = False) -> str | None:
+    track_info = await query_last_fm_url(url)
+
+    # Let's try to query external urls and try with them first
+    external_urls = [] if force_searching else track_info.external_urls
+    for external_url in external_urls:
+        song_link = await get_song_link(external_url)
+        if song_link is None:
+            continue
+
+        return song_link
+
+    # No external urls, let's get the first match from deezer :sadge:
+    for track in await search_tracks(f'{track_info.track.artist} - {track_info.track.name}'):
+        song_link = await get_song_link(track.url)
+        if song_link is None:
+            continue
+
+        return song_link
+
+    # No matches gg
+    return None
 
 
 def _ensure_response(response: Response) -> None:

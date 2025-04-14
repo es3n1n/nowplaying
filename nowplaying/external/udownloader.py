@@ -12,10 +12,11 @@ from nowplaying.util.http import STATUS_OK, get_headers
 
 
 @dataclass(frozen=True)
-class DownloadedMp3:
+class DownloadedSong:
+    file_extension: str | None = None
     thumbnail_url: str | None = None
     duration_sec: int | None = None
-    mp3_data: bytes | None = None
+    data: bytes | None = None
     error: str | None = None
 
 
@@ -28,12 +29,12 @@ def get_udownloader_base() -> str:
 
 
 # For now, only downloading from youtube via song.link is supported
-async def download_mp3(song_link_url: str) -> DownloadedMp3:
+async def download(song_link_url: str) -> DownloadedSong:
     start_time = time()
     async with ClientSession(headers=get_headers()) as session:
         try:
             async with session.post(
-                f'{get_udownloader_base()}/v1/mp3/by_songlink',
+                f'{get_udownloader_base()}/v1/download/by_songlink',
                 json={'url': song_link_url},
             ) as response:
                 if response.status != STATUS_OK:
@@ -41,23 +42,25 @@ async def download_mp3(song_link_url: str) -> DownloadedMp3:
                     try:
                         json_data = orjson.loads(bytes_data)
                     except orjson.JSONDecodeError:
-                        return DownloadedMp3(error=UNKNOWN_ERROR)
+                        return DownloadedSong(error=UNKNOWN_ERROR)
 
-                    return DownloadedMp3(error=json_data.get('detail', UNKNOWN_ERROR))
+                    return DownloadedSong(error=json_data.get('detail', UNKNOWN_ERROR))
 
                 serve_time = response.headers.get('x-serve-time', 'unknown')
                 thumbnail = response.headers.get('x-thumbnail-url')
+                file_extension = response.headers.get('x-file-extension')
                 duration_sec = int(response.headers['x-duration-seconds'])
-                mp3_data = await response.read()
+                data = await response.read()
         except ClientError:
-            return DownloadedMp3(error='udownloader is unavailable')
+            return DownloadedSong(error='udownloader is unavailable')
 
     logger.info(
-        f'Downloaded {song_link_url} from youtube via udownloader in {(time() - start_time) * 100:.1f}ms '
+        f'Downloaded {song_link_url} via udownloader in {(time() - start_time) * 100:.1f}ms '
         f'(served in {serve_time})'
     )
-    return DownloadedMp3(
+    return DownloadedSong(
+        file_extension=file_extension,
         thumbnail_url=thumbnail,
-        mp3_data=mp3_data,
+        data=data,
         duration_sec=duration_sec,
     )
