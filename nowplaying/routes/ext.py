@@ -1,14 +1,11 @@
-from aiogram import html
-from aiogram.enums import ParseMode
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import ORJSONResponse, RedirectResponse
 
-from nowplaying.bot.bot import bot
+from nowplaying.bot.handlers.start import send_auth_msg
 from nowplaying.core.config import config
 from nowplaying.core.sign import verify_sign
 from nowplaying.enums.start_actions import StartAction
-from nowplaying.platforms import apple, lastfm, spotify
+from nowplaying.platforms import PlatformABC, apple, lastfm, spotify, yandex
 from nowplaying.util.http import STATUS_FORBIDDEN, STATUS_TEMPORARY_REDIRECT
 
 
@@ -19,46 +16,31 @@ redirect = RedirectResponse(
 )
 
 
-async def send_auth_msg(telegram_id: int, platform_name: str) -> None:
-    await bot.send_message(
-        telegram_id,
-        f'Successfully authorized in {html.bold(platform_name.title())}!',
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text='Open inline menu',
-                        switch_inline_query_current_chat='',
-                    )
-                ]
-            ]
-        ),
-        parse_mode=ParseMode.HTML,
-    )
+async def _proceed_auth(platform: PlatformABC, state: str, arg: str) -> RedirectResponse:
+    telegram_id = verify_sign(state)
+    await platform.from_auth_callback(telegram_id, arg)
+    await send_auth_msg(telegram_id, platform.type)
+    return redirect
 
 
 @router.get('/spotify/callback')
-async def spotify_callback(code: str, state: str) -> RedirectResponse:
-    telegram_id = verify_sign(state)
-    await spotify.from_auth_callback(telegram_id, code)
-    await send_auth_msg(telegram_id, 'spotify')
-    return redirect
+async def spotify_callback(state: str, code: str) -> RedirectResponse:
+    return await _proceed_auth(spotify, state, code)
 
 
 @router.get('/lastfm/callback')
-async def lastfm_callback(token: str, state: str) -> RedirectResponse:
-    telegram_id = verify_sign(state)
-    await lastfm.from_auth_callback(telegram_id, token)
-    await send_auth_msg(telegram_id, 'lastfm')
-    return redirect
+async def lastfm_callback(state: str, token: str) -> RedirectResponse:
+    return await _proceed_auth(lastfm, state, token)
+
+
+@router.get('/yandex/callback')
+async def yandex_callback(state: str, access_token: str) -> RedirectResponse:
+    return await _proceed_auth(yandex, state, access_token)
 
 
 @router.get('/apple/callback')
-async def apple_callback(token: str, state: str) -> RedirectResponse:
-    telegram_id = verify_sign(state)
-    await apple.from_auth_callback(telegram_id, token)
-    await send_auth_msg(telegram_id, 'apple music')
-    return redirect
+async def apple_callback(state: str, token: str) -> RedirectResponse:
+    return await _proceed_auth(apple, state, token)
 
 
 @router.get('/apple/token')
