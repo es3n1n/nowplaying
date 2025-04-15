@@ -31,17 +31,6 @@ RUN --mount=type=cache,target=/root/.cache \
     set -ex \
     && uv pip install --python=/app/.venv --no-deps /src
 
-FROM node:22.3-alpine as frontend-builder
-
-COPY frontend/ym/ /frontend/ym/
-WORKDIR /frontend/ym/
-
-ENV NODE_ENV=production \
-    NODE_OPTIONS=--openssl-legacy-provider
-RUN set -ex \
-    && npm i \
-    && npm run build
-
 FROM ubuntu:noble
 
 WORKDIR /app
@@ -58,9 +47,7 @@ RUN set -ex \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app /app
-COPY --from=frontend-builder /frontend/ym/build/ ./frontend/ym/build/
-COPY frontend/apple/ ./frontend/apple/
-COPY frontend/sc/ ./frontend/sc/
+COPY frontend/ ./frontend/
 
 ENTRYPOINT ["python", "-m", "nowplaying"]
 STOPSIGNAL SIGINT
