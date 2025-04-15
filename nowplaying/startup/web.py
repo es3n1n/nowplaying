@@ -25,22 +25,19 @@ app = FastAPI(
 app.include_router(ext_router)
 
 
-def mount_static(web_path: str, *path: str) -> None:
-    result_path = ROOT_DIR / 'frontend'
-    for arg in path:
-        result_path /= arg
+def mount_static(path: str) -> None:
+    result_path = ROOT_DIR / 'frontend' / path
 
     if not result_path.exists():
-        msg = f'{web_path}: {result_path.absolute()}'
+        msg = f'{path}: {result_path.absolute()}'
         raise FileNotFoundError(msg)
 
     # TODO(es3n1n): move to a router once it would be possible (not implemented in fastapi atm)
-    app.mount(web_path, StaticFiles(directory=result_path, html=True))
+    app.mount(f'/{path}', StaticFiles(directory=result_path, html=True))
 
 
-mount_static('/ym', 'ym', 'build')
-mount_static('/apple', 'apple')
-mount_static('/sc', 'sc')
+for static_path in ('ym', 'apple', 'sc'):
+    mount_static(static_path)
 
 
 @app.exception_handler(PlatformInvalidAuthCodeError)

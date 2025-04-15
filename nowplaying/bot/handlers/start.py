@@ -3,7 +3,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from nowplaying.bot.bot import dp
+from nowplaying.bot.bot import bot, dp
 from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.enums.callback_buttons import CallbackButton
@@ -11,7 +11,6 @@ from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.enums.start_actions import StartAction
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.platforms import get_platform_from_telegram_id, soundcloud, yandex
-from nowplaying.routes.ext import send_auth_msg
 from nowplaying.util.string import QUERY_SEPARATOR, encode_query, extract_from_query
 
 from .link import get_auth_keyboard
@@ -22,6 +21,24 @@ SPECIAL_PLATFORMS = {
     'ym_': yandex,
     'sc_': soundcloud,
 }
+
+
+async def send_auth_msg(telegram_id: int, platform_type: SongLinkPlatformType) -> None:
+    await bot.send_message(
+        telegram_id,
+        f'Successfully authorized in {html.bold(platform_type.name.title())}!',
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text='Open inline menu',
+                        switch_inline_query_current_chat='',
+                    )
+                ]
+            ]
+        ),
+        parse_mode=ParseMode.HTML,
+    )
 
 
 async def _handle_controls(uri: str, message: Message) -> bool:
@@ -104,7 +121,7 @@ async def _try_start_cmds(message: Message, *, authorized: bool) -> bool:
             continue
 
         await platform.from_auth_callback(message.from_user.id, payload[len(key) :])
-        await send_auth_msg(message.from_user.id, platform.type.name.lower())
+        await send_auth_msg(message.from_user.id, platform.type)
         return True
 
     if payload == StartAction.SIGN_EXPIRED.value:

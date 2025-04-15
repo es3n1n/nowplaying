@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     YANDEX_GRPC_PROXY_DOCKER_HOST: str = 'nowplaying-grpc'
     YANDEX_GRPC_PROXY_HOST: str = '127.0.0.1'
     YANDEX_GRPC_PROXY_PORT: int = 50051
+    YANDEX_OAUTH_CLIENT_ID: str
 
     # Docker address is preferred by default
     POSTGRES_DOCKER_ADDRESS: str = 'postgres'
