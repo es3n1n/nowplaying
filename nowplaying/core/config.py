@@ -20,6 +20,9 @@ class Settings(BaseSettings):
 
     DEVELOPER_USERNAME: str = 'invlpg'
 
+    SOURCE_CODE_URL: str = 'https://github.com/es3n1n/nowplaying'
+    NEWS_CHANNEL_URL: str = 'https://t.me/playinnownews'
+
     WEB_SERVER_PUBLIC_ENDPOINT: str = 'https://now.es3n1n.eu'
 
     EMPTY_MP3_FILE_URL: Annotated[str, Field(validate_default=True)] = 'https://es3n1n.eu/empty.mp3'
@@ -116,6 +119,10 @@ class Settings(BaseSettings):
             return b64decode(payload + ('=' * 3)).decode()
         except ValueError:
             return None
+
+    @property
+    def developer_url(self) -> str:
+        return f'https://t.me/{self.DEVELOPER_USERNAME}'
 
 
 config = Settings()  # type: ignore[call-arg]
