@@ -147,11 +147,24 @@ async def command_start_handler(message: Message) -> None:
     if await _try_start_cmds(message, authorized=authorized):
         return
 
-    msg = f'Hello, {message.from_user.full_name}'
+    msg = f'Hello, {html.quote(message.from_user.full_name)}'
+
     if authorized:
-        msg += '\nYou are already authorized, check out the inline bot menu to see your recent tracks'
+        msg += '\n\nYou are already authorized, check out the inline bot menu to see your recent tracks'
         msg += '\nTo link a few more accounts please use the buttons below'
     else:
-        msg += '\nTo link your account please use the buttons below'
+        msg += '\n\nTo link your account please use the buttons below'
 
-    await message.reply(msg, reply_markup=await get_auth_keyboard(message.from_user.id))
+    msg += (
+        f'\n\n'
+        f'{html.link('news', config.NEWS_CHANNEL_URL)} / '
+        f'{html.link('source code', config.SOURCE_CODE_URL)} / '
+        f'{html.link('feedback', config.developer_url)}'
+    )
+
+    await message.reply(
+        msg,
+        reply_markup=await get_auth_keyboard(message.from_user.id),
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True,
+    )
