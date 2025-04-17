@@ -41,15 +41,24 @@ async def cache_file(
     duration_seconds: int,
 ) -> str:
     # Special handling for UUIDs
-    uri_safe: str = track.uri.replace('-', '_')
+    uri_safe = track.uri.replace('-', '_')
 
     thumbnail: URLInputFile | None = None
     if thumbnail_url:
         thumbnail = URLInputFile(url=thumbnail_url)
 
-    caption: str = f'#{uri_safe}\n'
+    caption = f'#{uri_safe}\n'
     caption += f'#uid_{user.id} #u_{user.username!s} {user.full_name}'
     caption = caption[:100]
+
+    file_name = f'{track.artist} - {track.name}'
+    # Telegram API automatically converts ogg files to voice messages;
+    #   however, they are checking this by mime_type.
+    # Ogg has multiple mime types, so in our "patched" bot api instances,
+    #   .vorbis files will be sent as .ogg with `audio/vorbis` mime_type instead of `audio/ogg`.
+    # No, this is not a behavior specific to bot api, even if you set the voice_note
+    #   within file attrs to False, it will still be sent as a voice message through raw MTProto.
+    file_name += f'.{file_extension if file_extension != "ogg" else "vorbis"}'
 
     sent: Message | None = None
 
@@ -57,7 +66,7 @@ async def cache_file(
         try:
             sent = await bot.send_audio(
                 config.BOT_CACHE_CHAT_ID,
-                BufferedInputFile(file=file_data, filename=f'{track.artist} - {track.name}.{file_extension}'),
+                BufferedInputFile(file=file_data, filename=file_name),
                 caption=caption,
                 performer=track.artist,
                 title=track.name,

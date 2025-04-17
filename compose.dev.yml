@@ -24,7 +24,7 @@ services:
     ports:
       - "50051:50051"
   telegram-bot-api:
-    image: aiogram/telegram-bot-api:latest
+    image: ghcr.io/es3n1n/telegram-bot-api:latest
     restart: unless-stopped
     container_name: nowplaying-bot-api
     env_file:
