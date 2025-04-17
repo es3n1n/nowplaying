@@ -1,5 +1,4 @@
-# BUILD
-FROM golang:1.22.3-alpine3.19 AS build
+FROM golang:1.23.8-alpine3.20 AS build
 
 # Update packages and clear cache
 RUN apk update && apk add --no-cache curl && rm -rf /var/cache/apk/*
@@ -19,7 +18,6 @@ RUN go mod download
 # Build app
 RUN CGO_ENABLED=0 go build -o bin/app ./main.go
 
-# APP
 FROM alpine:3.19 AS app
 
 # Install packages
