@@ -17,6 +17,8 @@ class DownloadedSong:
     thumbnail_url: str | None = None
     duration_sec: int | None = None
     data: bytes | None = None
+    quality_id: str = 'UNKNOWN'
+    platform_name: str = 'UNKNOWN'
     error: str | None = None
 
 
@@ -50,6 +52,8 @@ async def download(song_link_url: str) -> DownloadedSong:
                 thumbnail = response.headers.get('x-thumbnail-url')
                 file_extension = response.headers.get('x-file-extension')
                 duration_sec = int(response.headers['x-duration-seconds'])
+                quality_id = response.headers.get('x-file-quality', 'UNKNOWN')
+                platform_name = response.headers.get('x-downloaded-from', 'YOUTUBE')
                 data = await response.read()
         except ClientError:
             return DownloadedSong(error='udownloader is unavailable')
@@ -63,4 +67,6 @@ async def download(song_link_url: str) -> DownloadedSong:
         thumbnail_url=thumbnail,
         data=data,
         duration_sec=duration_sec,
+        quality_id=quality_id,
+        platform_name=platform_name,
     )

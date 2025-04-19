@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS cached_files
     id SERIAL PRIMARY KEY,
     uri VARCHAR UNIQUE NOT NULL,
     file_id VARCHAR NOT NULL,
-    cached_by_user_id BIGINT
+    cached_by_user_id BIGINT,
+    quality_id VARCHAR NOT NULL
 );
 CREATE INDEX IF NOT EXISTS our_uri ON cached_files (uri);
 CREATE INDEX IF NOT EXISTS cached_by_user ON cached_files (cached_by_user_id);
