@@ -46,13 +46,15 @@ async def main() -> None:
         # Forward the last message to the main bot
         to_forward.append(track_messages[-1].id)
 
+    # Startup bot
+    bot_username = config.BOT_URL.split('/')[-1]
+    await client.send_message(bot_username, '/start')
+
     # Forward all the messages
     logger.info(f'Forwarding {len(to_forward)} messages')
     for i in range(0, len(to_forward), 100):
         logger.info(f'Forwarding {i} to {i + 100}')
-        await client.forward_messages(
-            config.BOT_URL.split('/')[-1], to_forward[i : i + 100], from_peer=config.BOT_CACHE_CHAT_ID
-        )
+        await client.forward_messages(bot_username, to_forward[i : i + 100], from_peer=config.BOT_CACHE_CHAT_ID)
 
 
 if __name__ == '__main__':

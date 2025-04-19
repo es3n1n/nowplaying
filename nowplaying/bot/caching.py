@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from aiogram.exceptions import AiogramError, TelegramAPIError, TelegramEntityTooLarge
 from aiogram.types import BufferedInputFile, Message, URLInputFile, User
 
@@ -6,12 +8,20 @@ from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.models.track import Track
+from nowplaying.models.user_config import UserConfig
 from nowplaying.util.asyncio import LockManager
 from nowplaying.util.retries import retry
 
 
 # key is uri
 DOWNLOADING_LOCKS = LockManager()
+
+
+@dataclass(frozen=True)
+class FileToCache:
+    data: bytes
+    extension: str
+    thumbnail_url: str | None
 
 
 class CachingFileTooLargeError(Exception):
@@ -34,22 +44,35 @@ async def get_cached_file_id(uri: str) -> str | None:
 
 async def cache_file(
     track: Track,
-    file_data: bytes,
-    file_extension: str,
-    thumbnail_url: str | None,
+    file: FileToCache,
     user: User,
     duration_seconds: int,
+    user_config: UserConfig | None,
 ) -> str:
     # Special handling for UUIDs
     uri_safe = track.uri.replace('-', '_')
 
     thumbnail: URLInputFile | None = None
-    if thumbnail_url:
-        thumbnail = URLInputFile(url=thumbnail_url)
+    if file.thumbnail_url:
+        thumbnail = URLInputFile(url=file.thumbnail_url)
 
-    caption = f'#{uri_safe}\n'
-    caption += f'#uid_{user.id} #u_{user.username!s} {user.full_name}'
-    caption = caption[:100]
+    stats_user_id: int | None = user.id
+    stats_user_username: str | None = user.username
+    stats_user_name: str | None = user.full_name
+
+    # Set user id to None if user has opted out from stats
+    if not user_config:
+        user_config = await db.get_user_config(user.id)
+    if user_config.stats_opt_out:
+        stats_user_id = None
+        stats_user_username = None
+        stats_user_name = None
+
+    # These two are important
+    caption = f'#{uri_safe}'
+    caption += f'\n#uid_{stats_user_id} '
+    # These are not, so we can cut some parts of them
+    caption += f'#u_{stats_user_username!s} {stats_user_name}'[:100]
 
     file_name = f'{track.artist} - {track.name}'
     # Telegram API automatically converts ogg files to voice messages;
@@ -58,7 +81,7 @@ async def cache_file(
     #   .vorbis files will be sent as .ogg with `audio/vorbis` mime_type instead of `audio/ogg`.
     # No, this is not a behavior specific to bot api, even if you set the voice_note
     #   within file attrs to False, it will still be sent as a voice message through raw MTProto.
-    file_name += f'.{file_extension if file_extension != "ogg" else "vorbis"}'
+    file_name += f'.{file.extension if file.extension != "ogg" else "vorbis"}'
 
     sent: Message | None = None
 
@@ -66,7 +89,7 @@ async def cache_file(
         try:
             sent = await bot.send_audio(
                 config.BOT_CACHE_CHAT_ID,
-                BufferedInputFile(file=file_data, filename=file_name),
+                BufferedInputFile(file=file.data, filename=file_name),
                 caption=caption,
                 performer=track.artist,
                 title=track.name,
@@ -87,5 +110,5 @@ async def cache_file(
         msg = 'Audio is none'
         raise ValueError(msg)
 
-    await db.store_cached_file(track.uri, sent.audio.file_id)
+    await db.store_cached_file(track.uri, sent.audio.file_id, stats_user_id)
     return sent.audio.file_id
