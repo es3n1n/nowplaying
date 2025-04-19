@@ -2,8 +2,15 @@ from aiogram.enums import ParseMode
 from aiogram.types import ChosenInlineResult, User
 
 from nowplaying.bot.bot import bot, dp
-from nowplaying.bot.caching import DOWNLOADING_LOCKS, CachingFileTooLargeError, cache_file, get_cached_file_id
+from nowplaying.bot.caching import (
+    DOWNLOADING_LOCKS,
+    CachingFileTooLargeError,
+    FileToCache,
+    cache_file,
+    get_cached_file_id,
+)
 from nowplaying.bot.reporter import report_error
+from nowplaying.core.database import db
 from nowplaying.external.udownloader import download
 from nowplaying.models.track import Track
 from nowplaying.util.logger import logger
@@ -22,6 +29,11 @@ async def _unavailable(caption: str, error: str, inline_message_id: str) -> None
 
 
 async def _get_track_file_id(inline_message_id: str, from_user: User, track: Track, caption: str) -> str | None:
+    # Increment sent tracks statistics
+    user_config = await db.get_user_config(from_user.id)
+    if not user_config.stats_opt_out:
+        await db.increment_sent_tracks_count(from_user.id)
+
     # Cached file, no need to download
     cached_file_id = await get_cached_file_id(track.uri)
     if cached_file_id:
@@ -37,11 +49,14 @@ async def _get_track_file_id(inline_message_id: str, from_user: User, track: Tra
     try:
         return await cache_file(
             track=track,
-            file_data=downloaded.data,
-            file_extension=downloaded.file_extension,
-            thumbnail_url=downloaded.thumbnail_url,
+            file=FileToCache(
+                data=downloaded.data,
+                extension=downloaded.file_extension,
+                thumbnail_url=downloaded.thumbnail_url,
+            ),
             user=from_user,
             duration_seconds=downloaded.duration_sec,
+            user_config=user_config,
         )
     except CachingFileTooLargeError:
         # TODO(es3n1n): we should remember that this file is too large and not try to cache it again

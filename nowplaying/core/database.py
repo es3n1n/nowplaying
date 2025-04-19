@@ -4,6 +4,7 @@ from nowplaying.core.config import config
 from nowplaying.core.database_init import DATABASE_INIT_SQL
 from nowplaying.models.cached_local_track import CachedLocalTrack
 from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.models.user_config import UserConfig
 from nowplaying.util.dns import select_hostname
 from nowplaying.util.logger import logger
 from nowplaying.util.worker import worker
@@ -101,14 +102,15 @@ class Database:
             cached_file_result = await conn.fetch('SELECT 1 FROM cached_files WHERE spotify_uri = $1 LIMIT 1', uri)
             return bool(cached_file_result)
 
-    async def store_cached_file(self, uri: str, file_id: str) -> None:
+    async def store_cached_file(self, uri: str, file_id: str, cached_by_user_id: int | None) -> None:
         pool = await self.get_pool()
         async with pool.acquire() as conn, conn.transaction():
             await conn.execute(
-                'INSERT INTO cached_files (uri, file_id) VALUES ($1, $2) '
-                'ON CONFLICT (uri) DO UPDATE SET file_id = $2',
+                'INSERT INTO cached_files (uri, file_id, cached_by_user_id) VALUES ($1, $2, $3) '
+                'ON CONFLICT (uri) DO UPDATE SET file_id = $2, cached_by_user_id = $3',
                 uri,
                 file_id,
+                cached_by_user_id,
             )
 
     async def get_cached_file(self, uri: str) -> str | None:
@@ -170,6 +172,64 @@ class Database:
             artist=local_track[3],
             name=local_track[4],
         )
+
+    async def get_user_config(self, user_id: int) -> UserConfig:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn:
+            result = await conn.fetchrow(
+                'SELECT * FROM user_configs WHERE user_id = $1 LIMIT 1',
+                user_id,
+            )
+            if result is None:
+                return UserConfig()
+            return UserConfig.model_validate(dict(result))
+
+    async def update_config_var(self, user_id: int, field: str, *, new_value: bool) -> None:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                'SELECT update_user_config_value($1, $2, $3)',
+                user_id,
+                field,
+                new_value,
+            )
+
+    async def strip_user_id_from_cached_files(self, user_id: int) -> None:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                'UPDATE cached_files SET cached_by_user_id = NULL WHERE cached_by_user_id = $1',
+                user_id,
+            )
+
+    async def get_cached_files_count_for_user(self, user_id: int) -> int:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn:
+            count = await conn.fetchval(
+                'SELECT COUNT(*) FROM cached_files WHERE cached_by_user_id = $1',
+                user_id,
+            )
+            return count or 0
+
+    async def increment_sent_tracks_count(self, user_id: int) -> None:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                'INSERT INTO user_track_stats (user_id, track_count) '
+                'VALUES ($1, 1) '
+                'ON CONFLICT (user_id) DO '
+                'UPDATE SET track_count = user_track_stats.track_count + 1;',
+                user_id,
+            )
+
+    async def get_user_sent_tracks_count(self, user_id: int) -> int:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn:
+            count = await conn.fetchval(
+                'SELECT track_count FROM user_track_stats WHERE user_id = $1 LIMIT 1',
+                user_id,
+            )
+            return count or 0
 
 
 db = Database()

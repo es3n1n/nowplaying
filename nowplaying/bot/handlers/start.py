@@ -155,8 +155,13 @@ async def command_start_handler(message: Message) -> None:
     else:
         msg += '\n\nTo link your account please use the buttons below'
 
+    cached_tracks_count = await db.get_cached_files_count_for_user(message.from_user.id)
+    tracks_sent = await db.get_user_sent_tracks_count(message.from_user.id)
     msg += (
-        f'\n\n'
+        '\n\n'
+        f'Tracks you cached: {html.code(str(cached_tracks_count))} / '
+        f'{html.code(str(tracks_sent))} sent'
+        '\n'
         f'{html.link('news', config.NEWS_CHANNEL_URL)} / '
         f'{html.link('source code', config.SOURCE_CODE_URL)} / '
         f'{html.link('feedback', config.developer_url)}'

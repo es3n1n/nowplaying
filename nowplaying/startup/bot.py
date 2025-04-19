@@ -15,6 +15,7 @@ async def async_start_bot() -> None:
             BotCommand(command='start', description='Start'),
             BotCommand(command='link', description='Link account'),
             BotCommand(command='logout', description='Logout from platforms'),
+            BotCommand(command='settings', description='Bot settings'),
         ]
     )
 

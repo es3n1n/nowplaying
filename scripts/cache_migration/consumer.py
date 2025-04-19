@@ -5,7 +5,7 @@ from nowplaying.bot.bot import bot, dp
 from nowplaying.core.config import config
 from nowplaying.util.logger import logger
 from aiogram import types
-from aiogram.filters import Filter
+from aiogram.filters import Filter, CommandStart
 from os import environ
 
 
@@ -27,8 +27,25 @@ async def on_cached_track_recv(message: types.Message) -> None:
         return
 
     track_uri = message.caption.split()[0].lstrip('#')
-    await db.store_cached_file(track_uri, message.audio.file_id)
-    logger.info(f'Cached file for {track_uri} ({message.audio.file_name})')
+    user_id_str = message.caption.split()[1].lstrip('#uid_')
+    user_id = int(user_id_str) if user_id_str != 'None' else None
+
+    await db.store_cached_file(track_uri, message.audio.file_id, user_id)
+    if user_id:
+        await db.increment_sent_tracks_count(user_id)
+    logger.info(f'Cached file for {track_uri} ({message.audio.file_name}) received from {user_id}')
+
+
+@dp.message(CommandStart())
+async def on_start(message: types.Message) -> None:
+    if message.from_user is None or message.from_user.id != PRODUCER_TELEGRAM_ID:
+        return
+
+    logger.info('Initializing database')
+    pool = await db.get_pool()
+    async with pool.acquire() as conn, conn.transaction():
+        await conn.execute('DELETE FROM user_track_stats')
+        await conn.execute('DELETE FROM cached_files')
 
 
 async def main() -> None:

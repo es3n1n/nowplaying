@@ -7,3 +7,4 @@ class CallbackButton(str, Enum):
     ADD_TO_QUEUE_PREFIX = 'queue'
     LOGOUT_PREFIX = 'logout'
     LOADING = 'loading'
+    CONFIG_TOGGLE_PREFIX = 'toggle'
