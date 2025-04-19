@@ -53,6 +53,8 @@ async def _get_track_file_id(inline_message_id: str, from_user: User, track: Tra
                 data=downloaded.data,
                 extension=downloaded.file_extension,
                 thumbnail_url=downloaded.thumbnail_url,
+                quality_id=downloaded.quality_id,
+                platform_name=downloaded.platform_name,
             ),
             user=from_user,
             duration_seconds=downloaded.duration_sec,

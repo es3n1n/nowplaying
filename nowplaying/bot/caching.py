@@ -22,6 +22,8 @@ class FileToCache:
     data: bytes
     extension: str
     thumbnail_url: str | None
+    quality_id: str
+    platform_name: str
 
 
 class CachingFileTooLargeError(Exception):
@@ -73,6 +75,8 @@ async def cache_file(
     caption += f'\n#uid_{stats_user_id} '
     # These are not, so we can cut some parts of them
     caption += f'#u_{stats_user_username!s} {stats_user_name}'[:100]
+    # Do not cut this though
+    caption += f'\n#q_{file.quality_id} #p_{file.platform_name}'
 
     file_name = f'{track.artist} - {track.name}'
     # Telegram API automatically converts ogg files to voice messages;
@@ -110,5 +114,5 @@ async def cache_file(
         msg = 'Audio is none'
         raise ValueError(msg)
 
-    await db.store_cached_file(track.uri, sent.audio.file_id, stats_user_id)
+    await db.store_cached_file(track.uri, sent.audio.file_id, stats_user_id, file.quality_id)
     return sent.audio.file_id
