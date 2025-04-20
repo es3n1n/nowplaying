@@ -30,6 +30,7 @@ dependencies = [
     "protobuf==5.27.2",
     "grpcio>=1.67.0rc1",
     "aiohttp-socks>=0.10.1",
+    "pillow>=11.2.1",
 ]
 
 [tool.hatch.metadata]
