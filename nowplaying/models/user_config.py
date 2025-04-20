@@ -8,3 +8,6 @@ class UserConfig(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     stats_opt_out: Annotated[bool, Field(description='Opt out from stats')] = False
+    add_song_link: Annotated[bool, Field(description='Add song link url to message')] = True
+    add_bitrate: Annotated[bool, Field(description='Add bitrate to message')] = False
+    add_sample_rate: Annotated[bool, Field(description='Add sample rate to message')] = False

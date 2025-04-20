@@ -11,6 +11,7 @@ from nowplaying.enums.callback_buttons import CallbackButton
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
+from nowplaying.models.user_config import UserConfig
 from nowplaying.platforms import PlatformClientABC, get_platform_from_telegram_id, get_platform_track
 from nowplaying.util.string import encode_query, extract_from_query
 
@@ -71,12 +72,13 @@ async def fetch_feed_and_clients(
 async def feed_to_inline_results(
     feed: list[Track],
     clients: dict[SongLinkPlatformType, PlatformClientABC],
+    user_config: UserConfig,
 ) -> list[types.InlineQueryResultArticle | types.InlineQueryResultAudio]:
     seen_uris: set[str] = set()
     sorted_feed = sort_feed(feed)
 
     return [
-        await create_result_item(track, clients, seen_uris, index)
+        await create_result_item(track, clients, user_config, seen_uris, index)
         for index, track in enumerate(sorted_feed)
         if track.uri not in seen_uris
     ]
@@ -93,6 +95,7 @@ def sort_feed(feed: list[Track]) -> list[Track]:
 async def create_result_item(
     track: Track,
     clients: dict[SongLinkPlatformType, PlatformClientABC],
+    user_config: UserConfig,
     seen_uris: set,
     index: int,
 ) -> types.InlineQueryResultAudio:
@@ -119,7 +122,12 @@ async def create_result_item(
         performer=track.artist,
         title=name,
         caption=await track_to_caption(
-            client, track, is_getter_available=is_getter_available, is_track_available=is_track_available
+            user_config,
+            client,
+            track,
+            quality=None,
+            is_getter_available=is_getter_available,
+            is_track_available=is_track_available,
         ),
         parse_mode=ParseMode.HTML,
         reply_markup=types.InlineKeyboardMarkup(
@@ -143,7 +151,8 @@ async def inline_query_handler(query: types.InlineQuery) -> None:
     if feed is None or clients is None:
         return
 
-    result_items = await feed_to_inline_results(feed, clients)
+    user_config = await db.get_user_config(query.from_user.id)
+    result_items = await feed_to_inline_results(feed, clients, user_config)
     if not result_items:
         result_items.append(
             types.InlineQueryResultArticle(

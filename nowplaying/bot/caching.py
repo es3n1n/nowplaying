@@ -6,6 +6,7 @@ from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.external.udownloader import DownloadedSong
+from nowplaying.models.cached_file import CachedFile
 from nowplaying.models.track import Track
 from nowplaying.models.user_config import UserConfig
 from nowplaying.util.asyncio import LockManager
@@ -20,18 +21,18 @@ class CachingFileTooLargeError(Exception):
     """File is too large to cache."""
 
 
-async def get_cached_file_id(uri: str) -> str | None:
-    file_id = await db.get_cached_file(uri)
-    if file_id is None:
+async def get_cached_file_ensured(uri: str) -> CachedFile | None:
+    file = await db.get_cached_file(uri)
+    if file is None:
         return None
 
     # Verifying that file id isn't expired
     try:
-        await bot.get_file(file_id)
+        await bot.get_file(file.file_id)
     except (AiogramError, TelegramAPIError) as err:
         if not any(x in str(err).lower() for x in ('file is too big',)):
             return None
-    return file_id
+    return file
 
 
 async def cache_file(
@@ -39,7 +40,7 @@ async def cache_file(
     file: DownloadedSong,
     user: User,
     user_config: UserConfig | None,
-) -> str:
+) -> CachedFile:
     # Special handling for UUIDs
     uri_safe = track.uri.replace('-', '_')
 
@@ -109,4 +110,4 @@ async def cache_file(
         raise ValueError(msg)
 
     await db.store_cached_file(track.uri, sent.audio.file_id, stats_user_id, file.quality)
-    return sent.audio.file_id
+    return CachedFile(file_id=sent.audio.file_id, cached_by_user_id=user.id, quality_info=file.quality)
