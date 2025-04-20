@@ -1,5 +1,8 @@
+from io import BytesIO
+
 from aiogram.exceptions import AiogramError, TelegramAPIError, TelegramEntityTooLarge
-from aiogram.types import BufferedInputFile, Message, URLInputFile, User
+from aiogram.types import BufferedInputFile, Message, User
+from aiohttp import ClientSession
 
 from nowplaying.bot.bot import bot
 from nowplaying.bot.reporter import report_error
@@ -10,6 +13,8 @@ from nowplaying.models.cached_file import CachedFile
 from nowplaying.models.track import Track
 from nowplaying.models.user_config import UserConfig
 from nowplaying.util.asyncio import LockManager
+from nowplaying.util.compressing import compress_jpeg
+from nowplaying.util.http import STATUS_OK
 from nowplaying.util.retries import retry
 
 
@@ -35,6 +40,24 @@ async def get_cached_file_ensured(uri: str) -> CachedFile | None:
     return file
 
 
+async def process_thumbnail_jpeg(thumbnail_url: str | None) -> BufferedInputFile | None:
+    thumbnail: BufferedInputFile | None = None
+    if not thumbnail_url:
+        return thumbnail
+
+    async with ClientSession() as session, session.get(thumbnail_url) as resp:
+        if resp.status != STATUS_OK:
+            msg = f'Unable to get thumbnail {resp.status}'
+            raise ValueError(msg)
+
+        data = await resp.read()
+        return BufferedInputFile(
+            # Compress JPEG to avoid hitting the 200 kb limit
+            file=compress_jpeg(BytesIO(data), target_size_kb=200).getvalue(),
+            filename='thumbnail.jpeg',
+        )
+
+
 async def cache_file(
     track: Track,
     file: DownloadedSong,
@@ -43,10 +66,6 @@ async def cache_file(
 ) -> CachedFile:
     # Special handling for UUIDs
     uri_safe = track.uri.replace('-', '_')
-
-    thumbnail: URLInputFile | None = None
-    if file.thumbnail_url:
-        thumbnail = URLInputFile(url=file.thumbnail_url)
 
     stats_user_id: int | None = user.id
     stats_user_username: str | None = user.username
@@ -83,7 +102,6 @@ async def cache_file(
     file_name += f'.{file.file_extension if file.file_extension != "ogg" else "vorbis"}'
 
     sent: Message | None = None
-
     async for _ in retry(3):
         try:
             sent = await bot.send_audio(
@@ -92,7 +110,7 @@ async def cache_file(
                 caption=caption,
                 performer=track.artist,
                 title=track.name,
-                thumbnail=thumbnail,
+                thumbnail=await process_thumbnail_jpeg(file.thumbnail_url),
                 duration=file.duration_sec or None,  # in case for some reason, api returned 0
                 request_timeout=config.BOT_UPLOAD_FILE_TIMEOUT,
             )
