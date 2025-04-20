@@ -18,6 +18,9 @@ async def handle_toggle_button(query: CallbackQuery) -> None:
 
     _, var_name = extract_from_query(query.data, arguments_count=2)
     config = await db.get_user_config(query.from_user.id)
+    if var_name not in config.model_fields:
+        err_msg = f'Invalid config variable: {var_name}'
+        raise ValueError(err_msg)
 
     new_value = not getattr(config, var_name)
     setattr(config, var_name, new_value)

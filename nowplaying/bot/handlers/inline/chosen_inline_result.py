@@ -6,12 +6,14 @@ from nowplaying.bot.caching import (
     DOWNLOADING_LOCKS,
     CachingFileTooLargeError,
     cache_file,
-    get_cached_file_id,
+    get_cached_file_ensured,
 )
 from nowplaying.bot.reporter import report_error
 from nowplaying.core.database import db
 from nowplaying.external.udownloader import UdownloaderError, download
+from nowplaying.models.cached_file import CachedFile
 from nowplaying.models.track import Track
+from nowplaying.models.user_config import UserConfig
 from nowplaying.util.logger import logger
 
 from .inline import parse_track_from_uri
@@ -27,16 +29,17 @@ async def _unavailable(caption: str, error: str, inline_message_id: str) -> None
     )
 
 
-async def _get_track_file_id(inline_message_id: str, from_user: User, track: Track, caption: str) -> str | None:
+async def _get_cached_file(
+    inline_message_id: str, from_user: User, track: Track, caption: str, user_config: UserConfig
+) -> CachedFile | None:
     # Increment sent tracks statistics
-    user_config = await db.get_user_config(from_user.id)
     if not user_config.stats_opt_out:
         await db.increment_sent_tracks_count(from_user.id)
 
     # Cached file, no need to download
-    cached_file_id = await get_cached_file_id(track.uri)
-    if cached_file_id:
-        return cached_file_id
+    cached_file = await get_cached_file_ensured(track.uri)
+    if cached_file:
+        return cached_file
 
     # Cache missed, downloading
     try:
@@ -60,9 +63,11 @@ async def _get_track_file_id(inline_message_id: str, from_user: User, track: Tra
         return None
 
 
-async def get_track_file_id(inline_message_id: str, from_user: User, track: Track, caption: str) -> str | None:
+async def get_cached_file(
+    inline_message_id: str, from_user: User, track: Track, caption: str, user_config: UserConfig
+) -> CachedFile | None:
     async with DOWNLOADING_LOCKS.lock(track.uri):
-        return await _get_track_file_id(inline_message_id, from_user, track, caption)
+        return await _get_cached_file(inline_message_id, from_user, track, caption, user_config)
 
 
 async def update_placeholder_message_audio(from_user: User, uri: str, inline_message_id: str) -> None:
@@ -74,20 +79,22 @@ async def update_placeholder_message_audio(from_user: User, uri: str, inline_mes
         await report_error('Something unusual happened, track or client is None')
         return
 
-    caption = await track_to_caption(client, track, is_getter_available=True)
+    user_config = await db.get_user_config(from_user.id)
+    caption = await track_to_caption(user_config, client, track, quality=None, is_getter_available=True)
     logger.info(
         f'Processing {track.artist} - {track.name} ({track.platform.name})',
     )
 
-    file_id = await get_track_file_id(inline_message_id, from_user, track, caption)
-    if not file_id:
+    file = await get_cached_file(inline_message_id, from_user, track, caption, user_config)
+    if not file:
         return
 
     await update_inline_message_audio(
         track=track,
-        file_id=file_id,
-        caption=caption,
+        cached_file=file,
         inline_message_id=inline_message_id,
+        user_config=user_config,
+        client=client,
     )
 
 

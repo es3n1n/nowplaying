@@ -4,6 +4,7 @@ from asyncpg import Pool, create_pool
 from nowplaying.core.config import config
 from nowplaying.core.database_init import DATABASE_INIT_SQL
 from nowplaying.external.udownloader import SongQualityInfo
+from nowplaying.models.cached_file import CachedFile
 from nowplaying.models.cached_local_track import CachedLocalTrack
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.user_config import UserConfig
@@ -118,11 +119,13 @@ class Database:
                 orjson.dumps(quality_info).decode(),
             )
 
-    async def get_cached_file(self, uri: str) -> str | None:
+    async def get_cached_file(self, uri: str) -> CachedFile | None:
         pool = await self.get_pool()
         async with pool.acquire() as conn:
-            cached_file = await conn.fetchrow('SELECT (file_id) FROM cached_files WHERE uri = $1 LIMIT 1', uri)
-            return None if cached_file is None else cached_file['file_id']
+            cached_file = await conn.fetchrow('SELECT * FROM cached_files WHERE uri = $1 LIMIT 1', uri)
+            if not cached_file:
+                return None
+            return CachedFile.model_validate(dict(cached_file))
 
     async def delete_cached_files(self, uris: list[str]) -> None:
         pool = await self.get_pool()
