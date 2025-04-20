@@ -5,13 +5,12 @@ from nowplaying.bot.bot import bot, dp
 from nowplaying.bot.caching import (
     DOWNLOADING_LOCKS,
     CachingFileTooLargeError,
-    FileToCache,
     cache_file,
     get_cached_file_id,
 )
 from nowplaying.bot.reporter import report_error
 from nowplaying.core.database import db
-from nowplaying.external.udownloader import download
+from nowplaying.external.udownloader import UdownloaderError, download
 from nowplaying.models.track import Track
 from nowplaying.util.logger import logger
 
@@ -40,24 +39,18 @@ async def _get_track_file_id(inline_message_id: str, from_user: User, track: Tra
         return cached_file_id
 
     # Cache missed, downloading
-    downloaded = await download(await track.song_link())  # type: ignore[arg-type]
-    if downloaded.error or not downloaded.data or downloaded.duration_sec is None or downloaded.file_extension is None:
-        await _unavailable(caption, downloaded.error or 'Unknown error', inline_message_id)  # type: ignore[arg-type]
-        await report_error(f'Unable to download {track.model_dump_json()}\nError = {downloaded.error}')
+    try:
+        downloaded = await download(await track.song_link())  # type: ignore[arg-type]
+    except UdownloaderError as err:
+        await _unavailable(caption, str(err), inline_message_id)
+        await report_error(f'Unable to download {track.model_dump_json()}', exception=err)
         return None
 
     try:
         return await cache_file(
             track=track,
-            file=FileToCache(
-                data=downloaded.data,
-                extension=downloaded.file_extension,
-                thumbnail_url=downloaded.thumbnail_url,
-                quality_id=downloaded.quality_id,
-                platform_name=downloaded.platform_name,
-            ),
+            file=downloaded,
             user=from_user,
-            duration_seconds=downloaded.duration_sec,
             user_config=user_config,
         )
     except CachingFileTooLargeError:

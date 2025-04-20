@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from aiogram.exceptions import AiogramError, TelegramAPIError, TelegramEntityTooLarge
 from aiogram.types import BufferedInputFile, Message, URLInputFile, User
 
@@ -7,6 +5,7 @@ from nowplaying.bot.bot import bot
 from nowplaying.bot.reporter import report_error
 from nowplaying.core.config import config
 from nowplaying.core.database import db
+from nowplaying.external.udownloader import DownloadedSong
 from nowplaying.models.track import Track
 from nowplaying.models.user_config import UserConfig
 from nowplaying.util.asyncio import LockManager
@@ -15,15 +14,6 @@ from nowplaying.util.retries import retry
 
 # key is uri
 DOWNLOADING_LOCKS = LockManager()
-
-
-@dataclass(frozen=True)
-class FileToCache:
-    data: bytes
-    extension: str
-    thumbnail_url: str | None
-    quality_id: str
-    platform_name: str
 
 
 class CachingFileTooLargeError(Exception):
@@ -46,9 +36,8 @@ async def get_cached_file_id(uri: str) -> str | None:
 
 async def cache_file(
     track: Track,
-    file: FileToCache,
+    file: DownloadedSong,
     user: User,
-    duration_seconds: int,
     user_config: UserConfig | None,
 ) -> str:
     # Special handling for UUIDs
@@ -76,7 +65,12 @@ async def cache_file(
     # These are not, so we can cut some parts of them
     caption += f'#u_{stats_user_username!s} {stats_user_name}'[:100]
     # Do not cut this though
-    caption += f'\n#q_{file.quality_id} #p_{file.platform_name}'
+    caption += (
+        f'\n#bit_{file.quality["bit_depth"]} '
+        f'#kbps_{file.quality["bitrate_kbps"]} '
+        f'#khz_{file.quality["sample_rate_khz"]} '
+        f'#p_{file.platform_name}'
+    )
 
     file_name = f'{track.artist} - {track.name}'
     # Telegram API automatically converts ogg files to voice messages;
@@ -85,7 +79,7 @@ async def cache_file(
     #   .vorbis files will be sent as .ogg with `audio/vorbis` mime_type instead of `audio/ogg`.
     # No, this is not a behavior specific to bot api, even if you set the voice_note
     #   within file attrs to False, it will still be sent as a voice message through raw MTProto.
-    file_name += f'.{file.extension if file.extension != "ogg" else "vorbis"}'
+    file_name += f'.{file.file_extension if file.file_extension != "ogg" else "vorbis"}'
 
     sent: Message | None = None
 
@@ -98,7 +92,7 @@ async def cache_file(
                 performer=track.artist,
                 title=track.name,
                 thumbnail=thumbnail,
-                duration=duration_seconds or None,  # in case for some reason, api returned 0
+                duration=file.duration_sec or None,  # in case for some reason, api returned 0
                 request_timeout=config.BOT_UPLOAD_FILE_TIMEOUT,
             )
         except TelegramEntityTooLarge as exc:
@@ -114,5 +108,5 @@ async def cache_file(
         msg = 'Audio is none'
         raise ValueError(msg)
 
-    await db.store_cached_file(track.uri, sent.audio.file_id, stats_user_id, file.quality_id)
+    await db.store_cached_file(track.uri, sent.audio.file_id, stats_user_id, file.quality)
     return sent.audio.file_id

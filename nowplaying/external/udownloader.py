@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import cache
 from time import time
+from typing import TypedDict
 
 import orjson
 from aiohttp import ClientError, ClientSession
@@ -11,15 +12,27 @@ from nowplaying.util.dns import select_url
 from nowplaying.util.http import STATUS_OK, get_headers
 
 
+class SongQualityInfo(TypedDict):
+    bit_depth: int | None
+    bitrate_kbps: int
+    sample_rate_khz: int
+
+
 @dataclass(frozen=True)
 class DownloadedSong:
-    file_extension: str | None = None
-    thumbnail_url: str | None = None
-    duration_sec: int | None = None
-    data: bytes | None = None
-    quality_id: str = 'UNKNOWN'
+    file_extension: str
+    thumbnail_url: str
+
+    quality: SongQualityInfo
+    duration_sec: int
+
+    data: bytes
+
     platform_name: str = 'UNKNOWN'
-    error: str | None = None
+
+
+class UdownloaderError(Exception):
+    """Base class for all udownloader exceptions."""
 
 
 UNKNOWN_ERROR = f'Unknown error, contact @{config.DEVELOPER_USERNAME}'
@@ -43,20 +56,21 @@ async def download(song_link_url: str) -> DownloadedSong:
                     bytes_data = await response.read()
                     try:
                         json_data = orjson.loads(bytes_data)
-                    except orjson.JSONDecodeError:
-                        return DownloadedSong(error=UNKNOWN_ERROR)
+                    except orjson.JSONDecodeError as err:
+                        raise UdownloaderError(UNKNOWN_ERROR) from err
 
-                    return DownloadedSong(error=json_data.get('detail', UNKNOWN_ERROR))
+                    raise UdownloaderError(json_data.get('detail', UNKNOWN_ERROR))
 
-                serve_time = response.headers.get('x-serve-time', 'unknown')
-                thumbnail = response.headers.get('x-thumbnail-url')
-                file_extension = response.headers.get('x-file-extension')
+                serve_time = response.headers['x-serve-time']
+                thumbnail = response.headers['x-thumbnail-url']
+                file_extension = response.headers['x-file-extension']
                 duration_sec = int(response.headers['x-duration-seconds'])
-                quality_id = response.headers.get('x-file-quality', 'UNKNOWN')
-                platform_name = response.headers.get('x-downloaded-from', 'YOUTUBE')
+                quality_json = orjson.loads(response.headers['x-file-quality'])
+                platform_name = response.headers['x-downloaded-from']
                 data = await response.read()
-        except ClientError:
-            return DownloadedSong(error='udownloader is unavailable')
+        except (ClientError, TimeoutError, OSError, orjson.JSONDecodeError) as err:
+            err_msg = 'udownloader is unavailable'
+            raise UdownloaderError(err_msg) from err
 
     logger.info(
         f'Downloaded {song_link_url} via udownloader in {(time() - start_time) * 100:.1f}ms '
@@ -67,6 +81,6 @@ async def download(song_link_url: str) -> DownloadedSong:
         thumbnail_url=thumbnail,
         data=data,
         duration_sec=duration_sec,
-        quality_id=quality_id,
+        quality=quality_json,
         platform_name=platform_name,
     )
