@@ -30,11 +30,11 @@ async def on_cached_track_recv(message: types.Message) -> None:
     user_id_str = message.caption.split()[1].lstrip('#uid_')
     user_id = int(user_id_str) if user_id_str != 'None' else None
 
-    if '#q_' in message.caption:
+    if '#khz_' in message.caption:
         exc_msg = 'implement #q'
         raise ValueError(exc_msg)
 
-    await db.store_cached_file(track_uri, message.audio.file_id, user_id, 'UNKNOWN')
+    await db.store_cached_file(track_uri, message.audio.file_id, user_id, {})  # type: ignore[typeddict-item]
     if user_id:
         await db.increment_sent_tracks_count(user_id)
     logger.info(f'Cached file for {track_uri} ({message.audio.file_name}) received from {user_id}')

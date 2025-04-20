@@ -1,7 +1,9 @@
+import orjson
 from asyncpg import Pool, create_pool
 
 from nowplaying.core.config import config
 from nowplaying.core.database_init import DATABASE_INIT_SQL
+from nowplaying.external.udownloader import SongQualityInfo
 from nowplaying.models.cached_local_track import CachedLocalTrack
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.user_config import UserConfig
@@ -102,16 +104,18 @@ class Database:
             cached_file_result = await conn.fetch('SELECT 1 FROM cached_files WHERE spotify_uri = $1 LIMIT 1', uri)
             return bool(cached_file_result)
 
-    async def store_cached_file(self, uri: str, file_id: str, cached_by_user_id: int | None, quality_id: str) -> None:
+    async def store_cached_file(
+        self, uri: str, file_id: str, cached_by_user_id: int | None, quality_info: SongQualityInfo
+    ) -> None:
         pool = await self.get_pool()
         async with pool.acquire() as conn, conn.transaction():
             await conn.execute(
-                'INSERT INTO cached_files (uri, file_id, cached_by_user_id, quality_id) VALUES ($1, $2, $3, $4) '
-                'ON CONFLICT (uri) DO UPDATE SET file_id = $2, cached_by_user_id = $3, quality_id = $4',
+                'INSERT INTO cached_files (uri, file_id, cached_by_user_id, quality_info) VALUES ($1, $2, $3, $4) '
+                'ON CONFLICT (uri) DO UPDATE SET file_id = $2, cached_by_user_id = $3, quality_info = $4',
                 uri,
                 file_id,
                 cached_by_user_id,
-                quality_id,
+                orjson.dumps(quality_info).decode(),
             )
 
     async def get_cached_file(self, uri: str) -> str | None:
