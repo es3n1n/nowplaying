@@ -27,5 +27,8 @@ async def handle_loading_button(query: CallbackQuery) -> None:
         await bot.answer_callback_query(query.id, text='Already downloading the audio, please wait.')
         return
 
-    await bot.answer_callback_query(query.id, text='Downloading started.')
-    await update_placeholder_message_audio(query.from_user, track_uri, query.inline_message_id)
+    try:
+        await update_placeholder_message_audio(query.from_user, track_uri, query.inline_message_id)
+        await bot.answer_callback_query(query.id, text='Downloading started.')
+    except ValueError:
+        await bot.answer_callback_query(query.id, text='Sorry, but you can not use this button (authorize first).')
