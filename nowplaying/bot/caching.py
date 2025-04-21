@@ -13,7 +13,7 @@ from nowplaying.models.cached_file import CachedFile
 from nowplaying.models.track import Track
 from nowplaying.models.user_config import UserConfig
 from nowplaying.util.asyncio import LockManager
-from nowplaying.util.compressing import compress_jpeg
+from nowplaying.util.compressing import compress_to_jpeg
 from nowplaying.util.http import STATUS_OK
 from nowplaying.util.retries import retry
 
@@ -53,7 +53,7 @@ async def process_thumbnail_jpeg(thumbnail_url: str | None) -> BufferedInputFile
         data = await resp.read()
         return BufferedInputFile(
             # Compress JPEG to avoid hitting the 200 kb limit
-            file=compress_jpeg(BytesIO(data), target_size_kb=200).getvalue(),
+            file=compress_to_jpeg(BytesIO(data), target_size_kb=200).getvalue(),
             filename='thumbnail.jpeg',
         )
 

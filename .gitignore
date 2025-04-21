@@ -8,3 +8,4 @@ worker.lock
 .venv/
 scripts/protoc/**
 scripts/googleapis/**
+**/.DS_Store
