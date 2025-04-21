@@ -134,7 +134,7 @@ async def create_result_item(
             inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text='🎲 Downloading.. (click in channels)',
+                        text='🎲 Downloading.. (click to requeue downloading)',
                         callback_data=encode_query(CallbackButton.LOADING, track.uri),
                     ),
                 ]
