@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import cache
-from time import time
+from time import perf_counter
 from typing import TypedDict
 
 import orjson
@@ -45,7 +45,7 @@ def get_udownloader_base() -> str:
 
 # For now, only downloading from youtube via song.link is supported
 async def download(song_link_url: str) -> DownloadedSong:
-    start_time = time()
+    start_time = perf_counter()
     async with ClientSession(headers=get_headers()) as session:
         try:
             async with session.post(
@@ -72,8 +72,9 @@ async def download(song_link_url: str) -> DownloadedSong:
             err_msg = 'udownloader is unavailable'
             raise UdownloaderError(err_msg) from err
 
+    end = perf_counter()
     logger.info(
-        f'Downloaded {song_link_url} via udownloader in {(time() - start_time) * 100:.1f}ms '
+        f'Downloaded {song_link_url} via udownloader in {(end - start_time) * 1000:.1f}ms '
         f'(served in {serve_time})'
     )
     return DownloadedSong(
