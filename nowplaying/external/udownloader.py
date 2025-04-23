@@ -74,8 +74,7 @@ async def download(song_link_url: str) -> DownloadedSong:
 
     end = perf_counter()
     logger.info(
-        f'Downloaded {song_link_url} via udownloader in {(end - start_time) * 1000:.1f}ms '
-        f'(served in {serve_time})'
+        f'Downloaded {song_link_url} via udownloader in {(end - start_time) * 1000:.1f}ms ' f'(served in {serve_time})'
     )
     return DownloadedSong(
         file_extension=file_extension,
