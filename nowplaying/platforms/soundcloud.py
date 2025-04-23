@@ -37,10 +37,9 @@ class SoundCloudClient(PlatformClientABC):
     @rethrow_platform_error(SoundCloudError, TYPE)
     async def get_current_and_recent_tracks(self, limit: int) -> AsyncIterator[Track]:
         # Limit is without the currently playing track, that's why we have to do +1
-        for i, track in enumerate(await self.wrapper.get_play_history(limit=limit + 1)):
+        for track in await self.wrapper.get_play_history(limit=limit + 1):
             yield await Track.from_soundcloud_item(
                 track=track.track,
-                currently_playing=i == 0,
                 played_at=datetime.fromtimestamp(track.played_at, tz=UTC_TZ),
             )
 

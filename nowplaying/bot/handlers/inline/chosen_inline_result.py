@@ -75,8 +75,8 @@ async def update_placeholder_message_audio(from_user: User, uri: str, inline_mes
     if track is None or client is None or not await track.song_link():
         # :shrug:, there's nothing we can do
         logger.error(from_user.model_dump())
-        logger.error(f'client: {client} | track: {track}')
-        await report_error('Something unusual happened, track or client is None')
+        logger.error(f'client: {client} | track: {track} | song_link: {await track.song_link()}')
+        await report_error('Something unusual happened, track or client or song link is None')
         return
 
     user_config = await db.get_user_config(from_user.id)
