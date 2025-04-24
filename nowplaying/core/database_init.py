@@ -51,7 +51,9 @@ CREATE TABLE IF NOT EXISTS user_configs
     stats_opt_out BOOLEAN DEFAULT FALSE,
     add_song_link BOOLEAN DEFAULT TRUE,
     add_bitrate BOOLEAN DEFAULT FALSE,
-    add_sample_rate BOOLEAN DEFAULT FALSE
+    add_sample_rate BOOLEAN DEFAULT FALSE,
+    add_media_button BOOLEAN DEFAULT TRUE,
+    lowercase_mode BOOLEAN DEFAULT FALSE
 );
 
 CREATE OR REPLACE FUNCTION update_user_config_value(

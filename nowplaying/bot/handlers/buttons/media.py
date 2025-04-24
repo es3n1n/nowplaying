@@ -26,30 +26,27 @@ async def execute_command(client: PlatformClientABC, command: str, track_id: str
             await client.add_to_queue(track_id)
 
 
-async def _handle_media_buttons(query: CallbackQuery) -> None:
+async def handle_media_buttons(query: CallbackQuery) -> None:
     if query.data is None:
         msg = 'Unsupported query data'
         raise ValueError(msg)
 
+    config = await db.get_user_config(query.from_user.id)
     command, platform_name, track_id = extract_from_query(query.data, arguments_count=3)
     platform_type = SongLinkPlatformType(platform_name)
 
     if not await db.is_user_authorized(query.from_user.id, platform_type):
-        await bot.answer_callback_query(query.id, 'Please authorize first')
+        await bot.answer_callback_query(query.id, config.text('Please authorize first'))
         return
 
     client = await get_platform_from_telegram_id(query.from_user.id, platform_type)
 
     if not is_feature_supported(client, command):
-        await bot.answer_callback_query(query.id, 'Unsupported command')
+        await bot.answer_callback_query(query.id, config.text('Unsupported command'))
         return
 
-    await execute_command(client, command, track_id)
-    await bot.answer_callback_query(query.id, 'Done')
-
-
-async def handle_media_buttons(query: CallbackQuery) -> None:
     try:
-        await _handle_media_buttons(query)
+        await execute_command(client, command, track_id)
     except (ValueError, PlatformClientSideError) as err:
-        await bot.answer_callback_query(query.id, f'Error: {err}')
+        await bot.answer_callback_query(query.id, config.text(f'Error: {err}'))
+    await bot.answer_callback_query(query.id, config.text('Done'))

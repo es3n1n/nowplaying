@@ -10,6 +10,7 @@ from nowplaying.enums.callback_buttons import CallbackButton
 from nowplaying.enums.platform_features import PlatformFeature
 from nowplaying.enums.start_actions import StartAction
 from nowplaying.models.song_link import SongLinkPlatformType
+from nowplaying.models.user_config import UserConfig
 from nowplaying.platforms import get_platform_from_telegram_id, soundcloud, yandex
 from nowplaying.util.string import QUERY_SEPARATOR, encode_query, extract_from_query
 
@@ -24,14 +25,15 @@ SPECIAL_PLATFORMS = {
 
 
 async def send_auth_msg(telegram_id: int, platform_type: SongLinkPlatformType) -> None:
+    user_config = await db.get_user_config(telegram_id)
     await bot.send_message(
         telegram_id,
-        f'Successfully authorized in {html.bold(platform_type.name.title())}!',
+        user_config.text(f'Successfully authorized in {html.bold(platform_type.name.title())}!'),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text='Open inline menu',
+                        text=user_config.text('Open inline menu'),
                         switch_inline_query_current_chat='',
                     )
                 ]
@@ -41,7 +43,7 @@ async def send_auth_msg(telegram_id: int, platform_type: SongLinkPlatformType) -
     )
 
 
-async def _handle_controls(uri: str, message: Message) -> bool:
+async def _handle_controls(uri: str, message: Message, user_config: UserConfig) -> bool:
     if message.from_user is None:
         raise ValueError
 
@@ -62,7 +64,7 @@ async def _handle_controls(uri: str, message: Message) -> bool:
     if client.features.get(PlatformFeature.PLAY):
         buttons.append(
             InlineKeyboardButton(
-                text='Play',
+                text=user_config.text('Play'),
                 callback_data=encode_query(CallbackButton.PLAY_PREFIX, uri),
             )
         )
@@ -70,7 +72,7 @@ async def _handle_controls(uri: str, message: Message) -> bool:
     if client.features.get(PlatformFeature.ADD_TO_QUEUE):
         buttons.append(
             InlineKeyboardButton(
-                text='Add to queue',
+                text=user_config.text('Add to queue'),
                 callback_data=encode_query(CallbackButton.ADD_TO_QUEUE_PREFIX, uri),
             )
         )
@@ -85,7 +87,7 @@ async def _handle_controls(uri: str, message: Message) -> bool:
         text += f'\n{client.media_notice}'
 
     await message.reply(
-        text,
+        user_config.text(text),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 buttons,
@@ -95,7 +97,7 @@ async def _handle_controls(uri: str, message: Message) -> bool:
     return True
 
 
-async def _try_controls(payload: str, message: Message) -> bool:
+async def _try_controls(payload: str, message: Message, user_config: UserConfig) -> bool:
     uri = config.decode_start_url(payload)
     if not uri:
         return False
@@ -103,10 +105,10 @@ async def _try_controls(payload: str, message: Message) -> bool:
     if QUERY_SEPARATOR not in uri:
         return False
 
-    return await _handle_controls(uri, message)
+    return await _handle_controls(uri, message, user_config)
 
 
-async def _try_start_cmds(message: Message, *, authorized: bool) -> bool:
+async def _try_start_cmds(message: Message, *, authorized: bool, user_config: UserConfig) -> bool:
     if message.text is None or message.from_user is None:
         return False
 
@@ -127,15 +129,17 @@ async def _try_start_cmds(message: Message, *, authorized: bool) -> bool:
     if payload == StartAction.SIGN_EXPIRED.value:
         await message.reply(
             text=(
-                html.bold('This authorization url has expired.')
-                + '\n\nPlease try to authorize again using any any of the links above:'
+                user_config.text(
+                    html.bold('This authorization url has expired.')
+                    + '\n\nPlease try to authorize again using any any of the links above:'
+                )
             ),
             parse_mode=ParseMode.HTML,
-            reply_markup=await get_auth_keyboard(message.from_user.id),
+            reply_markup=await get_auth_keyboard(message.from_user.id, user_config),
         )
         return True
 
-    return authorized and await _try_controls(payload, message)
+    return authorized and await _try_controls(payload, message, user_config)
 
 
 @dp.message(CommandStart())
@@ -143,8 +147,9 @@ async def command_start_handler(message: Message) -> None:
     if message.from_user is None or message.text is None:
         raise ValueError
 
+    user_config = await db.get_user_config(message.from_user.id)
     authorized: bool = await db.is_user_authorized_globally(message.from_user.id)
-    if await _try_start_cmds(message, authorized=authorized):
+    if await _try_start_cmds(message, authorized=authorized, user_config=user_config):
         return
 
     msg = f'Hello, {html.quote(message.from_user.full_name)}'
@@ -168,8 +173,8 @@ async def command_start_handler(message: Message) -> None:
     )
 
     await message.reply(
-        msg,
-        reply_markup=await get_auth_keyboard(message.from_user.id),
+        user_config.text(msg),
+        reply_markup=await get_auth_keyboard(message.from_user.id, user_config),
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True,
     )

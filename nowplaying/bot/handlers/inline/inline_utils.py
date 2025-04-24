@@ -37,7 +37,7 @@ async def track_to_caption(
 
     message_text += f'{html.link(track.platform.name.capitalize(), track.url)}'
 
-    if client.can_control_playback:
+    if client.can_control_playback and user_config.add_media_button:
         message_text += f' {html.link("(▶️)", config.get_start_url(track.uri))}'
 
     song_link = await track.song_link()
@@ -50,7 +50,7 @@ async def track_to_caption(
     if user_config.add_sample_rate and quality:
         message_text += f' | {html.bold(str(quality["sample_rate_khz"]))} kHz'
 
-    return message_text
+    return user_config.text(message_text)
 
 
 async def update_inline_message_audio(
