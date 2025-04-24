@@ -108,7 +108,7 @@ async def create_result_item(
 
     name = track.name
     if len(clients) > 0:
-        name += f' ({track.platform.name.capitalize()})'
+        name += f' ({user_config.text(track.platform.name.capitalize())})'
 
     uri_for_placeholder = track.uri
     # Swap the uri for unavailable tracks (their id will be None)
@@ -134,7 +134,7 @@ async def create_result_item(
             inline_keyboard=[
                 [
                     types.InlineKeyboardButton(
-                        text='🎲 Downloading.. (click to requeue downloading)',
+                        text=user_config.text('🎲 Downloading.. (click to requeue downloading)'),
                         callback_data=encode_query(CallbackButton.LOADING, track.uri),
                     ),
                 ]

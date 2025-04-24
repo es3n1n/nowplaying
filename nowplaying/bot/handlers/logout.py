@@ -12,20 +12,21 @@ async def link_command_handler(message: Message) -> None:
     if message.from_user is None:
         raise ValueError
 
+    user_config = await db.get_user_config(message.from_user.id)
     kb = [
         InlineKeyboardButton(
-            text=f'Logout from {platform.value.capitalize()}',
+            text=user_config.text(f'Logout from {platform.value.capitalize()}'),
             callback_data=encode_query(CallbackButton.LOGOUT_PREFIX, platform.value),
         )
         for platform in await db.get_user_authorized_platforms(message.from_user.id)
     ]
 
     if not kb:
-        await message.reply('You are not authorized in any platform')
+        await message.reply(user_config.text('You are not authorized in any platform'))
         return
 
     await message.reply(
-        'Click on the buttons below to logout',
+        user_config.text('Click on the buttons below to logout'),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=chunks(kb, 2),
         ),

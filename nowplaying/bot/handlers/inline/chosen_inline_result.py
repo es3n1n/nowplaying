@@ -20,11 +20,11 @@ from .inline import parse_track_from_uri
 from .inline_utils import UNAVAILABLE_MSG_DETAILED, track_to_caption, update_inline_message_audio
 
 
-async def _unavailable(caption: str, error: str, inline_message_id: str) -> None:
+async def _unavailable(caption: str, error: str, inline_message_id: str, user_config: UserConfig) -> None:
     caption = f'{UNAVAILABLE_MSG_DETAILED.format(error=str(error))}\n{caption}'
     await bot.edit_message_caption(
         inline_message_id=inline_message_id,
-        caption=caption,
+        caption=user_config.text(caption),
         parse_mode=ParseMode.HTML,
     )
 
@@ -45,7 +45,7 @@ async def _get_cached_file(
     try:
         downloaded = await download(await track.song_link())  # type: ignore[arg-type]
     except UdownloaderError as err:
-        await _unavailable(caption, str(err), inline_message_id)
+        await _unavailable(caption, str(err), inline_message_id, user_config)
         await report_error(f'Unable to download {track.model_dump_json()}', exception=err)
         return None
 
@@ -58,7 +58,7 @@ async def _get_cached_file(
         )
     except CachingFileTooLargeError:
         # TODO(es3n1n): we should remember that this file is too large and not try to cache it again
-        await _unavailable(caption, 'File is too large to cache', inline_message_id)  # type: ignore[arg-type]
+        await _unavailable(caption, 'File is too large to cache', inline_message_id, user_config)
         await report_error(f'Unable to download {track.model_dump_json()}\nError = file is too large to cache')
         return None
 
