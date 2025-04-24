@@ -44,6 +44,7 @@ async def _fetch_feed(
 async def fetch_feed_and_clients(
     query_id: str,
     user_id: int,
+    user_config: UserConfig,
 ) -> tuple[list[Track] | None, dict[SongLinkPlatformType, PlatformClientABC] | None]:
     feed: list[Track] = []
     clients: dict[SongLinkPlatformType, PlatformClientABC] = {}
@@ -54,7 +55,7 @@ async def fetch_feed_and_clients(
         await bot.answer_inline_query(
             inline_query_id=query_id,
             button=types.InlineQueryResultsButton(
-                text='Authorize',
+                text=user_config.text('Authorize'),
                 # We don't really care about start parameter, but it can't be an empty string
                 start_parameter='hello',
             ),
@@ -147,19 +148,19 @@ async def create_result_item(
 
 @dp.inline_query()
 async def inline_query_handler(query: types.InlineQuery) -> None:
-    feed, clients = await fetch_feed_and_clients(query.id, query.from_user.id)
+    user_config = await db.get_user_config(query.from_user.id)
+    feed, clients = await fetch_feed_and_clients(query.id, query.from_user.id, user_config)
     if feed is None or clients is None:
         return
 
-    user_config = await db.get_user_config(query.from_user.id)
     result_items = await feed_to_inline_results(feed, clients, user_config)
     if not result_items:
         result_items.append(
             types.InlineQueryResultArticle(
                 id='0',
-                title='Hmm, no recent tracks found',
+                title=user_config.text('Hmm, no recent tracks found'),
                 input_message_content=types.InputTextMessageContent(
-                    message_text='No recent tracks found (┛ಠ_ಠ)┛彡┻━┻',
+                    message_text=user_config.text('No recent tracks found (┛ಠ_ಠ)┛彡┻━┻'),
                 ),
             )
         )
