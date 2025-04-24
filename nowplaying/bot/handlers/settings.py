@@ -9,8 +9,8 @@ from nowplaying.util.string import encode_query
 
 
 SETTINGS_TEXT = (
-    'Click on the buttons below to toggle values.'
-    '\n\nWhen opting out from statistics, all the stored stats data will be deleted.'
+    'Click on the buttons below to toggle values'
+    '\n\nWhen opting out from statistics, all the stored stats data will be deleted'
 )
 
 

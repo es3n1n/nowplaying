@@ -18,9 +18,9 @@ async def handle_loading_button(query: CallbackQuery) -> None:
         await bot.answer_callback_query(
             query.id,
             text=config.text(
-                'It seems like you are trying to click on a very old button.'
-                '\nUnfortunately, these (old) buttons are not supported anymore.'
-                '\nYou can generate a new one by sending fresh-new track from inline menu.'
+                'It seems like you are trying to click on a very old button'
+                '\nUnfortunately, these (old) buttons are not supported anymore'
+                '\nYou can generate a new one by sending fresh-new track from inline menu'
             ),
             show_alert=True,
         )
@@ -28,13 +28,13 @@ async def handle_loading_button(query: CallbackQuery) -> None:
 
     _, track_uri = query_args
     if DOWNLOADING_LOCKS.is_locked(track_uri):
-        await bot.answer_callback_query(query.id, text=config.text('Already downloading the audio, please wait.'))
+        await bot.answer_callback_query(query.id, text=config.text('Already downloading the audio, please wait'))
         return
 
     try:
         await update_placeholder_message_audio(query.from_user, track_uri, query.inline_message_id)
-        await bot.answer_callback_query(query.id, text=config.text('Downloading started.'))
+        await bot.answer_callback_query(query.id, text=config.text('Downloading started'))
     except ValueError:
         await bot.answer_callback_query(
-            query.id, text=config.text('Sorry, but you can not use this button (authorize first).')
+            query.id, text=config.text('Sorry, but you can not use this button (authorize first)')
         )
