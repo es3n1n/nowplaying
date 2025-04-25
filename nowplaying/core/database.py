@@ -99,12 +99,6 @@ class Database:
             )
             return None if user_token is None else user_token['token']
 
-    async def is_file_cached(self, uri: str) -> bool:
-        pool = await self.get_pool()
-        async with pool.acquire() as conn:
-            cached_file_result = await conn.fetch('SELECT 1 FROM cached_files WHERE spotify_uri = $1 LIMIT 1', uri)
-            return bool(cached_file_result)
-
     async def store_cached_file(
         self, uri: str, file_id: str, cached_by_user_id: int | None, quality_info: SongQualityInfo
     ) -> None:
@@ -119,13 +113,47 @@ class Database:
                 orjson.dumps(quality_info).decode(),
             )
 
-    async def get_cached_file(self, uri: str) -> CachedFile | None:
+    async def get_cached_file(self, uri: str, *, highest_available: bool) -> CachedFile | None:
+        highest_str = 'true' if highest_available else 'false'
         pool = await self.get_pool()
         async with pool.acquire() as conn:
-            cached_file = await conn.fetchrow('SELECT * FROM cached_files WHERE uri = $1 LIMIT 1', uri)
+            cached_file = await conn.fetchrow(
+                'SELECT * FROM cached_files WHERE uri = $1 AND (quality_info @> $2 OR quality_info @> $3) LIMIT 1',
+                uri,
+                # NOTE(es3n1n): i don't feel like getting overhead from json dumps here
+                f'{{"highest_available":{highest_str}}}',
+                f'{{"marked_as_highest_available":{highest_str}}}',
+            )
             if not cached_file:
                 return None
             return CachedFile.model_validate(dict(cached_file))
+
+    async def get_cached_file_by_quality(self, uri: str, file_quality: SongQualityInfo) -> CachedFile | None:
+        file_quality_copy = dict(file_quality).copy()
+        file_quality_copy.pop('highest_available')
+
+        pool = await self.get_pool()
+        async with pool.acquire() as conn:
+            cached_file = await conn.fetchrow(
+                'SELECT * FROM cached_files WHERE uri = $1 AND quality_info @> $2 LIMIT 1',
+                uri,
+                orjson.dumps(file_quality_copy).decode(),
+            )
+            if not cached_file:
+                return None
+            return CachedFile.model_validate(dict(cached_file))
+
+    async def mark_cached_file_quality(self, uri: str, *, marked_as_highest_available: bool) -> None:
+        pool = await self.get_pool()
+        async with pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                'UPDATE cached_files SET quality_info = quality_info || $1 WHERE uri = $2',
+                # NOTE(es3n1n): i don't feel like getting overhead from json dumps here
+                '{"marked_as_highest_available":true}'
+                if marked_as_highest_available
+                else '{"marked_as_highest_available":false}',
+                uri,
+            )
 
     async def delete_cached_files(self, uris: list[str]) -> None:
         pool = await self.get_pool()

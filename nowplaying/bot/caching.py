@@ -26,8 +26,8 @@ class CachingFileTooLargeError(Exception):
     """File is too large to cache."""
 
 
-async def get_cached_file_ensured(uri: str) -> CachedFile | None:
-    file = await db.get_cached_file(uri)
+async def get_cached_file_ensured(uri: str, *, highest_available: bool) -> CachedFile | None:
+    file = await db.get_cached_file(uri, highest_available=highest_available)
     if file is None:
         return None
 
@@ -64,6 +64,15 @@ async def cache_file(
     user: User,
     user_config: UserConfig | None,
 ) -> CachedFile:
+    # If (for example) we are downloading the best quality,
+    # and what we got matches with something that we already downloaded for the non-best quality,
+    # we can mark it in the database as both the best and the non-best quality
+    file_same_quality = await db.get_cached_file_by_quality(track.uri, file.quality)
+    if file_same_quality:
+        # Promote to our quality
+        await db.mark_cached_file_quality(track.uri, marked_as_highest_available=file.quality['highest_available'])
+        return file_same_quality
+
     # Special handling for UUIDs
     uri_safe = track.uri.replace('-', '_')
 
@@ -89,7 +98,8 @@ async def cache_file(
         f'\n#bit_{file.quality["bit_depth"]} '
         f'#kbps_{file.quality["bitrate_kbps"]} '
         f'#khz_{file.quality["sample_rate_khz"]} '
-        f'#p_{file.platform_name}'
+        f'#p_{file.platform_name} '
+        f'#highest_{file.quality["highest_available"]} '
     )
 
     file_name = f'{track.artist} - {track.name}'
