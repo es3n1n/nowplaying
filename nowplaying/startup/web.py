@@ -75,7 +75,9 @@ async def startup() -> None:
 
 
 def start_web() -> None:
-    kw = {}
+    kw: dict[str, int | str] = {
+        'loop': 'uvloop',
+    }
     if not config.is_dev_env:
         kw['workers'] = config.WEB_WORKERS
 

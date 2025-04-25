@@ -16,6 +16,7 @@ class SongQualityInfo(TypedDict):
     bit_depth: int | None
     bitrate_kbps: int
     sample_rate_khz: int
+    highest_available: bool
 
 
 @dataclass(frozen=True)
@@ -44,13 +45,17 @@ def get_udownloader_base() -> str:
 
 
 # For now, only downloading from youtube via song.link is supported
-async def download(song_link_url: str) -> DownloadedSong:
+async def download(song_link_url: str, *, download_flac: bool, fast_route: bool) -> DownloadedSong:
     start_time = perf_counter()
     async with ClientSession(headers=get_headers()) as session:
         try:
             async with session.post(
                 f'{get_udownloader_base()}/v1/download/by_songlink',
-                json={'url': song_link_url},
+                json={
+                    'url': song_link_url,
+                    'download_flac': download_flac,
+                    'skip_song_link': fast_route,
+                },
             ) as response:
                 if response.status != STATUS_OK:
                     bytes_data = await response.read()

@@ -16,10 +16,12 @@ CREATE TABLE IF NOT EXISTS cached_files
     uri VARCHAR UNIQUE NOT NULL,
     file_id VARCHAR NOT NULL,
     cached_by_user_id BIGINT,
-    quality_info JSON NOT NULL
+    quality_info JSONB NOT NULL
 );
 CREATE INDEX IF NOT EXISTS our_uri ON cached_files (uri);
 CREATE INDEX IF NOT EXISTS cached_by_user ON cached_files (cached_by_user_id);
+CREATE INDEX IF NOT EXISTS highest_available ON cached_files ((quality_info->'highest_available'));
+CREATE INDEX IF NOT EXISTS marked_as_highest_available ON cached_files ((quality_info->'marked_as_highest_available'));
 
 CREATE TABLE IF NOT EXISTS local_tracks
 (
@@ -53,7 +55,9 @@ CREATE TABLE IF NOT EXISTS user_configs
     add_bitrate BOOLEAN DEFAULT FALSE,
     add_sample_rate BOOLEAN DEFAULT FALSE,
     add_media_button BOOLEAN DEFAULT TRUE,
-    lowercase_mode BOOLEAN DEFAULT FALSE
+    lowercase_mode BOOLEAN DEFAULT FALSE,
+    download_flac BOOLEAN DEFAULT TRUE,
+    fast_download_route BOOLEAN DEFAULT FALSE
 );
 
 CREATE OR REPLACE FUNCTION update_user_config_value(

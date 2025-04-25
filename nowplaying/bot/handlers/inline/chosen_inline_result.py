@@ -37,13 +37,17 @@ async def _get_cached_file(
         await db.increment_sent_tracks_count(from_user.id)
 
     # Cached file, no need to download
-    cached_file = await get_cached_file_ensured(track.uri)
+    cached_file = await get_cached_file_ensured(track.uri, highest_available=user_config.download_flac)
     if cached_file:
         return cached_file
 
     # Cache missed, downloading
     try:
-        downloaded = await download(await track.song_link())  # type: ignore[arg-type]
+        downloaded = await download(
+            await track.song_link(),  # type: ignore[arg-type]
+            download_flac=user_config.download_flac,
+            fast_route=user_config.fast_download_route,
+        )
     except UdownloaderError as err:
         await _unavailable(caption, str(err), inline_message_id, user_config)
         await report_error(f'Unable to download {track.model_dump_json()}', exception=err)

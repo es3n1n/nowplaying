@@ -1,5 +1,3 @@
-from asyncio import run
-
 from aiogram.types import BotCommand
 
 from nowplaying.bot import import_bot_handlers
@@ -27,4 +25,12 @@ async def async_start_bot() -> None:
 
 def start_bot() -> None:
     import_bot_handlers()
-    run(async_start_bot())
+    try:
+        import uvloop
+
+        uvloop.run(async_start_bot())
+    except (TypeError, ImportError):
+        import asyncio
+
+        logger.warning('uvloop not found/failed, using default event loop')
+        asyncio.run(async_start_bot())
