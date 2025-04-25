@@ -35,22 +35,25 @@ async def track_to_caption(
     elif not is_track_available:
         message_text += UNAVAILABLE_MSG + '\n'
 
-    message_text += f'{html.link(track.platform.name.capitalize(), track.url)}'
+    components = [
+        f'{html.link(user_config.text(track.platform.name.capitalize()), track.url)}',
+    ]
 
     if client.can_control_playback and user_config.add_media_button:
-        message_text += f' {html.link("(▶️)", config.get_start_url(track.uri))}'
+        components[0] += f' {html.link("(▶️)", config.get_start_url(track.uri))}'
 
     song_link = await track.song_link()
     if user_config.add_song_link and song_link:
-        message_text += f' | {html.link("Other", song_link)}'
+        components.append(f'{html.link(user_config.text("Other"), song_link)}')
 
     if user_config.add_bitrate and quality:
-        message_text += f' | {html.bold(str(quality["bitrate_kbps"]))} kbps'
+        components.append(user_config.text(f'{html.bold(str(quality["bitrate_kbps"]))} kbps'))
 
     if user_config.add_sample_rate and quality:
-        message_text += f' | {html.bold(str(quality["sample_rate_khz"]))} kHz'
+        components.append(user_config.text(f'{html.bold(str(quality["sample_rate_khz"]))} kHz'))
 
-    return user_config.text(message_text)
+    message_text += ' | '.join(components)
+    return message_text
 
 
 async def update_inline_message_audio(
