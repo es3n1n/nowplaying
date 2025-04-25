@@ -99,7 +99,7 @@ async def cache_file(
         f'#kbps_{file.quality["bitrate_kbps"]} '
         f'#khz_{file.quality["sample_rate_khz"]} '
         f'#p_{file.platform_name} '
-        f'#highest_{file.quality["highest_available"]} '
+        f'#h_{str(file.quality["highest_available"])[0].lower()} '
     )
 
     file_name = f'{track.artist} - {track.name}'
