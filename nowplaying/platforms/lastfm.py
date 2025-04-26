@@ -86,7 +86,8 @@ class LastfmClient(PlatformClientABC):
             is_playing=is_playing,
         )
 
-        if out_track.song_link is not None:  # otherwise, this track isn't available for a download
+        song_link = await out_track.song_link()
+        if song_link is not None:  # otherwise, this track isn't available for a download
             out_track.id = await db.cache_local_track(
                 platform=TYPE,
                 url=out_track.url,
