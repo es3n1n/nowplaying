@@ -21,10 +21,10 @@ from .inline_utils import UNAVAILABLE_MSG_DETAILED, track_to_caption, update_inl
 
 
 async def _unavailable(caption: str, error: str, inline_message_id: str, user_config: UserConfig) -> None:
-    caption = f'{UNAVAILABLE_MSG_DETAILED.format(error=str(error))}\n{caption}'
+    caption = user_config.text(UNAVAILABLE_MSG_DETAILED.format(error=str(error))) + '\n' + caption
     await bot.edit_message_caption(
         inline_message_id=inline_message_id,
-        caption=user_config.text(caption),
+        caption=caption,
         parse_mode=ParseMode.HTML,
     )
 
@@ -42,15 +42,16 @@ async def _get_cached_file(
         return cached_file
 
     # Cache missed, downloading
+    song_link = await track.song_link()
     try:
         downloaded = await download(
-            await track.song_link(),  # type: ignore[arg-type]
+            song_link,  # type: ignore[arg-type]
             download_flac=user_config.download_flac,
             fast_route=user_config.fast_download_route,
         )
     except UdownloaderError as err:
         await _unavailable(caption, str(err), inline_message_id, user_config)
-        await report_error(f'Unable to download {track.model_dump_json()}', exception=err)
+        await report_error(f'Unable to download {track.model_dump_json()} {song_link=}', exception=err)
         return None
 
     try:
