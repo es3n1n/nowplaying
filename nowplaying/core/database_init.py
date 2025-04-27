@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS user_configs
 (
     user_id BIGINT PRIMARY KEY UNIQUE NOT NULL,
     stats_opt_out BOOLEAN DEFAULT FALSE,
+    add_platform_url BOOLEAN DEFAULT TRUE,
     add_song_link BOOLEAN DEFAULT TRUE,
     add_bitrate BOOLEAN DEFAULT FALSE,
     add_sample_rate BOOLEAN DEFAULT FALSE,
