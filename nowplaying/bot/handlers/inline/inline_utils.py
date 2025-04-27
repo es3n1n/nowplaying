@@ -35,12 +35,18 @@ async def track_to_caption(
     elif not is_track_available:
         message_text += UNAVAILABLE_MSG + '\n'
 
-    components = [
-        f'{html.link(user_config.text(track.platform.name.capitalize()), track.url)}',
-    ]
+    components = []
+
+    if user_config.add_platform_url:
+        components.append(html.link(user_config.text(track.platform.name.capitalize()), track.url))
 
     if client.can_control_playback and user_config.add_media_button:
-        components[0] += f' {html.link("(▶️)", config.get_start_url(track.uri))}'
+        media_text = '(▶️)' if components else user_config.text('Play')
+        media_link = html.link(media_text, config.get_start_url(track.uri))
+
+        if not components:
+            components.append('')
+        components[0] = (components[0] + f' {media_link}').strip()
 
     song_link = await track.song_link()
     if user_config.add_song_link and song_link:
