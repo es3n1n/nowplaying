@@ -32,8 +32,10 @@ class SoundCloudTrack:
     @classmethod
     def deserialize(cls, data: dict[str, Any]) -> 'SoundCloudTrack':
         author = data['user']['username']
-        if published_author := data.get('publisher_metadata', {}).get('artist'):
-            author = published_author
+
+        publisher_metadata = data.get('publisher_metadata')
+        if publisher_metadata:
+            author = publisher_metadata.get('artist') or author
 
         return cls(
             id=data['id'],
