@@ -117,6 +117,9 @@ async def create_result_item(
         # We still want it to cache on the telegram side, so instead of using random stuff, let's use the url
         uri_for_placeholder = track.url
 
+    # Telegram will cache the file name, so we have to add formatting identifier to the uri
+    uri_for_placeholder += f'_{user_config.formatting_identifier}'
+
     return types.InlineQueryResultAudio(
         id=track.uri if can_proceed else str(index),
         audio_url=f'{config.EMPTY_MP3_FILE_URL}?{quote(uri_for_placeholder)}',
