@@ -160,7 +160,7 @@ class Track(BaseModel):
     ) -> 'Track':
         return cls(
             platform=SongLinkPlatformType.SOUNDCLOUD,
-            artist=track.author_username,
+            artist=track.author,
             name=track.title,
             id=str(track.id),
             url=track.permalink_url,

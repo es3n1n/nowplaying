@@ -31,9 +31,21 @@ async def test_sc_get_track(sc_client: SoundCloudWrapper) -> None:
     assert track
 
     assert track.id == 1245462184
-    assert track.author_username == '...'
+    assert track.author == '...'
     assert track.title == 'everything i want for u ♦○♪'
     assert track.permalink_url == 'https://soundcloud.com/nkycat/everything-i-want-for-u'
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not SC_TOKEN, reason='no sc token')
+async def test_sc_get_track_publisher_meta(sc_client: SoundCloudWrapper) -> None:
+    track = await sc_client.get_track(1029241846)
+    assert track
+
+    assert track.id == 1029241846
+    assert track.author == 'DJ Sharpnel'
+    assert track.title == 'Pants'
+    assert track.permalink_url == 'https://soundcloud.com/extasium/dj-sharpnel-pants'
 
 
 @pytest.mark.asyncio

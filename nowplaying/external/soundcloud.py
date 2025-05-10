@@ -27,15 +27,19 @@ class SoundCloudTrack:
     id: int
     permalink_url: str
     title: str
-    author_username: str
+    author: str
 
     @classmethod
     def deserialize(cls, data: dict[str, Any]) -> 'SoundCloudTrack':
+        author = data['user']['username']
+        if published_author := data.get('publisher_metadata', {}).get('artist'):
+            author = published_author
+
         return cls(
             id=data['id'],
             permalink_url=data['permalink_url'],
             title=data['title'],
-            author_username=data['user']['username'],
+            author=author,
         )
 
 

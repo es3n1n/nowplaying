@@ -21,3 +21,10 @@ class UserConfig(BaseModel):
         if self.lowercase_mode:
             text = text.lower()
         return text
+
+    @property
+    def formatting_identifier(self) -> str:
+        def v(*, value: bool) -> str:
+            return str(value)[0].lower()
+
+        return f'{v(value=self.lowercase_mode)}'
