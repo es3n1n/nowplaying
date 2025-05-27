@@ -47,8 +47,8 @@ async def process_thumbnail_jpeg(thumbnail_url: str | None) -> BufferedInputFile
 
     async with ClientSession() as session, session.get(thumbnail_url) as resp:
         if resp.status != STATUS_OK:
-            msg = f'Unable to get thumbnail {resp.status}'
-            raise ValueError(msg)
+            # :shrug:
+            return None
 
         data = await resp.read()
         return BufferedInputFile(
