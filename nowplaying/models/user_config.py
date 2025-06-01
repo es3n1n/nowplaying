@@ -14,7 +14,7 @@ class UserConfig(BaseModel):
     add_bitrate: Annotated[bool, Field(description='Add bitrate to message')] = False
     add_sample_rate: Annotated[bool, Field(description='Add sample rate to message')] = False
     lowercase_mode: Annotated[bool, Field(description='Everything in lowercase')] = False
-    download_flac: Annotated[bool, Field(description='Download FLAC if possible')] = True
+    download_flac: Annotated[bool, Field(description='Download in lossless quality if possible')] = True
     fast_download_route: Annotated[bool, Field(description='Fast downloading route (lower quality)')] = False
 
     def text(self, text: str) -> str:
