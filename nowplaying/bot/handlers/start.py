@@ -28,7 +28,10 @@ async def send_auth_msg(telegram_id: int, platform_type: SongLinkPlatformType) -
     user_config = await db.get_user_config(telegram_id)
     await bot.send_message(
         telegram_id,
-        user_config.text(f'Successfully authorized in {html.bold(platform_type.name.title())}!'),
+        user_config.text(
+            f'Successfully authorized in {html.bold(platform_type.name.title())}!'
+            '\nYou can customize your experience (like download quality) in /settings.'
+        ),
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
@@ -142,38 +145,66 @@ async def _try_start_cmds(message: Message, *, authorized: bool, user_config: Us
     return authorized and await _try_controls(payload, message, user_config)
 
 
+async def _start_message_authorized(user_config: UserConfig) -> str:
+    me = await bot.me()
+    bot_mention = '@' + str(me.username)
+
+    msg = "Hi! Here's what you can do:"
+
+    msg += f'\n* {html.bold("Access recent tracks")}: Type {html.code(bot_mention)} and press space in any chat.'
+    msg += f'\n* {html.bold("Link more accounts")}: Use the buttons below.'
+
+    flac_status = 'enabled' if user_config.download_flac else 'disabled'
+    flac_action = 'disable it for smaller files' if user_config.download_flac else 'enable it for higher quality'
+    msg += (
+        f'\n* {html.bold("Adjust file quality")}: Lossless audio is currently <b>{flac_status}</b>. '
+        f'Visit /settings to {flac_action}.'
+    )
+
+    return msg
+
+
+def _start_message_unauthorized() -> str:
+    return (
+        'Hi!'
+        '\nI am a bot that will help you with sending your currently-playing songs right in telegram.'
+        '\n\nTo get started, please link an account from one of our supported platforms using the buttons below.'
+    )
+
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     if message.from_user is None or message.text is None:
-        raise ValueError
+        return
 
     user_config = await db.get_user_config(message.from_user.id)
     authorized: bool = await db.is_user_authorized_globally(message.from_user.id)
     if await _try_start_cmds(message, authorized=authorized, user_config=user_config):
         return
 
-    msg = f'Hello, {html.quote(message.from_user.full_name)}'
-
+    sections = []
     if authorized:
-        msg += '\n\nYou are already authorized, check out the inline bot menu to see your recent tracks'
-        msg += '\nTo link a few more accounts please use the buttons below'
+        sections.append(await _start_message_authorized(user_config))
     else:
-        msg += '\n\nTo link your account please use the buttons below'
+        sections.append(_start_message_unauthorized())
 
     cached_tracks_count = await db.get_cached_files_count_for_user(message.from_user.id)
     tracks_sent = await db.get_user_sent_tracks_count(message.from_user.id)
-    msg += (
-        '\n\n'
-        f'Tracks you cached: {html.code(str(cached_tracks_count))} / '
-        f'{html.code(str(tracks_sent))} sent'
-        '\n'
-        f'{html.link('news', config.NEWS_CHANNEL_URL)} / '
-        f'{html.link('source code', config.SOURCE_CODE_URL)} / '
-        f'{html.link('feedback', config.developer_url)}'
+    if authorized and (cached_tracks_count or tracks_sent):
+        sections.append(
+            'Your activity:'
+            f'\n* Tracks cached from your requests: {html.code(str(cached_tracks_count))}'
+            f'\n* Total tracks you sent: {html.code(str(tracks_sent))}'
+        )
+
+    sections.append(
+        f"{html.link('News', config.NEWS_CHANNEL_URL)} / "
+        f"{html.link('Source code', config.SOURCE_CODE_URL)} / "
+        f"{html.link('Feedback', config.developer_url)}"
     )
 
     await message.reply(
-        user_config.text(msg),
+        text=user_config.text('\n\n'.join(sections)),
         reply_markup=await get_auth_keyboard(message.from_user.id, user_config),
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True,
