@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     # Docker address is preferred by default
     UDOWNLOADER_DOCKER_BASE_URL: str = 'http://udownloader:1337/'
     UDOWNLOADER_BASE_URL: str = 'http://127.0.0.1:41337/'
+    UDOWNLOADER_RETRIES: int = 3
 
     WEB_HOST: str = '0.0.0.0'
     WEB_PORT: int = 1337
