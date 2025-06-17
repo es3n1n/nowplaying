@@ -124,8 +124,8 @@ class Track(BaseModel):
         url = f'https://music.yandex.ru/track/{track.id}'
         return cls(
             platform=SongLinkPlatformType.YANDEX,
-            artist=', '.join(track.artists_name()),
-            name=track.title,
+            artist=', '.join(track.artists_name()) or 'No artist',
+            name=track.title or 'No title',
             id=track.id,
             url=url,
             currently_playing=is_playing,
