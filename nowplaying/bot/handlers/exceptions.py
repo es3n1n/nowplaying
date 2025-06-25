@@ -1,6 +1,6 @@
 from typing import cast
 
-from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import ExceptionTypeFilter
 from aiogram.types import ErrorEvent, InlineQueryResultArticle, InputTextMessageContent
 
@@ -120,6 +120,11 @@ async def fallback_error_handler(event: ErrorEvent) -> bool:
     ):
         # There is nothing we can do about this,
         # since most likely this error occurs because of the long responses from platforms
+        return False
+
+    if isinstance(event.exception, TelegramForbiddenError) and 'bot was blocked by the user' in event.exception.message:
+        # There's a telegram bug where people that blocked the bot can still send a message to it
+        # using the start button that shows up in the inline menu, and the bot will try to respond to it.
         return False
 
     await reply_to_event(event, f'Something went wrong (┛ಠ_ಠ)┛彡┻━┻\nContact @{config.DEVELOPER_USERNAME}')
