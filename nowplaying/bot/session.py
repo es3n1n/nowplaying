@@ -1,14 +1,16 @@
+from asyncio import sleep
 from typing import Any, cast
 
 from aiogram import Bot
 from aiogram.client.session.aiohttp import AiohttpSession, _ProxyType
 from aiogram.client.telegram import PRODUCTION, TelegramAPIServer
-from aiogram.exceptions import TelegramNetworkError
+from aiogram.exceptions import TelegramNetworkError, TelegramRetryAfter
 from aiogram.methods import TelegramMethod
 from aiogram.methods.base import TelegramType
 from aiohttp import ClientError, ClientSession
 from loguru import logger
 
+from nowplaying.bot.reporter import report_to_dev
 from nowplaying.core.config import config
 from nowplaying.util.dns import try_resolve_url
 
@@ -67,10 +69,19 @@ class BotSession(AiohttpSession):
         except ClientError as exc:
             raise TelegramNetworkError(method=method, message=f'{type(exc).__name__}: {exc}') from exc
 
-        response = self.check_response(
-            bot=bot,
-            method=method,
-            status_code=resp.status,
-            content=raw_result,
-        )
+        try:
+            response = self.check_response(
+                bot=bot,
+                method=method,
+                status_code=resp.status,
+                content=raw_result,
+            )
+        except TelegramRetryAfter as exc:
+            # Avoid report_to_dev, or something like that, otherwise we might enter a loop of flood-waits
+            logger.warning(
+                f'Got flood wait from telegram while requesting {method}, retrying after {exc.retry_after} seconds'
+            )
+            await sleep(exc.retry_after)
+            return await self.make_request(bot, method, timeout)
+
         return cast(TelegramType, response.result)
