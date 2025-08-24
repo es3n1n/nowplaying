@@ -26,8 +26,9 @@ async def async_start_bot() -> None:
 def start_bot() -> None:
     import_bot_handlers()
     try:
-        import uvloop
+        import uvloop  # type: ignore[import-not-found]
 
+        logger.info('Starting with uvloop')
         uvloop.run(async_start_bot())
     except (TypeError, ImportError):
         import asyncio

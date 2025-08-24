@@ -10,7 +10,6 @@ from aiogram.methods.base import TelegramType
 from aiohttp import ClientError, ClientSession
 from loguru import logger
 
-from nowplaying.bot.reporter import report_to_dev
 from nowplaying.core.config import config
 from nowplaying.util.dns import try_resolve_url
 

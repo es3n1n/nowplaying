@@ -3,4 +3,4 @@ from enum import Enum, unique
 
 @unique
 class StartAction(Enum):
-    SIGN_EXPIRED: str = 'expired'
+    SIGN_EXPIRED = 'expired'

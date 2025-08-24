@@ -72,8 +72,8 @@ def init_logger() -> None:
     logger.remove()
     logger.configure(
         handlers=[
-            {'sink': sys.stderr, 'level': 'ERROR', 'format': fmt, 'filter': _filter_stderr},
-            {'sink': sys.stdout, 'format': fmt, 'filter': _filter_stdout},
+            {'sink': sys.stderr, 'level': 'ERROR', 'format': fmt, 'filter': _filter_stderr},  # type: ignore[misc,list-item]
+            {'sink': sys.stdout, 'format': fmt, 'filter': _filter_stdout},  # type: ignore[misc,list-item]
         ]
     )
 
