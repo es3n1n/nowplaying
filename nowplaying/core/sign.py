@@ -38,16 +38,6 @@ def sign(payload: Any) -> str:  # noqa: ANN401
     ).decode()
 
 
-def _validate_fields(payload: Any | None, signature: str | None, expires_at: int | None) -> bool:  # noqa: ANN401
-    if not isinstance(payload, int):
-        return False
-
-    if not isinstance(signature, str):
-        return False
-
-    return isinstance(expires_at, int)
-
-
 def verify_sign(state: str, *, check_expiration: bool = False) -> Any:  # noqa: ANN401
     try:
         loaded = orjson.loads(b64decode(state).decode())
@@ -61,7 +51,7 @@ def verify_sign(state: str, *, check_expiration: bool = False) -> Any:  # noqa: 
     signature = loaded.get('m', None)
     expires_at = loaded.get('e', None)
 
-    if not _validate_fields(payload, signature, expires_at):
+    if not isinstance(payload, int) or not isinstance(signature, str) or not isinstance(expires_at, int):
         raise SIGN_EXPIRED_EXCEPTION
 
     to_sign: str = _payload_to_sign(payload, expires_at)

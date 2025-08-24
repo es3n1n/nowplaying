@@ -12,26 +12,26 @@ license = "Apache-2.0"
 requires-python = ">=3.12"
 version = "1.0.0"
 dependencies = [
-    "aiogram==3.12.0",
-    "httpx==0.27.2",
-    "fastapi==0.112.0",
-    "uvicorn==0.30.6",
-    "loguru==0.7.2",
-    "pydantic-settings==2.4.0",
-    "filelock==3.15.4",
-    "async-lru==2.0.4",
-    "pycryptodome==3.20.0",
-    "pyjwt==2.9.0",
-    "yandex-music @ git+https://github.com/MarshalX/yandex-music-api.git@15fc42bdda0e00d6eb637cfe7e41016c57d61f47",
-    "asyncpg==0.29.0",
-    "cryptography==43.0.0",
-    "orjson==3.10.7",
-    "googleapis-common-protos>=1.65.0",
-    "protobuf==5.27.2",
-    "grpcio>=1.67.0rc1",
-    "aiohttp-socks>=0.10.1",
-    "pillow>=11.2.1",
-    "uvloop>=0.21.0",
+    "aiogram==3.22.0",
+    "httpx==0.28.1",
+    "fastapi==0.116.1",
+    "uvicorn==0.35.0",
+    "loguru==0.7.3",
+    "pydantic-settings==2.10.1",
+    "filelock==3.19.1",
+    "async-lru==2.0.5",
+    "pycryptodome==3.23.0",
+    "pyjwt==2.10.1",
+    "yandex-music @ git+https://github.com/MarshalX/yandex-music-api.git@dfdcfaf3ef3d30ab47e1533cb1c6dd5bf3812cad",
+    "asyncpg==0.30.0",
+    "cryptography==45.0.6",
+    "orjson==3.11.2",
+    "googleapis-common-protos==1.70.0",
+    "protobuf==6.32.0",
+    "grpcio==1.74.0",
+    "aiohttp-socks==0.10.1",
+    "pillow==11.3.0",
+    "uvloop>=0.21.0; sys_platform != 'win32'",
 ]
 
 [tool.hatch.metadata]
@@ -43,13 +43,13 @@ packages = ["nowplaying/"]
 [tool.uv]
 dev-dependencies = [
     "ruff",
-    "mypy~=1.11.1",
+    "mypy~=1.17.1",
     "asyncpg-stubs",
     "types-requests",
     "pytest",
     "pytest-asyncio",
-    "grpcio-tools>=1.66.2",
-    "telethon>=1.38.1",
+    "grpcio-tools==1.74.0",
+    "telethon==1.40.0",
 ]
 
 [project.urls]
