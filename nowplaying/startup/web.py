@@ -1,3 +1,5 @@
+from importlib.util import find_spec
+
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -75,11 +77,11 @@ async def startup() -> None:
 
 
 def start_web() -> None:
-    kw: dict[str, int | str] = {
-        'loop': 'uvloop',
-    }
+    kw: dict[str, int | str] = {}
     if not config.is_dev_env:
         kw['workers'] = config.WEB_WORKERS
+    if find_spec('uvloop'):
+        kw['loop'] = 'uvloop'
 
     # Start the web server
     logger.info('Starting web-server...')
