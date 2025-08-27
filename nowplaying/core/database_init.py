@@ -13,10 +13,13 @@ CREATE INDEX IF NOT EXISTS tg_idx_platform ON tokens (telegram_id, platform_name
 CREATE TABLE IF NOT EXISTS cached_files
 (
     id SERIAL PRIMARY KEY,
-    uri VARCHAR UNIQUE NOT NULL,
+    uri VARCHAR NOT NULL,
     file_id VARCHAR NOT NULL,
     cached_by_user_id BIGINT,
-    quality_info JSONB NOT NULL
+    quality_info JSONB NOT NULL,
+    highest_available BOOLEAN
+        GENERATED ALWAYS AS ((quality_info ->> 'highest_available')::BOOLEAN) STORED,
+    UNIQUE (uri, highest_available)
 );
 CREATE INDEX IF NOT EXISTS our_uri ON cached_files (uri);
 CREATE INDEX IF NOT EXISTS cached_by_user ON cached_files (cached_by_user_id);

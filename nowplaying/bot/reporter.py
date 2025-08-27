@@ -1,3 +1,5 @@
+from traceback import format_exc
+
 from aiogram.exceptions import AiogramError
 from aiogram.types import BufferedInputFile
 from loguru import logger
@@ -39,6 +41,6 @@ async def report_error(message: str, exception: Exception | None = None) -> None
 
     logger.opt(exception=exception).error(message)
     try:
-        await report_to_dev(message + f'\nException: {exception}')
+        await report_to_dev(message + f'\n{format_exc()}')
     except AiogramError as exc:
         logger.opt(exception=exc).error('Unable to report to dev')

@@ -105,8 +105,13 @@ class Database:
         pool = await self.get_pool()
         async with pool.acquire() as conn, conn.transaction():
             await conn.execute(
-                'INSERT INTO cached_files (uri, file_id, cached_by_user_id, quality_info) VALUES ($1, $2, $3, $4) '
-                'ON CONFLICT (uri) DO UPDATE SET file_id = $2, cached_by_user_id = $3, quality_info = $4',
+                'INSERT INTO cached_files (uri, file_id, cached_by_user_id, quality_info) '
+                'VALUES ($1, $2, $3, $4) '
+                'ON CONFLICT (uri, highest_available) DO UPDATE '
+                'SET '
+                'file_id = EXCLUDED.file_id, '
+                'cached_by_user_id = EXCLUDED.cached_by_user_id, '
+                'quality_info = EXCLUDED.quality_info;',
                 uri,
                 file_id,
                 cached_by_user_id,
