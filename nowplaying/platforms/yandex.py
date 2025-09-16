@@ -119,20 +119,4 @@ class YandexPlatform(PlatformABC):
         return YandexClient(ClientAsync(token), telegram_id)
 
     async def get_authorization_url(self, state: str) -> str:
-        query = urlencode(
-            {
-                'client_id': config.YANDEX_OAUTH_CLIENT_ID,
-                'response_type': 'token',
-                'scope': [
-                    'music:content',
-                    'music:read',
-                    'music:write',
-                ],
-                'state': state,
-                # Not a `redirect_url_for_ext_svc` because yandex provides token as # param to the redirect url,
-                #   the HTML code will replace it with a get param and redirect.
-                'redirect_uri': f'{config.WEB_SERVER_PUBLIC_ENDPOINT}/ym/',
-            },
-            doseq=True,
-        )
-        return f'https://oauth.yandex.ru/authorize?{query}'
+        return f'{config.WEB_SERVER_PUBLIC_ENDPOINT}/ym/'
