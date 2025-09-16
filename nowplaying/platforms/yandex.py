@@ -1,7 +1,6 @@
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta
 from types import MappingProxyType
-from urllib.parse import urlencode
 
 from yandex_music.exceptions import TimedOutError, YandexMusicError
 
@@ -118,5 +117,5 @@ class YandexPlatform(PlatformABC):
             raise ValueError(err_msg)
         return YandexClient(ClientAsync(token), telegram_id)
 
-    async def get_authorization_url(self, state: str) -> str:
+    async def get_authorization_url(self, _: str) -> str:
         return f'{config.WEB_SERVER_PUBLIC_ENDPOINT}/ym/'
