@@ -5,7 +5,7 @@ from nowplaying.bot.handlers.start import send_auth_msg
 from nowplaying.core.config import config
 from nowplaying.core.sign import verify_sign
 from nowplaying.enums.start_actions import StartAction
-from nowplaying.platforms import PlatformABC, apple, lastfm, spotify, yandex
+from nowplaying.platforms import PlatformABC, apple, lastfm, spotify
 from nowplaying.util.http import STATUS_FORBIDDEN, STATUS_TEMPORARY_REDIRECT
 
 
@@ -31,11 +31,6 @@ async def spotify_callback(state: str, code: str) -> RedirectResponse:
 @router.get('/lastfm/callback')
 async def lastfm_callback(state: str, token: str) -> RedirectResponse:
     return await _proceed_auth(lastfm, state, token)
-
-
-@router.get('/yandex/callback')
-async def yandex_callback(state: str, access_token: str) -> RedirectResponse:
-    return await _proceed_auth(yandex, state, access_token)
 
 
 @router.get('/apple/callback')
