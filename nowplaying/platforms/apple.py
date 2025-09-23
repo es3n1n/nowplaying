@@ -12,6 +12,7 @@ from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
 from nowplaying.platforms.abc import PlatformABC, PlatformClientABC
 from nowplaying.util.exceptions import rethrow_platform_error
+from nowplaying.util.logger import logger
 from nowplaying.util.time import UTC_TZ
 
 
@@ -66,7 +67,8 @@ class AppleClient(PlatformClientABC):
     async def is_alive(self) -> bool:
         try:
             await self.app.recently_played(1)
-        except AppleMusicError:
+        except AppleMusicError as exc:
+            logger.opt(exception=exc).warning('Apple music client is not alive')
             return False
 
         return self.telegram_id != 0

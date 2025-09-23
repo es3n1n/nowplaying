@@ -48,7 +48,8 @@ def _validate_response_code(response: Response) -> None:
     if is_serverside_error(response.status_code):
         raise PlatformTemporarilyUnavailableError(platform=SongLinkPlatformType.APPLE)
     if response.status_code != STATUS_OK:
-        raise AppleMusicInvalidResultCodeError(str(response.status_code))
+        msg = f'Apple music client returned {response.status_code}: {response.text}'
+        raise AppleMusicInvalidResultCodeError(msg)
 
 
 class AppleMusicWrapperClient:
