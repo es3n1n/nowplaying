@@ -20,6 +20,7 @@ AUTH_CODE_ERROR_MSG = 'Error! Unable to authorize in {platform}, please try agai
 
 
 async def send_auth_code_error_msg(exc: PlatformInvalidAuthCodeError) -> None:
+    logger.opt(exception=exc).warning(f'Got an invalid auth code exception')
     await bot.send_message(
         exc.telegram_id,
         AUTH_CODE_ERROR_MSG.format(platform=exc.platform.name.capitalize()),
