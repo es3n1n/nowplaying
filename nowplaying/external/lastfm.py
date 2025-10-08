@@ -43,6 +43,10 @@ def get_client() -> AsyncClient:
         proxy=config.LASTFM_SEARCH_PROXY,
         verify=not config.LASTFM_SEARCH_PROXY,
         timeout=Timeout(5.0, read=None),
+        cookies={
+            # Without this cookie, last.fm will return 406 for some reason
+            'lfmanon': '0',
+        },
     )
 
 
