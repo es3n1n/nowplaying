@@ -14,6 +14,7 @@ def is_feature_supported(client: PlatformClientABC, command: str) -> bool:
     feature_map = {
         CallbackButton.PLAY_PREFIX.value: PlatformFeature.PLAY,
         CallbackButton.ADD_TO_QUEUE_PREFIX.value: PlatformFeature.ADD_TO_QUEUE,
+        CallbackButton.LIKE_PREFIX.value: PlatformFeature.LIKE,
     }
     return client.features.get(feature_map[command], False)
 
@@ -24,6 +25,8 @@ async def execute_command(client: PlatformClientABC, command: str, track_id: str
             await client.play(track_id)
         case CallbackButton.ADD_TO_QUEUE_PREFIX.value:
             await client.add_to_queue(track_id)
+        case CallbackButton.LIKE_PREFIX.value:
+            await client.like(track_id)
 
 
 async def handle_media_buttons(query: CallbackQuery) -> None:

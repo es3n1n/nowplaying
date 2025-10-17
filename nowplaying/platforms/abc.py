@@ -21,6 +21,7 @@ class PlatformClientABC(ABC):
             PlatformFeature.TRACK_GETTERS: True,
             PlatformFeature.ADD_TO_QUEUE: False,
             PlatformFeature.PLAY: False,
+            PlatformFeature.LIKE: False,
         }
     )
     media_notice: str | None = None
@@ -43,6 +44,10 @@ class PlatformClientABC(ABC):
 
     @abstractmethod
     async def play(self, track_id: str) -> None:
+        """ """
+
+    @abstractmethod
+    async def like(self, track_id: str) -> None:
         """ """
 
     @property

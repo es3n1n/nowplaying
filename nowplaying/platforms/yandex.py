@@ -26,6 +26,7 @@ class YandexClient(PlatformClientABC):
             PlatformFeature.TRACK_GETTERS: True,
             PlatformFeature.ADD_TO_QUEUE: True,
             PlatformFeature.PLAY: True,
+            PlatformFeature.LIKE: True,
         }
     )
     media_notice = (
@@ -95,6 +96,10 @@ class YandexClient(PlatformClientABC):
             await self._ynison.play_track(track_id, keep_queue=True)
         except YnisonClientSideError as err:
             raise PlatformClientSideError(str(err)) from err
+
+    @rethrow_platform_error(YandexMusicError, TYPE)
+    async def like(self, track_id: str) -> None:
+        await self._app.users_likes_tracks_add(track_ids=[track_id])
 
 
 class YandexPlatform(PlatformABC):

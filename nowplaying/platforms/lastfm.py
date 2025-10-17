@@ -28,8 +28,6 @@ class LastfmClient(PlatformClientABC):
     features: MappingProxyType[PlatformFeature, bool] = MappingProxyType(
         {
             PlatformFeature.TRACK_GETTERS: True,
-            PlatformFeature.ADD_TO_QUEUE: False,
-            PlatformFeature.PLAY: False,
         }
     )
 
@@ -69,6 +67,9 @@ class LastfmClient(PlatformClientABC):
         raise NotImplementedError
 
     async def play(self, _: str) -> None:
+        raise NotImplementedError
+
+    async def like(self, _: str) -> None:
         raise NotImplementedError
 
     @classmethod

@@ -5,6 +5,7 @@ from enum import Enum, unique
 class CallbackButton(str, Enum):
     PLAY_PREFIX = 'play'
     ADD_TO_QUEUE_PREFIX = 'queue'
+    LIKE_PREFIX = 'like'
     LOGOUT_PREFIX = 'logout'
     LOADING = 'loading'
     CONFIG_TOGGLE_PREFIX = 'toggle'
