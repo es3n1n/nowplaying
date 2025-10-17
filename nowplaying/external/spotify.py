@@ -34,6 +34,10 @@ class SpotifyPremiumRequiredError(SpotifyError):
     """Would be raised if you try to access an endpoint that requires a premium license."""
 
 
+class SpotifyInvalidTokenScopeError(SpotifyError):
+    """Would be raised if the token scope is invalid."""
+
+
 class SpotifyCacheHandlerABC(ABC):
     @abstractmethod
     async def get_cached_token(self) -> dict[str, str | int] | None:
@@ -48,8 +52,8 @@ SpotifyToken = dict[str, int | str]
 
 
 def _is_scope_subset(needle_scope: str, haystack_scope: str) -> bool:
-    needle_scope_set = set(needle_scope.split()) if needle_scope else set()
-    haystack_scope_set = set(haystack_scope.split()) if haystack_scope else set()
+    needle_scope_set = set(needle_scope.split(','))
+    haystack_scope_set = set(haystack_scope.split(','))
     return needle_scope_set <= haystack_scope_set
 
 
@@ -243,6 +247,25 @@ class Spotify:
 
         _raise_for_status(response)
 
+    async def like(self, track_uri: str) -> None:
+        if self._token is None:
+            raise SpotifyNoTokenError
+
+        # if scopes don't match, then bail
+        if not _is_scope_subset('user-library-modify', cast(str, self._token.get('scope', ''))):
+            raise SpotifyInvalidTokenScopeError
+
+        try:
+            response = await self._client.put(
+                f'{self._api_base}/me/tracks',
+                json={'ids': [track_uri]},
+                headers=self._auth_headers,
+            )
+        except HTTPError:
+            _unavailable()
+
+        _raise_for_status(response)
+
     @property
     def _auth_headers(self) -> dict[str, str]:
         if self._token is not None:
@@ -266,10 +289,6 @@ class Spotify:
         token_info: SpotifyToken | None,
     ) -> SpotifyToken | None:
         if token_info is None:
-            return None
-
-        # if scopes don't match, then bail
-        if not _is_scope_subset(self._scope, cast(str, token_info.get('scope', ''))):
             return None
 
         if _is_token_expired(token_info):

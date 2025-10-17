@@ -80,17 +80,29 @@ async def _handle_controls(uri: str, message: Message, user_config: UserConfig) 
             )
         )
 
+    has_likes = False
+    if client.features.get(PlatformFeature.LIKE):
+        has_likes = True
+        buttons.append(
+            InlineKeyboardButton(
+                text=user_config.text('❤️'),
+                callback_data=encode_query(CallbackButton.LIKE_PREFIX, uri),
+            )
+        )
+
     if not buttons:
         return False
 
     text: str = f'{track.artist} - {track.name}'[:128]
-    text += '\n\nUse the buttons bellow to control your playback.'
+    text += user_config.text(
+        '\n\nUse the buttons bellow to control your playback' + (' or like the track.' if has_likes else '.')
+    )
 
     if client.media_notice:
-        text += f'\n{client.media_notice}'
+        text += user_config.text(f'\n\n{client.media_notice}')
 
     await message.reply(
-        user_config.text(text),
+        text,
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 buttons,

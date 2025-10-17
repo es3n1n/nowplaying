@@ -8,8 +8,17 @@ import orjson
 from nowplaying.core.config import config
 from nowplaying.core.database import db
 from nowplaying.enums.platform_features import PlatformFeature
-from nowplaying.exceptions.platforms import PlatformInvalidAuthCodeError, PlatformTokenInvalidateError
-from nowplaying.external.spotify import Spotify, SpotifyCacheHandlerABC, SpotifyError, SpotifyPremiumRequiredError
+from nowplaying.exceptions.platforms import (
+    PlatformInvalidAuthCodeError,
+    PlatformTokenInvalidateError,
+)
+from nowplaying.external.spotify import (
+    Spotify,
+    SpotifyCacheHandlerABC,
+    SpotifyError,
+    SpotifyInvalidTokenScopeError,
+    SpotifyPremiumRequiredError,
+)
 from nowplaying.models.song_link import SongLinkPlatformType
 from nowplaying.models.track import Track
 from nowplaying.platforms.abc import PlatformABC, PlatformClientABC, PlatformClientSideError
@@ -18,7 +27,7 @@ from nowplaying.util.time import UTC_TZ
 
 
 TYPE = SongLinkPlatformType.SPOTIFY
-SCOPE = 'user-read-currently-playing,user-read-recently-played,streaming'
+SCOPE = 'user-read-currently-playing,user-read-recently-played,streaming,user-library-modify'
 REDIRECT_URI = config.redirect_url_for_ext_svc('spotify')
 SPOTIFY_PREMIUM_REQUIRED_ERR: str = 'Spotify premium required'
 
@@ -37,6 +46,7 @@ class SpotifyClient(PlatformClientABC):
             PlatformFeature.TRACK_GETTERS: True,
             PlatformFeature.ADD_TO_QUEUE: True,
             PlatformFeature.PLAY: True,
+            PlatformFeature.LIKE: True,
         }
     )
 
@@ -98,6 +108,14 @@ class SpotifyClient(PlatformClientABC):
             raise PlatformClientSideError(SPOTIFY_PREMIUM_REQUIRED_ERR) from err
 
         return True
+
+    @rethrow_platform_error(SpotifyError, TYPE)
+    async def like(self, track_id: str) -> None:
+        try:
+            await self.spotify_app.like(track_id)
+        except SpotifyInvalidTokenScopeError as err:
+            msg = 'Missing Spotify token scope for liking tracks, please reauthorize'
+            raise PlatformClientSideError(msg) from err
 
 
 class SpotifyCacheHandler(SpotifyCacheHandlerABC):

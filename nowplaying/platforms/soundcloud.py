@@ -21,8 +21,6 @@ class SoundCloudClient(PlatformClientABC):
     features: MappingProxyType[PlatformFeature, bool] = MappingProxyType(
         {
             PlatformFeature.TRACK_GETTERS: True,
-            PlatformFeature.ADD_TO_QUEUE: False,
-            PlatformFeature.PLAY: False,
         }
     )
 
@@ -55,6 +53,9 @@ class SoundCloudClient(PlatformClientABC):
         raise NotImplementedError
 
     async def play(self, _: str) -> None:
+        raise NotImplementedError
+
+    async def like(self, track_id: str) -> None:
         raise NotImplementedError
 
 
