@@ -119,15 +119,13 @@ class Database:
             )
 
     async def get_cached_file(self, uri: str, *, highest_available: bool) -> CachedFile | None:
-        highest_str = 'true' if highest_available else 'false'
         pool = await self.get_pool()
         async with pool.acquire() as conn:
             cached_file = await conn.fetchrow(
                 'SELECT * FROM cached_files WHERE uri = $1 AND (quality_info @> $2 OR quality_info @> $3) LIMIT 1',
                 uri,
-                # NOTE(es3n1n): i don't feel like getting overhead from json dumps here
-                f'{{"highest_available":{highest_str}}}',
-                f'{{"marked_as_highest_available":{highest_str}}}',
+                f'{{"highest_available":{'true' if highest_available else 'false'}}}',  # direct quality match
+                '{"marked_as_highest_available":true}',  # same file for both qualities
             )
             if not cached_file:
                 return None
