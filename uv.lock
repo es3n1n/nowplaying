@@ -468,6 +468,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
 ]
 
+[package.optional-dependencies]
+socks = [
+    { name = "socksio" },
+]
+
 [[package]]
 name = "idna"
 version = "3.8"
@@ -587,7 +592,7 @@ dependencies = [
     { name = "filelock" },
     { name = "googleapis-common-protos" },
     { name = "grpcio" },
-    { name = "httpx" },
+    { name = "httpx", extra = ["socks"] },
     { name = "loguru" },
     { name = "orjson" },
     { name = "pillow" },
@@ -623,7 +628,7 @@ requires-dist = [
     { name = "filelock", specifier = "==3.19.1" },
     { name = "googleapis-common-protos", specifier = "==1.70.0" },
     { name = "grpcio", specifier = "==1.74.0" },
-    { name = "httpx", specifier = "==0.28.1" },
+    { name = "httpx", extras = ["socks"], specifier = "==0.28.1" },
     { name = "loguru", specifier = "==0.7.3" },
     { name = "orjson", specifier = "==3.11.2" },
     { name = "pillow", specifier = "==11.3.0" },
@@ -1060,6 +1065,15 @@ wheels = [
 ]
 
 [[package]]
+name = "socksio"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f8/5c/48a7d9495be3d1c651198fd99dbb6ce190e2274d0f28b9051307bdec6b85/socksio-1.0.0.tar.gz", hash = "sha256:f88beb3da5b5c38b9890469de67d0cb0f9d494b78b106ca1845f96c10b91c4ac", size = 19055, upload-time = "2020-04-17T15:50:34.664Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/37/c3/6eeb6034408dac0fa653d126c9204ade96b819c936e136c5e8a6897eee9c/socksio-1.0.0-py3-none-any.whl", hash = "sha256:95dc1f15f9b34e8d7b16f06d74b8ccf48f609af32ab33c608d08761c5dcbb1f3", size = 12763, upload-time = "2020-04-17T15:50:31.878Z" },
+]
+
+[[package]]
 name = "starlette"
 version = "0.47.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1083,6 +1097,7 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/58/af/9b7111e3f63fffe8e55b7ceb8bda023173e2052f420b6debcb25fd2fbc15/telethon-1.40.0.tar.gz", hash = "sha256:40e83326877a2e68b754d4b6d0d1ca5ac924110045b039e02660f2d67add97db", size = 646723, upload-time = "2025-04-21T09:12:10.506Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/5a/c5370edb3215d19a6e858f4169b8eec725ba55f9d39df0f557508048c037/Telethon-1.40.0-py3-none-any.whl", hash = "sha256:146fd4cb2a7afa66bc67f9c2167756096a37b930f65711a3e7399ec9874dcfa7", size = 722013, upload-time = "2025-04-21T09:12:08.399Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/b0/78f74085b6c88c2bf2bec39c67267cd9ba6af24ceaea9654fb0c272a53da/telethon-1.40.0-py3-none-any.whl", hash = "sha256:1aebaca04fd8410968816645bdbcc0baeff55429b6d6bec37e647417bb8e8a2c", size = 744897, upload-time = "2025-09-01T15:32:34.212Z" },
 ]
 
 [[package]]

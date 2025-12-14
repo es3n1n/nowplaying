@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     APPLE_KEY_ID: str
     APPLE_TEAM_ID: str
 
+    # Soundcloud has started banning ASNs of specific servers
+    SOUNDCLOUD_PROXY: str | None = None
+
     # Russian(preferred) proxy for yandex, optional but will resolve some availability issues.
     # `YANDEX_PROXY` is used for all platform interactions
     # `YANDEX_HTTP_PROXY` is used for Ynison grpc requests, without it server sometimes drop connections :shrug:

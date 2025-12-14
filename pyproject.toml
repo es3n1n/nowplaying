@@ -13,7 +13,7 @@ requires-python = ">=3.12"
 version = "1.0.0"
 dependencies = [
     "aiogram==3.22.0",
-    "httpx==0.28.1",
+    "httpx[socks]==0.28.1",
     "fastapi==0.116.1",
     "uvicorn==0.35.0",
     "loguru==0.7.3",

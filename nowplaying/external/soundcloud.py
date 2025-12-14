@@ -4,6 +4,7 @@ from typing import Any, NoReturn
 import orjson
 from httpx import AsyncClient, HTTPError, Response
 
+from nowplaying.core.config import config
 from nowplaying.enums.platform_type import SongLinkPlatformType
 from nowplaying.exceptions.platforms import PlatformTemporarilyUnavailableError
 from nowplaying.util.http import STATUS_NOT_FOUND, STATUS_OK, is_serverside_error
@@ -76,6 +77,7 @@ class SoundCloudWrapper:
                 'app_version': '1765442274',
                 'app_locale': 'en',
             },
+            proxy=config.SOUNDCLOUD_PROXY,
         )
         self._api_base = 'https://api-v2.soundcloud.com/'
 
