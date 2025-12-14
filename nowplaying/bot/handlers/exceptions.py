@@ -63,6 +63,7 @@ async def on_invalid_auth_code_error(event: ErrorEvent) -> bool:
     exc = cast(PlatformInvalidAuthCodeError, event.exception)
 
     await reply_to_event(event, AUTH_CODE_ERROR_MSG.format(platform=exc.platform.name.capitalize()))
+    logger.opt(exception=event.exception).warning(f'Unable to authorize in {exc.platform.name.capitalize()}')
     return True
 
 
