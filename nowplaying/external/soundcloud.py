@@ -72,8 +72,8 @@ class SoundCloudWrapper:
                 'Referer': 'https://soundcloud.com/',
             },
             params={
-                'client_id': '1HxML01xkzWgtHfBreaeZfpANMe3ADjb',
-                'app_version': '1739181955',
+                'client_id': 'xXKzFLdhfXAtbaLbKFp4cNoiduLizuYO',
+                'app_version': '1765442274',
                 'app_locale': 'en',
             },
         )
