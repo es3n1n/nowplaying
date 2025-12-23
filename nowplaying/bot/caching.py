@@ -50,7 +50,11 @@ async def process_thumbnail_jpeg(thumbnail_url: str | None) -> BufferedInputFile
             # :shrug:
             return None
 
-        data = await resp.read()
+        try:
+            data = await resp.read()
+        except TimeoutError:
+            return None
+
         return BufferedInputFile(
             # Compress JPEG to avoid hitting the 200 kb limit
             file=compress_to_jpeg(BytesIO(data), target_size_kb=200).getvalue(),
